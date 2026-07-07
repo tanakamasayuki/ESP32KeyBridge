@@ -61,6 +61,7 @@ def compile_and_run_cpp(tmp_path, name, main_body):
             "-I",
             str(ROOT / "src"),
             str(source),
+            str(ROOT / "src" / "ESP32KeyBridge.cpp"),
             "-o",
             str(binary),
         ],
@@ -317,4 +318,3 @@ def test_layout_conversion_runs_before_global_transform(tmp_path):
         assert(output.last_.keyCount() == 1);
         ''',
     )
-
