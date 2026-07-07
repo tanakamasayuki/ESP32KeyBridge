@@ -84,6 +84,18 @@ public:
   virtual const KeyboardState &state() const = 0;
 };
 
+class EventInputAdapter : public InputAdapter
+{
+public:
+  void update() override;
+  const KeyboardState &state() const override;
+  bool apply(InputEvent event);
+  void clear();
+
+private:
+  KeyboardState state_;
+};
+
 class OutputAdapter
 {
 public:

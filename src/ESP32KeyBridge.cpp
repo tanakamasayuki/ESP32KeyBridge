@@ -169,6 +169,23 @@ InputCode KeyboardState::codeAt(size_t index) const
   return index < keyCount_ ? codes_[index] : keyboardCode(Key::None);
 }
 
+void EventInputAdapter::update() {}
+
+const KeyboardState &EventInputAdapter::state() const
+{
+  return state_;
+}
+
+bool EventInputAdapter::apply(InputEvent event)
+{
+  return state_.apply(event);
+}
+
+void EventInputAdapter::clear()
+{
+  state_.clear();
+}
+
 bool TransformConfig::remap(Key from, Key to)
 {
   if (from == Key::None || to == Key::None)

@@ -82,6 +82,7 @@ DeviceState
 core には `esp32keybridge::InputCode` を置き、keyboard、consumer control、pointer button、pointer axis、vendor などの domain を表せるようにします。現時点の `esp32keybridge::KeyboardState` は内部的に `InputCode` を保持しますが、受け付ける domain は keyboard のみに制限します。adapter や将来の state 型が同じ domain/code の考え方を使えるようにするための土台です。
 
 press / release の差分には `esp32keybridge::InputEvent` を使います。現時点では `KeyboardState::apply(event)` で keyboard domain の event を state に反映できます。debounce、hold/tap、event macro sequence などはこの event 表現を使って後から追加する想定です。
+`esp32keybridge::EventInputAdapter` は、この event 表現を使って state を作る最小 input adapter です。実 adapter は raw input を `InputEvent` に変換し、同じ state 更新の考え方を使えます。
 
 ## Merge Layer
 
