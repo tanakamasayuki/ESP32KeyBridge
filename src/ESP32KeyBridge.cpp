@@ -87,11 +87,16 @@ void KeyboardState::clear()
 
 bool KeyboardState::press(Key key)
 {
-  if (key == Key::None)
+  return press(keyboardCode(key));
+}
+
+bool KeyboardState::press(InputCode code)
+{
+  if (code.domain != InputDomain::Keyboard || code.code == static_cast<uint16_t>(Key::None))
   {
     return false;
   }
-  if (isPressed(key))
+  if (isPressed(code))
   {
     return true;
   }
@@ -99,17 +104,22 @@ bool KeyboardState::press(Key key)
   {
     return false;
   }
-  keys_[keyCount_++] = key;
+  codes_[keyCount_++] = code;
   return true;
 }
 
 bool KeyboardState::release(Key key)
 {
+  return release(keyboardCode(key));
+}
+
+bool KeyboardState::release(InputCode code)
+{
   for (size_t i = 0; i < keyCount_; ++i)
   {
-    if (keys_[i] == key)
+    if (codes_[i] == code)
     {
-      keys_[i] = keys_[keyCount_ - 1];
+      codes_[i] = codes_[keyCount_ - 1];
       --keyCount_;
       return true;
     }
@@ -119,9 +129,14 @@ bool KeyboardState::release(Key key)
 
 bool KeyboardState::isPressed(Key key) const
 {
+  return isPressed(keyboardCode(key));
+}
+
+bool KeyboardState::isPressed(InputCode code) const
+{
   for (size_t i = 0; i < keyCount_; ++i)
   {
-    if (keys_[i] == key)
+    if (codes_[i] == code)
     {
       return true;
     }
@@ -136,7 +151,12 @@ size_t KeyboardState::keyCount() const
 
 Key KeyboardState::keyAt(size_t index) const
 {
-  return index < keyCount_ ? keys_[index] : Key::None;
+  return index < keyCount_ ? keyFromCode(codes_[index]) : Key::None;
+}
+
+InputCode KeyboardState::codeAt(size_t index) const
+{
+  return index < keyCount_ ? codes_[index] : keyboardCode(Key::None);
 }
 
 bool TransformConfig::remap(Key from, Key to)

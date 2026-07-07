@@ -22,6 +22,7 @@ esp32keybridge::InputCode code = esp32keybridge::keyboardCode(esp32keybridge::Ke
 ```
 
 現時点の `esp32keybridge::KeyboardState` は keyboard domain 専用です。consumer control、pointer、vendor などは将来の state / adapter 拡張で同じ domain/code の考え方に乗せます。
+`esp32keybridge::KeyboardState` は `esp32keybridge::InputCode` を保持できますが、現時点では keyboard domain の code だけを受け付けます。
 
 ## Hardcoded Remap
 

@@ -53,13 +53,17 @@ public:
 
   void clear();
   bool press(Key key);
+  bool press(InputCode code);
   bool release(Key key);
+  bool release(InputCode code);
   bool isPressed(Key key) const;
+  bool isPressed(InputCode code) const;
   size_t keyCount() const;
   Key keyAt(size_t index) const;
+  InputCode codeAt(size_t index) const;
 
 private:
-  Key keys_[MaxKeys] = {};
+  InputCode codes_[MaxKeys] = {};
   size_t keyCount_ = 0;
 };
 

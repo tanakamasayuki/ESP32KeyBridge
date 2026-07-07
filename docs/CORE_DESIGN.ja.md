@@ -79,7 +79,7 @@ DeviceState
 
 将来、mouse、trackpad、wheel などを扱えるように event domain を拡張できる余地を残します。ただし MVP は keyboard / consumer control を優先します。
 
-core には `esp32keybridge::InputCode` を置き、keyboard、consumer control、pointer button、pointer axis、vendor などの domain を表せるようにします。現時点の `esp32keybridge::KeyboardState` は keyboard domain 専用ですが、adapter や将来の state 型が同じ domain/code の考え方を使えるようにします。
+core には `esp32keybridge::InputCode` を置き、keyboard、consumer control、pointer button、pointer axis、vendor などの domain を表せるようにします。現時点の `esp32keybridge::KeyboardState` は内部的に `InputCode` を保持しますが、受け付ける domain は keyboard のみに制限します。adapter や将来の state 型が同じ domain/code の考え方を使えるようにするための土台です。
 
 ## Merge Layer
 

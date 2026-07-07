@@ -104,6 +104,24 @@ def test_core_cpp_behaviors(tmp_path):
               assert(std::strcmp(esp32keybridge::inputDomainName(static_cast<esp32keybridge::InputDomain>(77)), "Unknown") == 0);
             }
 
+            static void test_keyboard_state_accepts_keyboard_input_code()
+            {
+              esp32keybridge::KeyboardState state;
+              const esp32keybridge::InputCode a = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
+              const esp32keybridge::InputCode consumer{esp32keybridge::InputDomain::Consumer, 0x00e9};
+
+              assert(state.press(a));
+              assert(state.isPressed(a));
+              assert(state.isPressed(esp32keybridge::Key::A));
+              assert(state.codeAt(0) == a);
+              assert(state.keyAt(0) == esp32keybridge::Key::A);
+              assert(!state.press(consumer));
+              assert(state.keyCount() == 1);
+              assert(state.release(a));
+              assert(!state.isPressed(a));
+              assert(state.keyCount() == 0);
+            }
+
             static void test_core_merge_options()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -343,6 +361,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("core_merge_and_transform", test_core_merge_and_transform);
               run("key_name_helper", test_key_name_helper);
               run("input_code_helpers", test_input_code_helpers);
+              run("keyboard_state_accepts_keyboard_input_code", test_keyboard_state_accepts_keyboard_input_code);
               run("core_merge_options", test_core_merge_options);
               run("per_input_transform_runs_before_merge_and_global_transform", test_per_input_transform_runs_before_merge_and_global_transform);
               run("config_try_input_reports_out_of_range", test_config_try_input_reports_out_of_range);
