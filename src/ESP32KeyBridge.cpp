@@ -286,6 +286,13 @@ bool TransformConfig::macro(Key trigger, const Key *keys, size_t keyCount)
   return true;
 }
 
+void TransformConfig::clear()
+{
+  remapCount_ = 0;
+  disabledKeyCount_ = 0;
+  macroCount_ = 0;
+}
+
 Key TransformConfig::map(Key key) const
 {
   for (size_t i = 0; i < remapCount_; ++i)
@@ -338,6 +345,13 @@ bool LayerConfig::remap(Key from, Key to)
   return transform_.remap(from, to);
 }
 
+void LayerConfig::clear()
+{
+  enabled_ = false;
+  trigger_ = Key::None;
+  transform_.clear();
+}
+
 bool LayerConfig::enabled() const
 {
   return enabled_;
@@ -375,6 +389,11 @@ bool LayoutConfig::map(Key from, Key to)
   return true;
 }
 
+void LayoutConfig::clear()
+{
+  mappingCount_ = 0;
+}
+
 Key LayoutConfig::convert(Key key) const
 {
   for (size_t i = 0; i < mappingCount_; ++i)
@@ -410,6 +429,19 @@ const TransformConfig *ESP32KeyBridgeConfig::tryInput(size_t index) const
 bool ESP32KeyBridgeConfig::hasInvalidInputConfig() const
 {
   return !invalidInputTransform_.empty();
+}
+
+void ESP32KeyBridgeConfig::clear()
+{
+  for (size_t i = 0; i < MaxInputConfigs; ++i)
+  {
+    inputTransforms_[i].clear();
+  }
+  invalidInputTransform_.clear();
+  global.clear();
+  layer.clear();
+  layout.clear();
+  merge = MergeConfig{};
 }
 
 bool ESP32KeyBridge::addInput(InputAdapter &input)

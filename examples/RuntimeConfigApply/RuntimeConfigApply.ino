@@ -46,13 +46,14 @@ public:
   {
     applied_ = true;
 
-    esp32keybridge::ESP32KeyBridgeConfig config;
-    config.global.remap(esp32keybridge::Key::A, esp32keybridge::Key::B);
-    return config;
+    config_.clear();
+    config_.global.remap(esp32keybridge::Key::A, esp32keybridge::Key::B);
+    return config_;
   }
 
 private:
   bool applied_ = false;
+  esp32keybridge::ESP32KeyBridgeConfig config_;
 };
 
 esp32keybridge::ESP32KeyBridge bridge;
@@ -90,4 +91,3 @@ void loop()
   bridge.update();
   delay(1000);
 }
-

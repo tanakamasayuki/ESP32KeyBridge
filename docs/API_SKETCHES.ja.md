@@ -234,6 +234,7 @@ void loop()
 
 `configService` と `configStorage` は example またはユーザー実装です。WebSerial、UART、BLE、NVS、LittleFS、JSON などはここで選択します。
 最小 example は [examples/RuntimeConfigApply](../examples/RuntimeConfigApply/README.ja.md) に置きます。
+設定 object を再利用する場合は `next.clear()` で既存内容を消してから新しい内容を組み立てます。
 
 ## Runtime Adapter Reconfigure
 

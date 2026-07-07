@@ -9,6 +9,6 @@
 - 設定の取得方法は core の外側にある。
 - 設定の保存先も core の外側にある。
 - core は `validateConfig()` と `applyConfig()` の入口だけを提供する。
+- 設定 object を再利用する場合は `clear()` してから組み立てる。
 
 WebSerial、UART、BLE、NVS、LittleFS などを使う場合も、最終的には `esp32keybridge::ESP32KeyBridgeConfig` を作って同じ流れで適用します。
-

@@ -141,6 +141,7 @@ public:
   bool remap(Key from, Key to);
   bool disable(Key key);
   bool macro(Key trigger, const Key *keys, size_t keyCount);
+  void clear();
   Key map(Key key) const;
   bool isDisabled(Key key) const;
   const KeyMacro *findMacro(Key trigger) const;
@@ -166,6 +167,7 @@ class LayerConfig
 public:
   void setMomentary(Key trigger);
   bool remap(Key from, Key to);
+  void clear();
   bool enabled() const;
   Key trigger() const;
   Key map(Key key) const;
@@ -182,6 +184,7 @@ public:
   static constexpr size_t MaxMappings = 64;
 
   bool map(Key from, Key to);
+  void clear();
   Key convert(Key key) const;
 
 private:
@@ -199,6 +202,7 @@ public:
   TransformConfig *tryInput(size_t index);
   const TransformConfig *tryInput(size_t index) const;
   bool hasInvalidInputConfig() const;
+  void clear();
 
   TransformConfig global;
   LayerConfig layer;

@@ -269,6 +269,36 @@ def test_core_cpp_behaviors(tmp_path):
               assert(std::strcmp(error.message, "input config index out of range") == 0);
             }
 
+            static void test_config_clear_resets_all_sections()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              esp32keybridge::ESP32KeyBridgeConfig config;
+              esp32keybridge::ESP32KeyBridgeConfigError error;
+
+              assert(config.input(0).remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+              assert(config.input(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs).remap(
+                esp32keybridge::Key::B,
+                esp32keybridge::Key::C
+              ));
+              assert(config.global.disable(esp32keybridge::Key::Insert));
+              config.layer.setMomentary(esp32keybridge::Key::Fn1);
+              assert(config.layer.remap(esp32keybridge::Key::A, esp32keybridge::Key::C));
+              assert(config.layout.map(esp32keybridge::Key::A, esp32keybridge::Key::B));
+              config.merge.shareKeys = false;
+
+              assert(!bridge.validateConfig(config, error));
+              config.clear();
+
+              assert(bridge.validateConfig(config, error));
+              assert(error.message == nullptr);
+              assert(config.input(0).map(esp32keybridge::Key::A) == esp32keybridge::Key::A);
+              assert(!config.global.isDisabled(esp32keybridge::Key::Insert));
+              assert(!config.layer.enabled());
+              assert(config.layout.convert(esp32keybridge::Key::A) == esp32keybridge::Key::A);
+              assert(config.merge.shareModifiers);
+              assert(config.merge.shareKeys);
+            }
+
             static void test_momentary_layer_remaps_while_trigger_is_pressed()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -425,6 +455,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("per_input_transform_runs_before_merge_and_global_transform", test_per_input_transform_runs_before_merge_and_global_transform);
               run("config_try_input_reports_out_of_range", test_config_try_input_reports_out_of_range);
               run("validate_config_rejects_out_of_range_input_config", test_validate_config_rejects_out_of_range_input_config);
+              run("config_clear_resets_all_sections", test_config_clear_resets_all_sections);
               run("momentary_layer_remaps_while_trigger_is_pressed", test_momentary_layer_remaps_while_trigger_is_pressed);
               run("transform_macro_expands_trigger_to_key_sequence", test_transform_macro_expands_trigger_to_key_sequence);
               run("layout_conversion_runs_before_global_transform", test_layout_conversion_runs_before_global_transform);
