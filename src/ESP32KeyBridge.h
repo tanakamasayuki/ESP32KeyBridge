@@ -226,6 +226,7 @@ public:
   static constexpr size_t MaxOutputs = 4;
 
   bool addInput(InputAdapter &input);
+  bool addInput(InputAdapter &input, size_t configIndex);
   bool addOutput(OutputAdapter &output);
   void clearInputs();
   void clearOutputs();
@@ -243,6 +244,7 @@ private:
   void applyLayout(const KeyboardState &input, KeyboardState &output) const;
 
   InputAdapter *inputs_[MaxInputs] = {};
+  size_t inputConfigIndexes_[MaxInputs] = {};
   size_t inputCount_ = 0;
   OutputAdapter *outputs_[MaxOutputs] = {};
   size_t outputCount_ = 0;

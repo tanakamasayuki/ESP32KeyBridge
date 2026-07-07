@@ -234,6 +234,29 @@ def test_core_cpp_behaviors(tmp_path):
               assert(output.state().keyCount() == 3);
             }
 
+            static void test_input_can_bind_to_explicit_config_index()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput input;
+              esp32keybridge::RecordingOutputAdapter output;
+
+              assert(bridge.addInput(input, 2));
+              assert(bridge.addOutput(output));
+              assert(!bridge.addInput(input, esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs));
+
+              esp32keybridge::ESP32KeyBridgeConfig config;
+              assert(config.input(0).remap(esp32keybridge::Key::A, esp32keybridge::Key::C));
+              assert(config.input(2).remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+              bridge.applyConfig(config);
+
+              input.state_.press(esp32keybridge::Key::A);
+              bridge.update();
+
+              assert(output.state().isPressed(esp32keybridge::Key::B));
+              assert(!output.state().isPressed(esp32keybridge::Key::A));
+              assert(!output.state().isPressed(esp32keybridge::Key::C));
+            }
+
             static void test_config_try_input_reports_out_of_range()
             {
               esp32keybridge::ESP32KeyBridgeConfig config;
@@ -453,6 +476,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);
               run("core_merge_options", test_core_merge_options);
               run("per_input_transform_runs_before_merge_and_global_transform", test_per_input_transform_runs_before_merge_and_global_transform);
+              run("input_can_bind_to_explicit_config_index", test_input_can_bind_to_explicit_config_index);
               run("config_try_input_reports_out_of_range", test_config_try_input_reports_out_of_range);
               run("validate_config_rejects_out_of_range_input_config", test_validate_config_rejects_out_of_range_input_config);
               run("config_clear_resets_all_sections", test_config_clear_resets_all_sections);

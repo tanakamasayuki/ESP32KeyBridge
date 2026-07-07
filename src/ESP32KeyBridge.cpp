@@ -446,11 +446,21 @@ void ESP32KeyBridgeConfig::clear()
 
 bool ESP32KeyBridge::addInput(InputAdapter &input)
 {
+  return addInput(input, inputCount_);
+}
+
+bool ESP32KeyBridge::addInput(InputAdapter &input, size_t configIndex)
+{
   if (inputCount_ >= MaxInputs)
   {
     return false;
   }
+  if (configIndex >= ESP32KeyBridgeConfig::MaxInputConfigs)
+  {
+    return false;
+  }
   inputs_[inputCount_++] = &input;
+  inputConfigIndexes_[inputCount_ - 1] = configIndex;
   return true;
 }
 
@@ -469,6 +479,7 @@ void ESP32KeyBridge::clearInputs()
   for (size_t i = 0; i < inputCount_; ++i)
   {
     inputs_[i] = nullptr;
+    inputConfigIndexes_[i] = 0;
   }
   inputCount_ = 0;
   mergedState_.clear();
@@ -509,7 +520,7 @@ void ESP32KeyBridge::update()
   {
     inputs_[i]->update();
     KeyboardState deviceState;
-    applyTransform(inputs_[i]->state(), config_.input(i), deviceState);
+    applyTransform(inputs_[i]->state(), config_.input(inputConfigIndexes_[i]), deviceState);
     mergeInput(deviceState, mergedState_);
   }
 

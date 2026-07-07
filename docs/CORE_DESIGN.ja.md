@@ -182,6 +182,7 @@ external config
 - 2つの keyboard state merge
 - Shift 共有
 - 入力追加順 index による per-input remap
+- 明示 config index による input と per-input config の紐付け
 - state 変換としての単純 macro
 - key mapping table としての layout conversion
 
