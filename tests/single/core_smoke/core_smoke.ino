@@ -1,26 +1,6 @@
 #include <Arduino.h>
 #include <ESP32KeyBridge.h>
 
-class VirtualInput : public esp32keybridge::InputAdapter
-{
-public:
-  void update() override
-  {
-    state_.clear();
-    state_.press(esp32keybridge::Key::CapsLock);
-    state_.press(esp32keybridge::Key::A);
-    state_.press(esp32keybridge::Key::Insert);
-  }
-
-  const esp32keybridge::KeyboardState &state() const override
-  {
-    return state_;
-  }
-
-private:
-  esp32keybridge::KeyboardState state_;
-};
-
 class RecordingOutput : public esp32keybridge::OutputAdapter
 {
 public:
@@ -34,7 +14,7 @@ public:
   int writeCount_ = 0;
 };
 
-VirtualInput input;
+esp32keybridge::EventInputAdapter input;
 RecordingOutput output;
 esp32keybridge::ESP32KeyBridge bridge;
 
@@ -53,9 +33,13 @@ void setup()
   config.global.disable(esp32keybridge::Key::Insert);
   bridge.applyConfig(config);
   bridge.begin();
+
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::CapsLock, true, millis()));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true, millis()));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::Insert, true, millis()));
   bridge.update();
 
-  const bool ok =
+  const bool firstOk =
       output.writeCount_ == 1 &&
       bridge.mergedState().isPressed(esp32keybridge::Key::CapsLock) &&
       bridge.mergedState().isPressed(esp32keybridge::Key::Insert) &&
@@ -66,11 +50,18 @@ void setup()
       output.last_.isPressed(esp32keybridge::Key::LeftCtrl) &&
       output.last_.isPressed(esp32keybridge::Key::A);
 
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, false, millis()));
+  bridge.update();
+
+  const bool secondOk =
+      output.writeCount_ == 2 &&
+      bridge.outputState().isPressed(esp32keybridge::Key::LeftCtrl) &&
+      !bridge.outputState().isPressed(esp32keybridge::Key::A);
+
   Serial.println("TEST_END");
-  Serial.println(ok ? "OK" : "NG");
+  Serial.println(firstOk && secondOk ? "OK" : "NG");
 }
 
 void loop()
 {
 }
-
