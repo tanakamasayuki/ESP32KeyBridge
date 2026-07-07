@@ -6,10 +6,10 @@ __pycache__/
 .pytest_cache/
 .pytest-results/
 .venv/
+.env
 
 # Arduino / build artifacts
 build/
 *.bin
 *.elf
 *.map
-
