@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -40,3 +41,12 @@ def test_library_properties_names_public_header():
 
     assert "name=ESP32KeyBridge" in library_properties
     assert "includes=ESP32KeyBridge.h" in library_properties
+
+
+def test_examples_readme_lists_current_examples():
+    example_dirs = sorted(path.parent.name for path in (ROOT / "examples").glob("*/*.ino"))
+    readme = (ROOT / "examples" / "README.ja.md").read_text(encoding="utf-8")
+    core_section = readme.split("## Core Examples", 1)[1].split("## 追加予定", 1)[0]
+    listed = sorted(re.findall(r"- `([^`]+)`:", core_section))
+
+    assert listed == example_dirs
