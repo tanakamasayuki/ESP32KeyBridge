@@ -116,11 +116,21 @@ struct KeyRemap
   Key to = Key::None;
 };
 
+struct KeyMacro
+{
+  static constexpr size_t MaxKeys = 8;
+
+  Key trigger = Key::None;
+  Key keys[MaxKeys] = {};
+  size_t keyCount = 0;
+};
+
 class TransformConfig
 {
 public:
   static constexpr size_t MaxRemaps = 32;
   static constexpr size_t MaxDisabledKeys = 32;
+  static constexpr size_t MaxMacros = 16;
 
   bool remap(Key from, Key to)
   {
@@ -158,6 +168,48 @@ public:
     return true;
   }
 
+  bool macro(Key trigger, const Key *keys, size_t keyCount)
+  {
+    if (trigger == Key::None || keys == nullptr || keyCount == 0 || keyCount > KeyMacro::MaxKeys)
+    {
+      return false;
+    }
+    for (size_t i = 0; i < keyCount; ++i)
+    {
+      if (keys[i] == Key::None)
+      {
+        return false;
+      }
+    }
+
+    for (size_t i = 0; i < macroCount_; ++i)
+    {
+      if (macros_[i].trigger == trigger)
+      {
+        macros_[i].keyCount = keyCount;
+        for (size_t j = 0; j < keyCount; ++j)
+        {
+          macros_[i].keys[j] = keys[j];
+        }
+        return true;
+      }
+    }
+
+    if (macroCount_ >= MaxMacros)
+    {
+      return false;
+    }
+
+    macros_[macroCount_].trigger = trigger;
+    macros_[macroCount_].keyCount = keyCount;
+    for (size_t i = 0; i < keyCount; ++i)
+    {
+      macros_[macroCount_].keys[i] = keys[i];
+    }
+    ++macroCount_;
+    return true;
+  }
+
   Key map(Key key) const
   {
     for (size_t i = 0; i < remapCount_; ++i)
@@ -182,11 +234,25 @@ public:
     return false;
   }
 
+  const KeyMacro *findMacro(Key trigger) const
+  {
+    for (size_t i = 0; i < macroCount_; ++i)
+    {
+      if (macros_[i].trigger == trigger)
+      {
+        return &macros_[i];
+      }
+    }
+    return nullptr;
+  }
+
 private:
   KeyRemap remaps_[MaxRemaps] = {};
   size_t remapCount_ = 0;
   Key disabledKeys_[MaxDisabledKeys] = {};
   size_t disabledKeyCount_ = 0;
+  KeyMacro macros_[MaxMacros] = {};
+  size_t macroCount_ = 0;
 };
 
 struct MergeConfig
@@ -357,6 +423,15 @@ private:
       const Key key = input.keyAt(i);
       if (transform.isDisabled(key))
       {
+        continue;
+      }
+      const KeyMacro *macro = transform.findMacro(key);
+      if (macro != nullptr)
+      {
+        for (size_t j = 0; j < macro->keyCount; ++j)
+        {
+          output.press(macro->keys[j]);
+        }
         continue;
       }
       output.press(transform.map(key));

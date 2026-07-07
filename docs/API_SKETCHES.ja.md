@@ -152,6 +152,25 @@ output: B
 
 `Fn1` は layer trigger として消費され、出力 state には含めません。最小 example は [examples/MomentaryLayer](../examples/MomentaryLayer/README.ja.md) に置きます。
 
+## Simple Macro
+
+trigger key を複数 key の state に展開する使い方です。
+
+```cpp
+esp32keybridge::ESP32KeyBridgeConfig config;
+
+const esp32keybridge::Key macroKeys[] = {
+  esp32keybridge::Key::LeftCtrl,
+  esp32keybridge::Key::A,
+  esp32keybridge::Key::B,
+};
+config.global.macro(esp32keybridge::Key::Fn1, macroKeys, 3);
+
+bridge.applyConfig(config);
+```
+
+現在の macro は state 変換としての最小機能です。押下順、release 順、delay、文字列入力などの event 的な macro は今後検討します。最小 example は [examples/SimpleMacro](../examples/SimpleMacro/README.ja.md) に置きます。
+
 ## Runtime Config Apply
 
 設定の取得、parse、保存は core の外側で行い、core には設定 object を渡します。
