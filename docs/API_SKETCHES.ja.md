@@ -13,6 +13,16 @@
 - 複雑な設定 UI や保存処理は examples 側で実装する。
 - ドキュメント内のコード例では namespace を省略しない。`using namespace` や type alias で短くするかはユーザー側の選択とする。
 
+## Code Domain
+
+keyboard 以外の HID 系入力へ拡張できるように、core には `esp32keybridge::InputCode` を置きます。
+
+```cpp
+esp32keybridge::InputCode code = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
+```
+
+現時点の `esp32keybridge::KeyboardState` は keyboard domain 専用です。consumer control、pointer、vendor などは将来の state / adapter 拡張で同じ domain/code の考え方に乗せます。
+
 ## Hardcoded Remap
 
 外部設定なしで、スケッチ内に変換内容を直接書く使い方です。

@@ -21,6 +21,28 @@ enum class Key : uint16_t
   Fn1,
 };
 
+enum class InputDomain : uint8_t
+{
+  Keyboard = 1,
+  Consumer = 2,
+  PointerButton = 3,
+  PointerAxis = 4,
+  Vendor = 255,
+};
+
+struct InputCode
+{
+  InputDomain domain = InputDomain::Keyboard;
+  uint16_t code = 0;
+
+  bool operator==(const InputCode &other) const;
+  bool operator!=(const InputCode &other) const;
+};
+
+InputCode keyboardCode(Key key);
+Key keyFromCode(InputCode code);
+const char *inputDomainName(InputDomain domain);
+
 bool isModifierKey(Key key);
 const char *keyName(Key key);
 

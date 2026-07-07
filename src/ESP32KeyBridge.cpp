@@ -3,6 +3,48 @@
 namespace esp32keybridge
 {
 
+bool InputCode::operator==(const InputCode &other) const
+{
+  return domain == other.domain && code == other.code;
+}
+
+bool InputCode::operator!=(const InputCode &other) const
+{
+  return !(*this == other);
+}
+
+InputCode keyboardCode(Key key)
+{
+  return {InputDomain::Keyboard, static_cast<uint16_t>(key)};
+}
+
+Key keyFromCode(InputCode code)
+{
+  if (code.domain != InputDomain::Keyboard)
+  {
+    return Key::None;
+  }
+  return static_cast<Key>(code.code);
+}
+
+const char *inputDomainName(InputDomain domain)
+{
+  switch (domain)
+  {
+  case InputDomain::Keyboard:
+    return "Keyboard";
+  case InputDomain::Consumer:
+    return "Consumer";
+  case InputDomain::PointerButton:
+    return "PointerButton";
+  case InputDomain::PointerAxis:
+    return "PointerAxis";
+  case InputDomain::Vendor:
+    return "Vendor";
+  }
+  return "Unknown";
+}
+
 bool isModifierKey(Key key)
 {
   return key == Key::LeftCtrl || key == Key::LeftShift;

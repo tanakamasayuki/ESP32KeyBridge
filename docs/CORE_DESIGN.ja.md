@@ -79,6 +79,8 @@ DeviceState
 
 将来、mouse、trackpad、wheel などを扱えるように event domain を拡張できる余地を残します。ただし MVP は keyboard / consumer control を優先します。
 
+core には `esp32keybridge::InputCode` を置き、keyboard、consumer control、pointer button、pointer axis、vendor などの domain を表せるようにします。現時点の `esp32keybridge::KeyboardState` は keyboard domain 専用ですが、adapter や将来の state 型が同じ domain/code の考え方を使えるようにします。
+
 ## Merge Layer
 
 merge layer は複数の `DeviceState` を統合します。

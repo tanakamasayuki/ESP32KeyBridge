@@ -87,6 +87,23 @@ def test_core_cpp_behaviors(tmp_path):
               assert(std::strcmp(esp32keybridge::keyName(static_cast<esp32keybridge::Key>(999)), "Unknown") == 0);
             }
 
+            static void test_input_code_helpers()
+            {
+              const esp32keybridge::InputCode a = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
+              const esp32keybridge::InputCode anotherA = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
+              const esp32keybridge::InputCode consumer{esp32keybridge::InputDomain::Consumer, 0x00e9};
+
+              assert(a == anotherA);
+              assert(a != consumer);
+              assert(a.domain == esp32keybridge::InputDomain::Keyboard);
+              assert(a.code == static_cast<uint16_t>(esp32keybridge::Key::A));
+              assert(esp32keybridge::keyFromCode(a) == esp32keybridge::Key::A);
+              assert(esp32keybridge::keyFromCode(consumer) == esp32keybridge::Key::None);
+              assert(std::strcmp(esp32keybridge::inputDomainName(esp32keybridge::InputDomain::Keyboard), "Keyboard") == 0);
+              assert(std::strcmp(esp32keybridge::inputDomainName(esp32keybridge::InputDomain::Consumer), "Consumer") == 0);
+              assert(std::strcmp(esp32keybridge::inputDomainName(static_cast<esp32keybridge::InputDomain>(77)), "Unknown") == 0);
+            }
+
             static void test_core_merge_options()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -325,6 +342,7 @@ def test_core_cpp_behaviors(tmp_path):
             {
               run("core_merge_and_transform", test_core_merge_and_transform);
               run("key_name_helper", test_key_name_helper);
+              run("input_code_helpers", test_input_code_helpers);
               run("core_merge_options", test_core_merge_options);
               run("per_input_transform_runs_before_merge_and_global_transform", test_per_input_transform_runs_before_merge_and_global_transform);
               run("config_try_input_reports_out_of_range", test_config_try_input_reports_out_of_range);
@@ -357,4 +375,3 @@ def test_core_cpp_behaviors(tmp_path):
         check=True,
     )
     subprocess.run([str(binary)], check=True)
-
