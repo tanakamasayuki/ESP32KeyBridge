@@ -97,6 +97,48 @@ def test_core_merge_and_transform(tmp_path):
     subprocess.run([str(binary)], check=True)
 
 
+def test_key_name_helper(tmp_path):
+    source = tmp_path / "key_name_test.cpp"
+    binary = tmp_path / "key_name_test"
+
+    source.write_text(
+        textwrap.dedent(
+            r'''
+            #include <ESP32KeyBridge.h>
+            #include <cassert>
+            #include <cstring>
+
+            int main()
+            {
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::A), "A") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::CapsLock), "CapsLock") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Fn1), "Fn1") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(static_cast<esp32keybridge::Key>(999)), "Unknown") == 0);
+              return 0;
+            }
+            '''
+        ),
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [
+            "g++",
+            "-std=c++17",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(ROOT / "src"),
+            str(source),
+            "-o",
+            str(binary),
+        ],
+        check=True,
+    )
+    subprocess.run([str(binary)], check=True)
+
+
 def test_core_merge_options(tmp_path):
     source = tmp_path / "merge_options_test.cpp"
     binary = tmp_path / "merge_options_test"

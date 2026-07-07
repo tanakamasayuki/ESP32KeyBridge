@@ -28,7 +28,7 @@ public:
     for (size_t i = 0; i < state.keyCount(); ++i)
     {
       Serial.print(' ');
-      Serial.print(static_cast<unsigned>(state.keyAt(i)));
+      Serial.print(esp32keybridge::keyName(state.keyAt(i)));
     }
     Serial.println();
   }

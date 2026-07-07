@@ -11,3 +11,4 @@ input:  Fn1 + A
 output: B
 ```
 
+出力は serial に key state を名前で表示します。

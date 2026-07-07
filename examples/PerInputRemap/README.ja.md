@@ -18,4 +18,4 @@ input 1 A     -> output B
 ```
 
 同じ `Enter` でも、どの入力デバイスから来たかによって処理を変えられます。
-
+出力は serial に key state を名前で表示します。

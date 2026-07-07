@@ -26,6 +26,36 @@ inline bool isModifierKey(Key key)
   return key == Key::LeftCtrl || key == Key::LeftShift;
 }
 
+inline const char *keyName(Key key)
+{
+  switch (key)
+  {
+  case Key::None:
+    return "None";
+  case Key::A:
+    return "A";
+  case Key::B:
+    return "B";
+  case Key::C:
+    return "C";
+  case Key::Enter:
+    return "Enter";
+  case Key::Tab:
+    return "Tab";
+  case Key::Insert:
+    return "Insert";
+  case Key::CapsLock:
+    return "CapsLock";
+  case Key::LeftCtrl:
+    return "LeftCtrl";
+  case Key::LeftShift:
+    return "LeftShift";
+  case Key::Fn1:
+    return "Fn1";
+  }
+  return "Unknown";
+}
+
 class KeyboardState
 {
 public:
