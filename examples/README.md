@@ -13,5 +13,6 @@ Early examples use virtual inputs and serial output to demonstrate the core API 
 - `SimpleMacro`: expand a trigger key into multiple keys.
 - `LayoutConversion`: apply a key mapping table for layout conversion.
 - `RuntimeConfigApply`: apply a runtime configuration object produced outside the core.
+- `RuntimeAdapterReconfigure`: replace input/output adapter registrations at runtime.
 
 Planned examples include USB keyboard bridge, USB remap, WebSerial configuration, and GPIO matrix input.
