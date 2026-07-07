@@ -3,6 +3,7 @@
 `ESP32KeyBridge` core は、キーマップやレイヤーを C++ コードで決め打ちする使い方と、外部から読み込んだ設定を適用する使い方の両方を許容します。
 
 ライブラリ本体は、設定をどこから取得するか、どこへ保存するか、どの UI で編集するかを規定しません。WebSerial から入力デバイス設定、キーマップ、出力デバイス設定を編集する画面は、リファレンス実装として examples 側で提供する方針です。
+外部設定適用の最小例は [../examples/RuntimeConfigApply/README.ja.md](../examples/RuntimeConfigApply/README.ja.md) に置きます。
 
 ## 基本構成
 

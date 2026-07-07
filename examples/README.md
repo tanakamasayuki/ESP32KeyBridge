@@ -11,5 +11,6 @@ Early examples use virtual inputs and serial output to demonstrate the core API 
 - `MomentaryLayer`: apply a layer remap while `Fn1` is pressed.
 - `SimpleMacro`: expand a trigger key into multiple keys.
 - `LayoutConversion`: apply a key mapping table for layout conversion.
+- `RuntimeConfigApply`: apply a runtime configuration object produced outside the core.
 
 Planned examples include USB keyboard bridge, USB remap, WebSerial configuration, and GPIO matrix input.
