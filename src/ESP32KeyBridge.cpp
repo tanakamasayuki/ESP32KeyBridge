@@ -211,6 +211,11 @@ const KeyMacro *TransformConfig::findMacro(Key trigger) const
   return nullptr;
 }
 
+bool TransformConfig::empty() const
+{
+  return remapCount_ == 0 && disabledKeyCount_ == 0 && macroCount_ == 0;
+}
+
 void LayerConfig::setMomentary(Key trigger)
 {
   trigger_ = trigger;
@@ -291,6 +296,11 @@ const TransformConfig *ESP32KeyBridgeConfig::tryInput(size_t index) const
   return index < MaxInputConfigs ? &inputTransforms_[index] : nullptr;
 }
 
+bool ESP32KeyBridgeConfig::hasInvalidInputConfig() const
+{
+  return !invalidInputTransform_.empty();
+}
+
 bool ESP32KeyBridge::addInput(InputAdapter &input)
 {
   if (inputCount_ >= MaxInputs)
@@ -311,8 +321,13 @@ bool ESP32KeyBridge::addOutput(OutputAdapter &output)
   return true;
 }
 
-bool ESP32KeyBridge::validateConfig(const ESP32KeyBridgeConfig &, ESP32KeyBridgeConfigError &error) const
+bool ESP32KeyBridge::validateConfig(const ESP32KeyBridgeConfig &config, ESP32KeyBridgeConfigError &error) const
 {
+  if (config.hasInvalidInputConfig())
+  {
+    error.message = "input config index out of range";
+    return false;
+  }
   error.message = nullptr;
   return true;
 }
@@ -422,4 +437,3 @@ void ESP32KeyBridge::applyLayout(const KeyboardState &input, KeyboardState &outp
 }
 
 } // namespace esp32keybridge
-

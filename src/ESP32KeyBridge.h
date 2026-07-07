@@ -84,6 +84,7 @@ public:
   Key map(Key key) const;
   bool isDisabled(Key key) const;
   const KeyMacro *findMacro(Key trigger) const;
+  bool empty() const;
 
 private:
   KeyRemap remaps_[MaxRemaps] = {};
@@ -137,6 +138,7 @@ public:
   const TransformConfig &input(size_t index) const;
   TransformConfig *tryInput(size_t index);
   const TransformConfig *tryInput(size_t index) const;
+  bool hasInvalidInputConfig() const;
 
   TransformConfig global;
   LayerConfig layer;
@@ -184,4 +186,3 @@ private:
 };
 
 } // namespace esp32keybridge
-

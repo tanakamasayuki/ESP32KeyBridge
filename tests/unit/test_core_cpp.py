@@ -216,6 +216,30 @@ def test_config_try_input_reports_out_of_range(tmp_path):
     )
 
 
+def test_validate_config_rejects_out_of_range_input_config(tmp_path):
+    compile_and_run_cpp(
+        tmp_path,
+        "validate_config",
+        r'''
+        esp32keybridge::ESP32KeyBridge bridge;
+        esp32keybridge::ESP32KeyBridgeConfig config;
+        esp32keybridge::ESP32KeyBridgeConfigError error;
+
+        assert(bridge.validateConfig(config, error));
+        assert(error.message == nullptr);
+
+        config.input(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs).remap(
+          esp32keybridge::Key::A,
+          esp32keybridge::Key::B
+        );
+
+        assert(!bridge.validateConfig(config, error));
+        assert(error.message != nullptr);
+        assert(std::strcmp(error.message, "input config index out of range") == 0);
+        ''',
+    )
+
+
 def test_momentary_layer_remaps_while_trigger_is_pressed(tmp_path):
     compile_and_run_cpp(
         tmp_path,
