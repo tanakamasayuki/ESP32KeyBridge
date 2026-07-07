@@ -318,3 +318,56 @@ def test_layout_conversion_runs_before_global_transform(tmp_path):
         assert(output.last_.keyCount() == 1);
         ''',
     )
+
+
+def test_capacity_limits_report_failure(tmp_path):
+    compile_and_run_cpp(
+        tmp_path,
+        "capacity_limits",
+        r'''
+        esp32keybridge::ESP32KeyBridge bridge;
+        VirtualInput inputs[esp32keybridge::ESP32KeyBridge::MaxInputs + 1];
+        RecordingOutput outputs[esp32keybridge::ESP32KeyBridge::MaxOutputs + 1];
+
+        for (size_t i = 0; i < esp32keybridge::ESP32KeyBridge::MaxInputs; ++i)
+        {
+          assert(bridge.addInput(inputs[i]));
+        }
+        assert(!bridge.addInput(inputs[esp32keybridge::ESP32KeyBridge::MaxInputs]));
+
+        for (size_t i = 0; i < esp32keybridge::ESP32KeyBridge::MaxOutputs; ++i)
+        {
+          assert(bridge.addOutput(outputs[i]));
+        }
+        assert(!bridge.addOutput(outputs[esp32keybridge::ESP32KeyBridge::MaxOutputs]));
+
+        esp32keybridge::TransformConfig transform;
+        for (size_t i = 0; i < esp32keybridge::TransformConfig::MaxRemaps; ++i)
+        {
+          assert(transform.remap(static_cast<esp32keybridge::Key>(100 + i), esp32keybridge::Key::A));
+        }
+        assert(!transform.remap(esp32keybridge::Key::CapsLock, esp32keybridge::Key::LeftCtrl));
+
+        esp32keybridge::TransformConfig disabled;
+        for (size_t i = 0; i < esp32keybridge::TransformConfig::MaxDisabledKeys; ++i)
+        {
+          assert(disabled.disable(static_cast<esp32keybridge::Key>(200 + i)));
+        }
+        assert(!disabled.disable(esp32keybridge::Key::Insert));
+
+        esp32keybridge::TransformConfig macros;
+        const esp32keybridge::Key macroKeys[] = {esp32keybridge::Key::A};
+        for (size_t i = 0; i < esp32keybridge::TransformConfig::MaxMacros; ++i)
+        {
+          assert(macros.macro(static_cast<esp32keybridge::Key>(300 + i), macroKeys, 1));
+        }
+        assert(!macros.macro(esp32keybridge::Key::Fn1, macroKeys, 1));
+
+        esp32keybridge::LayoutConfig layout;
+        for (size_t i = 0; i < esp32keybridge::LayoutConfig::MaxMappings; ++i)
+        {
+          assert(layout.map(static_cast<esp32keybridge::Key>(400 + i), esp32keybridge::Key::B));
+        }
+        assert(!layout.map(esp32keybridge::Key::A, esp32keybridge::Key::C));
+        ''',
+    )
