@@ -27,6 +27,11 @@ Key keyFromCode(InputCode code)
   return static_cast<Key>(code.code);
 }
 
+InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs)
+{
+  return {keyboardCode(key), pressed, timestampMs};
+}
+
 const char *inputDomainName(InputDomain domain)
 {
   switch (domain)
@@ -142,6 +147,11 @@ bool KeyboardState::isPressed(InputCode code) const
     }
   }
   return false;
+}
+
+bool KeyboardState::apply(InputEvent event)
+{
+  return event.pressed ? press(event.code) : release(event.code);
 }
 
 size_t KeyboardState::keyCount() const

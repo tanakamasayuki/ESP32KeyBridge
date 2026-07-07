@@ -39,9 +39,17 @@ struct InputCode
   bool operator!=(const InputCode &other) const;
 };
 
+struct InputEvent
+{
+  InputCode code;
+  bool pressed = false;
+  uint32_t timestampMs = 0;
+};
+
 InputCode keyboardCode(Key key);
 Key keyFromCode(InputCode code);
 const char *inputDomainName(InputDomain domain);
+InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs = 0);
 
 bool isModifierKey(Key key);
 const char *keyName(Key key);
@@ -58,6 +66,7 @@ public:
   bool release(InputCode code);
   bool isPressed(Key key) const;
   bool isPressed(InputCode code) const;
+  bool apply(InputEvent event);
   size_t keyCount() const;
   Key keyAt(size_t index) const;
   InputCode codeAt(size_t index) const;

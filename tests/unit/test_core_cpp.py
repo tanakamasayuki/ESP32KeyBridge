@@ -122,6 +122,26 @@ def test_core_cpp_behaviors(tmp_path):
               assert(state.keyCount() == 0);
             }
 
+            static void test_keyboard_state_applies_input_events()
+            {
+              esp32keybridge::KeyboardState state;
+              const esp32keybridge::InputEvent press = esp32keybridge::keyEvent(esp32keybridge::Key::A, true, 123);
+              const esp32keybridge::InputEvent release = esp32keybridge::keyEvent(esp32keybridge::Key::A, false, 456);
+              const esp32keybridge::InputEvent consumer{{esp32keybridge::InputDomain::Consumer, 0x00e9}, true, 789};
+
+              assert(press.pressed);
+              assert(press.timestampMs == 123);
+              assert(esp32keybridge::keyFromCode(press.code) == esp32keybridge::Key::A);
+              assert(state.apply(press));
+              assert(state.isPressed(esp32keybridge::Key::A));
+              assert(!state.apply(consumer));
+              assert(state.keyCount() == 1);
+              assert(state.apply(release));
+              assert(!state.isPressed(esp32keybridge::Key::A));
+              assert(state.keyCount() == 0);
+              assert(!state.apply(release));
+            }
+
             static void test_core_merge_options()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -362,6 +382,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("key_name_helper", test_key_name_helper);
               run("input_code_helpers", test_input_code_helpers);
               run("keyboard_state_accepts_keyboard_input_code", test_keyboard_state_accepts_keyboard_input_code);
+              run("keyboard_state_applies_input_events", test_keyboard_state_applies_input_events);
               run("core_merge_options", test_core_merge_options);
               run("per_input_transform_runs_before_merge_and_global_transform", test_per_input_transform_runs_before_merge_and_global_transform);
               run("config_try_input_reports_out_of_range", test_config_try_input_reports_out_of_range);
