@@ -1,0 +1,15 @@
+.DS_Store
+
+# Python / pytest
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest-results/
+.venv/
+
+# Arduino / build artifacts
+build/
+*.bin
+*.elf
+*.map
+
