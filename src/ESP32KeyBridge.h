@@ -296,6 +296,50 @@ private:
   TransformConfig transform_;
 };
 
+class LayoutConfig
+{
+public:
+  static constexpr size_t MaxMappings = 64;
+
+  bool map(Key from, Key to)
+  {
+    if (from == Key::None || to == Key::None)
+    {
+      return false;
+    }
+    for (size_t i = 0; i < mappingCount_; ++i)
+    {
+      if (mappings_[i].from == from)
+      {
+        mappings_[i].to = to;
+        return true;
+      }
+    }
+    if (mappingCount_ >= MaxMappings)
+    {
+      return false;
+    }
+    mappings_[mappingCount_++] = {from, to};
+    return true;
+  }
+
+  Key convert(Key key) const
+  {
+    for (size_t i = 0; i < mappingCount_; ++i)
+    {
+      if (mappings_[i].from == key)
+      {
+        return mappings_[i].to;
+      }
+    }
+    return key;
+  }
+
+private:
+  KeyRemap mappings_[MaxMappings] = {};
+  size_t mappingCount_ = 0;
+};
+
 class ESP32KeyBridgeConfig
 {
 public:
@@ -323,6 +367,7 @@ public:
 
   TransformConfig global;
   LayerConfig layer;
+  LayoutConfig layout;
   MergeConfig merge;
 
 private:
@@ -388,7 +433,9 @@ public:
     KeyboardState output;
     KeyboardState layered;
     applyLayer(merged, layered);
-    applyTransform(layered, config_.global, output);
+    KeyboardState layoutConverted;
+    applyLayout(layered, layoutConverted);
+    applyTransform(layoutConverted, config_.global, output);
 
     for (size_t i = 0; i < outputCount_; ++i)
     {
@@ -449,6 +496,14 @@ private:
         continue;
       }
       output.press(layerActive ? config_.layer.map(key) : key);
+    }
+  }
+
+  void applyLayout(const KeyboardState &input, KeyboardState &output) const
+  {
+    for (size_t i = 0; i < input.keyCount(); ++i)
+    {
+      output.press(config_.layout.convert(input.keyAt(i)));
     }
   }
 

@@ -171,6 +171,20 @@ bridge.applyConfig(config);
 
 現在の macro は state 変換としての最小機能です。押下順、release 順、delay、文字列入力などの event 的な macro は今後検討します。最小 example は [examples/SimpleMacro](../examples/SimpleMacro/README.ja.md) に置きます。
 
+## Layout Conversion
+
+layout conversion 用の key mapping table を適用する使い方です。
+
+```cpp
+esp32keybridge::ESP32KeyBridgeConfig config;
+
+config.layout.map(esp32keybridge::Key::A, esp32keybridge::Key::B);
+
+bridge.applyConfig(config);
+```
+
+現在の layout conversion は汎用的な key mapping table として扱います。US/JA などの実 layout 定義、文字意味ベースの decode / encode、修飾キー付き記号変換は今後検討します。最小 example は [examples/LayoutConversion](../examples/LayoutConversion/README.ja.md) に置きます。
+
 ## Runtime Config Apply
 
 設定の取得、parse、保存は core の外側で行い、core には設定 object を渡します。

@@ -462,3 +462,76 @@ def test_transform_macro_expands_trigger_to_key_sequence(tmp_path):
         check=True,
     )
     subprocess.run([str(binary)], check=True)
+
+
+def test_layout_conversion_runs_before_global_transform(tmp_path):
+    source = tmp_path / "layout_test.cpp"
+    binary = tmp_path / "layout_test"
+
+    source.write_text(
+        textwrap.dedent(
+            r'''
+            #include <ESP32KeyBridge.h>
+            #include <cassert>
+
+            class VirtualInput : public esp32keybridge::InputAdapter
+            {
+            public:
+              void update() override {}
+              const esp32keybridge::KeyboardState &state() const override { return state_; }
+              esp32keybridge::KeyboardState state_;
+            };
+
+            class RecordingOutput : public esp32keybridge::OutputAdapter
+            {
+            public:
+              void write(const esp32keybridge::KeyboardState &state) override { last_ = state; }
+              esp32keybridge::KeyboardState last_;
+            };
+
+            int main()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput input;
+              RecordingOutput output;
+
+              assert(bridge.addInput(input));
+              assert(bridge.addOutput(output));
+
+              esp32keybridge::ESP32KeyBridgeConfig config;
+              assert(config.layout.map(esp32keybridge::Key::A, esp32keybridge::Key::B));
+              assert(config.global.remap(esp32keybridge::Key::B, esp32keybridge::Key::C));
+              bridge.applyConfig(config);
+
+              input.state_.press(esp32keybridge::Key::A);
+
+              bridge.update();
+
+              assert(output.last_.isPressed(esp32keybridge::Key::C));
+              assert(!output.last_.isPressed(esp32keybridge::Key::A));
+              assert(!output.last_.isPressed(esp32keybridge::Key::B));
+              assert(output.last_.keyCount() == 1);
+
+              return 0;
+            }
+            '''
+        ),
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [
+            "g++",
+            "-std=c++17",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(ROOT / "src"),
+            str(source),
+            "-o",
+            str(binary),
+        ],
+        check=True,
+    )
+    subprocess.run([str(binary)], check=True)
