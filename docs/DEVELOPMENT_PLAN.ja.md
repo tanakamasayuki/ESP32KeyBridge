@@ -14,13 +14,14 @@ core は特定の transport、保存先、設定 UI に依存しません。USB 
 
 最初のマイルストーンでは、実ハードウェア依存を増やす前に、core の境界を unit test で固定します。
 
-1. 共通キーイベント型と press / release の基本表現を決める。
-2. 入力 adapter、processor、出力 adapter の最小 interface を決める。
-3. keymap、キー入れ替え、キー無効化の最小変換を実装する。
-4. layer の基本動作を unit test で固定する。
-5. hardcoded config と外部設定 object の両方で使える設定適用 API を決める。
-6. GPIO matrix 入力、USB HID 入出力などの adapter example を追加する。
-7. WebSerial 設定画面は core 実装後にリファレンス example として追加を検討する。
+1. [API_SKETCHES.ja.md](API_SKETCHES.ja.md) でユーザー側 API の初期案を固める。
+2. [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) で data flow、state、adapter、configuration boundary を固める。
+3. 共通 event / state 型と press / release の基本表現を決める。
+4. 入力 adapter、processor、出力 adapter の最小 interface を決める。
+5. virtual input / output を使った unit test で merge、remap、disable を固定する。
+6. hardcoded config と外部設定 object の両方で使える設定適用 API を決める。
+7. GPIO matrix 入力、USB HID 入出力などの adapter example を追加する。
+8. WebSerial 設定画面は core 実装後にリファレンス example として追加を検討する。
 
 ## 対応予定の入力
 

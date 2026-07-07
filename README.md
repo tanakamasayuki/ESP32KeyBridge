@@ -16,7 +16,7 @@ The core does not depend on a specific transport, storage backend, configuration
 
 Initial development should start with small core APIs that can be tested without hardware, then add hardware-backed adapters incrementally.
 
-Configuration design notes are in [docs/CONFIGURATION.ja.md](docs/CONFIGURATION.ja.md).
+Core design and API sketches are in [docs/CORE_DESIGN.ja.md](docs/CORE_DESIGN.ja.md) and [docs/API_SKETCHES.ja.md](docs/API_SKETCHES.ja.md). Configuration design notes are in [docs/CONFIGURATION.ja.md](docs/CONFIGURATION.ja.md).
 
 ## Tests
 

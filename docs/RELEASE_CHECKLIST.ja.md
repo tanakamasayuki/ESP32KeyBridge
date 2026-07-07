@@ -6,6 +6,8 @@
 
 - `README.ja.md` / `README.md` のスコープが実装済み範囲と合っている。
 - `docs/REQUIREMENTS.ja.md` の要件と実装済み範囲の差分が説明できる。
+- `docs/CORE_DESIGN.ja.md` の core / adapter / example 境界が実装と合っている。
+- `docs/API_SKETCHES.ja.md` の API 案が実装済み API と大きく食い違っていない。
 - `docs/CONFIGURATION.ja.md` の core 非依存方針と WebSerial / CDC reference example 方針が実装と合っている。
 - `docs/DEVELOPMENT_PLAN.ja.md` は現在の方針と残作業を示している。
 - `tests/README.ja.md` / `tests/TEST_PLAN.ja.md` は現状のテスト構成と合っている。

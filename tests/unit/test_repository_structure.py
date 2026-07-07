@@ -14,6 +14,8 @@ def test_required_project_files_exist():
         "src/ESP32KeyBridge.h",
         "src/ESP32KeyBridge.cpp",
         "docs/REQUIREMENTS.ja.md",
+        "docs/CORE_DESIGN.ja.md",
+        "docs/API_SKETCHES.ja.md",
         "docs/CONFIGURATION.ja.md",
         "docs/DEVELOPMENT_PLAN.ja.md",
         "docs/RELEASE_CHECKLIST.ja.md",
