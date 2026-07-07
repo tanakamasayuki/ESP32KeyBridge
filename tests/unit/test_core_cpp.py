@@ -25,25 +25,12 @@ def test_core_cpp_behaviors(tmp_path):
               esp32keybridge::KeyboardState state_;
             };
 
-            class RecordingOutput : public esp32keybridge::OutputAdapter
-            {
-            public:
-              void write(const esp32keybridge::KeyboardState &state) override
-              {
-                last_ = state;
-                ++writeCount_;
-              }
-
-              esp32keybridge::KeyboardState last_;
-              int writeCount_ = 0;
-            };
-
             static void test_core_merge_and_transform()
             {
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput left;
               VirtualInput right;
-              RecordingOutput output;
+              esp32keybridge::RecordingOutputAdapter output;
 
               assert(bridge.addInput(left));
               assert(bridge.addInput(right));
@@ -65,13 +52,13 @@ def test_core_cpp_behaviors(tmp_path):
 
               bridge.update();
 
-              assert(output.writeCount_ == 1);
-              assert(output.last_.isPressed(esp32keybridge::Key::LeftShift));
-              assert(output.last_.isPressed(esp32keybridge::Key::LeftCtrl));
-              assert(output.last_.isPressed(esp32keybridge::Key::A));
-              assert(!output.last_.isPressed(esp32keybridge::Key::CapsLock));
-              assert(!output.last_.isPressed(esp32keybridge::Key::Insert));
-              assert(output.last_.keyCount() == 3);
+              assert(output.writeCount() == 1);
+              assert(output.state().isPressed(esp32keybridge::Key::LeftShift));
+              assert(output.state().isPressed(esp32keybridge::Key::LeftCtrl));
+              assert(output.state().isPressed(esp32keybridge::Key::A));
+              assert(!output.state().isPressed(esp32keybridge::Key::CapsLock));
+              assert(!output.state().isPressed(esp32keybridge::Key::Insert));
+              assert(output.state().keyCount() == 3);
               assert(bridge.mergedState().isPressed(esp32keybridge::Key::CapsLock));
               assert(bridge.mergedState().isPressed(esp32keybridge::Key::Insert));
               assert(!bridge.outputState().isPressed(esp32keybridge::Key::CapsLock));
@@ -146,39 +133,39 @@ def test_core_cpp_behaviors(tmp_path):
             {
               esp32keybridge::ESP32KeyBridge bridge;
               esp32keybridge::EventInputAdapter input;
-              RecordingOutput output;
+              esp32keybridge::RecordingOutputAdapter output;
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));
 
               assert(input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true, 100)));
               bridge.update();
-              assert(output.last_.isPressed(esp32keybridge::Key::A));
+              assert(output.state().isPressed(esp32keybridge::Key::A));
 
               assert(input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, false, 200)));
               bridge.update();
-              assert(!output.last_.isPressed(esp32keybridge::Key::A));
-              assert(output.last_.keyCount() == 0);
+              assert(!output.state().isPressed(esp32keybridge::Key::A));
+              assert(output.state().keyCount() == 0);
             }
 
             static void test_bridge_can_clear_inputs_and_outputs()
             {
               esp32keybridge::ESP32KeyBridge bridge;
               esp32keybridge::EventInputAdapter input;
-              RecordingOutput output;
+              esp32keybridge::RecordingOutputAdapter output;
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));
 
               input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true));
               bridge.update();
-              assert(output.writeCount_ == 1);
-              assert(output.last_.isPressed(esp32keybridge::Key::A));
+              assert(output.writeCount() == 1);
+              assert(output.state().isPressed(esp32keybridge::Key::A));
 
               bridge.clearInputs();
               bridge.update();
-              assert(output.writeCount_ == 2);
-              assert(output.last_.keyCount() == 0);
+              assert(output.writeCount() == 2);
+              assert(output.state().keyCount() == 0);
               assert(bridge.mergedState().keyCount() == 0);
               assert(bridge.outputState().keyCount() == 0);
 
@@ -186,7 +173,7 @@ def test_core_cpp_behaviors(tmp_path):
               input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::B, true));
               bridge.clearOutputs();
               bridge.update();
-              assert(output.writeCount_ == 2);
+              assert(output.writeCount() == 2);
               assert(bridge.outputState().isPressed(esp32keybridge::Key::A));
               assert(bridge.outputState().isPressed(esp32keybridge::Key::B));
             }
@@ -195,7 +182,7 @@ def test_core_cpp_behaviors(tmp_path):
             {
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput input;
-              RecordingOutput output;
+              esp32keybridge::RecordingOutputAdapter output;
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));
@@ -210,9 +197,9 @@ def test_core_cpp_behaviors(tmp_path):
 
               bridge.update();
 
-              assert(output.last_.isPressed(esp32keybridge::Key::LeftShift));
-              assert(!output.last_.isPressed(esp32keybridge::Key::A));
-              assert(output.last_.keyCount() == 1);
+              assert(output.state().isPressed(esp32keybridge::Key::LeftShift));
+              assert(!output.state().isPressed(esp32keybridge::Key::A));
+              assert(output.state().keyCount() == 1);
             }
 
             static void test_per_input_transform_runs_before_merge_and_global_transform()
@@ -220,7 +207,7 @@ def test_core_cpp_behaviors(tmp_path):
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput keyboard;
               VirtualInput scanner;
-              RecordingOutput output;
+              esp32keybridge::RecordingOutputAdapter output;
 
               assert(bridge.addInput(keyboard));
               assert(bridge.addInput(scanner));
@@ -239,12 +226,12 @@ def test_core_cpp_behaviors(tmp_path):
 
               bridge.update();
 
-              assert(output.last_.isPressed(esp32keybridge::Key::Enter));
-              assert(output.last_.isPressed(esp32keybridge::Key::Tab));
-              assert(output.last_.isPressed(esp32keybridge::Key::B));
-              assert(!output.last_.isPressed(esp32keybridge::Key::A));
-              assert(!output.last_.isPressed(esp32keybridge::Key::Insert));
-              assert(output.last_.keyCount() == 3);
+              assert(output.state().isPressed(esp32keybridge::Key::Enter));
+              assert(output.state().isPressed(esp32keybridge::Key::Tab));
+              assert(output.state().isPressed(esp32keybridge::Key::B));
+              assert(!output.state().isPressed(esp32keybridge::Key::A));
+              assert(!output.state().isPressed(esp32keybridge::Key::Insert));
+              assert(output.state().keyCount() == 3);
             }
 
             static void test_config_try_input_reports_out_of_range()
@@ -286,7 +273,7 @@ def test_core_cpp_behaviors(tmp_path):
             {
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput input;
-              RecordingOutput output;
+              esp32keybridge::RecordingOutputAdapter output;
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));
@@ -301,26 +288,26 @@ def test_core_cpp_behaviors(tmp_path):
 
               bridge.update();
 
-              assert(output.last_.isPressed(esp32keybridge::Key::B));
-              assert(!output.last_.isPressed(esp32keybridge::Key::A));
-              assert(!output.last_.isPressed(esp32keybridge::Key::Fn1));
-              assert(output.last_.keyCount() == 1);
+              assert(output.state().isPressed(esp32keybridge::Key::B));
+              assert(!output.state().isPressed(esp32keybridge::Key::A));
+              assert(!output.state().isPressed(esp32keybridge::Key::Fn1));
+              assert(output.state().keyCount() == 1);
 
               input.state_.clear();
               input.state_.press(esp32keybridge::Key::A);
 
               bridge.update();
 
-              assert(output.last_.isPressed(esp32keybridge::Key::A));
-              assert(!output.last_.isPressed(esp32keybridge::Key::B));
-              assert(output.last_.keyCount() == 1);
+              assert(output.state().isPressed(esp32keybridge::Key::A));
+              assert(!output.state().isPressed(esp32keybridge::Key::B));
+              assert(output.state().keyCount() == 1);
             }
 
             static void test_transform_macro_expands_trigger_to_key_sequence()
             {
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput input;
-              RecordingOutput output;
+              esp32keybridge::RecordingOutputAdapter output;
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));
@@ -339,19 +326,19 @@ def test_core_cpp_behaviors(tmp_path):
 
               bridge.update();
 
-              assert(output.last_.isPressed(esp32keybridge::Key::LeftCtrl));
-              assert(output.last_.isPressed(esp32keybridge::Key::A));
-              assert(output.last_.isPressed(esp32keybridge::Key::B));
-              assert(!output.last_.isPressed(esp32keybridge::Key::Fn1));
-              assert(!output.last_.isPressed(esp32keybridge::Key::C));
-              assert(output.last_.keyCount() == 3);
+              assert(output.state().isPressed(esp32keybridge::Key::LeftCtrl));
+              assert(output.state().isPressed(esp32keybridge::Key::A));
+              assert(output.state().isPressed(esp32keybridge::Key::B));
+              assert(!output.state().isPressed(esp32keybridge::Key::Fn1));
+              assert(!output.state().isPressed(esp32keybridge::Key::C));
+              assert(output.state().keyCount() == 3);
             }
 
             static void test_layout_conversion_runs_before_global_transform()
             {
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput input;
-              RecordingOutput output;
+              esp32keybridge::RecordingOutputAdapter output;
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));
@@ -365,17 +352,17 @@ def test_core_cpp_behaviors(tmp_path):
 
               bridge.update();
 
-              assert(output.last_.isPressed(esp32keybridge::Key::C));
-              assert(!output.last_.isPressed(esp32keybridge::Key::A));
-              assert(!output.last_.isPressed(esp32keybridge::Key::B));
-              assert(output.last_.keyCount() == 1);
+              assert(output.state().isPressed(esp32keybridge::Key::C));
+              assert(!output.state().isPressed(esp32keybridge::Key::A));
+              assert(!output.state().isPressed(esp32keybridge::Key::B));
+              assert(output.state().keyCount() == 1);
             }
 
             static void test_capacity_limits_report_failure()
             {
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput inputs[esp32keybridge::ESP32KeyBridge::MaxInputs + 1];
-              RecordingOutput outputs[esp32keybridge::ESP32KeyBridge::MaxOutputs + 1];
+              esp32keybridge::RecordingOutputAdapter outputs[esp32keybridge::ESP32KeyBridge::MaxOutputs + 1];
 
               for (size_t i = 0; i < esp32keybridge::ESP32KeyBridge::MaxInputs; ++i)
               {

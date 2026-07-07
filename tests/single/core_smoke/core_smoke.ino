@@ -1,21 +1,8 @@
 #include <Arduino.h>
 #include <ESP32KeyBridge.h>
 
-class RecordingOutput : public esp32keybridge::OutputAdapter
-{
-public:
-  void write(const esp32keybridge::KeyboardState &state) override
-  {
-    last_ = state;
-    ++writeCount_;
-  }
-
-  esp32keybridge::KeyboardState last_;
-  int writeCount_ = 0;
-};
-
 esp32keybridge::EventInputAdapter input;
-RecordingOutput output;
+esp32keybridge::RecordingOutputAdapter output;
 esp32keybridge::ESP32KeyBridge bridge;
 
 void setup()
@@ -40,21 +27,21 @@ void setup()
   bridge.update();
 
   const bool firstOk =
-      output.writeCount_ == 1 &&
+      output.writeCount() == 1 &&
       bridge.mergedState().isPressed(esp32keybridge::Key::CapsLock) &&
       bridge.mergedState().isPressed(esp32keybridge::Key::Insert) &&
       bridge.outputState().isPressed(esp32keybridge::Key::LeftCtrl) &&
       bridge.outputState().isPressed(esp32keybridge::Key::A) &&
       !bridge.outputState().isPressed(esp32keybridge::Key::CapsLock) &&
       !bridge.outputState().isPressed(esp32keybridge::Key::Insert) &&
-      output.last_.isPressed(esp32keybridge::Key::LeftCtrl) &&
-      output.last_.isPressed(esp32keybridge::Key::A);
+      output.state().isPressed(esp32keybridge::Key::LeftCtrl) &&
+      output.state().isPressed(esp32keybridge::Key::A);
 
   input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, false, millis()));
   bridge.update();
 
   const bool secondOk =
-      output.writeCount_ == 2 &&
+      output.writeCount() == 2 &&
       bridge.outputState().isPressed(esp32keybridge::Key::LeftCtrl) &&
       !bridge.outputState().isPressed(esp32keybridge::Key::A);
 

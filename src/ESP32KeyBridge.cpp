@@ -186,6 +186,28 @@ void EventInputAdapter::clear()
   state_.clear();
 }
 
+void RecordingOutputAdapter::write(const KeyboardState &state)
+{
+  state_ = state;
+  ++writeCount_;
+}
+
+const KeyboardState &RecordingOutputAdapter::state() const
+{
+  return state_;
+}
+
+size_t RecordingOutputAdapter::writeCount() const
+{
+  return writeCount_;
+}
+
+void RecordingOutputAdapter::clear()
+{
+  state_.clear();
+  writeCount_ = 0;
+}
+
 bool TransformConfig::remap(Key from, Key to)
 {
   if (from == Key::None || to == Key::None)

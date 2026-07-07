@@ -103,6 +103,19 @@ public:
   virtual void write(const KeyboardState &state) = 0;
 };
 
+class RecordingOutputAdapter : public OutputAdapter
+{
+public:
+  void write(const KeyboardState &state) override;
+  const KeyboardState &state() const;
+  size_t writeCount() const;
+  void clear();
+
+private:
+  KeyboardState state_;
+  size_t writeCount_ = 0;
+};
+
 struct KeyRemap
 {
   Key from = Key::None;
