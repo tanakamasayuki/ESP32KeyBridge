@@ -18,6 +18,7 @@ enum class Key : uint16_t
   CapsLock,
   LeftCtrl,
   LeftShift,
+  Fn1,
 };
 
 inline bool isModifierKey(Key key)
@@ -194,6 +195,41 @@ struct MergeConfig
   bool shareKeys = true;
 };
 
+class LayerConfig
+{
+public:
+  void setMomentary(Key trigger)
+  {
+    trigger_ = trigger;
+    enabled_ = trigger != Key::None;
+  }
+
+  bool remap(Key from, Key to)
+  {
+    return transform_.remap(from, to);
+  }
+
+  bool enabled() const
+  {
+    return enabled_;
+  }
+
+  Key trigger() const
+  {
+    return trigger_;
+  }
+
+  Key map(Key key) const
+  {
+    return transform_.map(key);
+  }
+
+private:
+  bool enabled_ = false;
+  Key trigger_ = Key::None;
+  TransformConfig transform_;
+};
+
 class ESP32KeyBridgeConfig
 {
 public:
@@ -220,6 +256,7 @@ public:
   }
 
   TransformConfig global;
+  LayerConfig layer;
   MergeConfig merge;
 
 private:
@@ -283,7 +320,9 @@ public:
     }
 
     KeyboardState output;
-    applyTransform(merged, config_.global, output);
+    KeyboardState layered;
+    applyLayer(merged, layered);
+    applyTransform(layered, config_.global, output);
 
     for (size_t i = 0; i < outputCount_; ++i)
     {
@@ -321,6 +360,20 @@ private:
         continue;
       }
       output.press(transform.map(key));
+    }
+  }
+
+  void applyLayer(const KeyboardState &input, KeyboardState &output) const
+  {
+    const bool layerActive = config_.layer.enabled() && input.isPressed(config_.layer.trigger());
+    for (size_t i = 0; i < input.keyCount(); ++i)
+    {
+      const Key key = input.keyAt(i);
+      if (layerActive && key == config_.layer.trigger())
+      {
+        continue;
+      }
+      output.press(layerActive ? config_.layer.map(key) : key);
     }
   }
 

@@ -10,6 +10,7 @@
 - `HardcodedRemap`: 外部設定なしで C++ コードから remap / disable を設定する例。
 - `MultiKeyboardMerge`: 複数の virtual keyboard 入力を 1 つの keyboard state へ統合する例。
 - `PerInputRemap`: 特定の入力デバイスにだけ remap を適用し、merge 後に global remap も適用する例。
+- `MomentaryLayer`: `Fn1` を押している間だけ layer remap を適用する例。
 
 ## 追加予定
 

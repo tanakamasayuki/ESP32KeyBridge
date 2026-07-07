@@ -130,6 +130,28 @@ per-input: 特定デバイスから来たキーだけを変換する。
 global: どのデバイスから来ても統合後に変換する。
 ```
 
+## Momentary Layer
+
+trigger key が押されている間だけ layer remap を適用する使い方です。
+
+```cpp
+esp32keybridge::ESP32KeyBridgeConfig config;
+
+config.layer.setMomentary(esp32keybridge::Key::Fn1);
+config.layer.remap(esp32keybridge::Key::A, esp32keybridge::Key::B);
+
+bridge.applyConfig(config);
+```
+
+期待する挙動:
+
+```text
+input:  Fn1 + A
+output: B
+```
+
+`Fn1` は layer trigger として消費され、出力 state には含めません。最小 example は [examples/MomentaryLayer](../examples/MomentaryLayer/README.ja.md) に置きます。
+
 ## Runtime Config Apply
 
 設定の取得、parse、保存は core の外側で行い、core には設定 object を渡します。
