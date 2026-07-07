@@ -1,6 +1,6 @@
 #include <ESP32KeyBridge.h>
 
-ESP32KeyBridge keyBridge;
+esp32keybridge::ESP32KeyBridge keyBridge;
 
 void setup()
 {
@@ -12,4 +12,3 @@ void loop()
 {
   keyBridge.update();
 }
-
