@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -10,7 +11,24 @@ EXAMPLES_DIR = REPO_ROOT / "examples"
 
 
 def example_dirs():
-    return sorted(path.parent for path in EXAMPLES_DIR.glob("*/*.ino"))
+    selected = os.environ.get("ESP32KEYBRIDGE_EXAMPLES")
+    examples = sorted(path.parent for path in EXAMPLES_DIR.glob("*/*.ino"))
+    if not selected:
+        return examples
+
+    names = {name.strip() for name in selected.split(",") if name.strip()}
+    return [path for path in examples if path.name in names]
+
+
+def test_selected_examples_exist():
+    selected = os.environ.get("ESP32KEYBRIDGE_EXAMPLES")
+    if not selected:
+        return
+
+    names = {name.strip() for name in selected.split(",") if name.strip()}
+    available = {path.parent.name for path in EXAMPLES_DIR.glob("*/*.ino")}
+    missing = sorted(names - available)
+    assert missing == []
 
 
 @pytest.mark.parametrize("example_dir", example_dirs(), ids=lambda path: path.name)
@@ -27,4 +45,3 @@ def test_example_compile(example_dir):
         check=False,
     )
     assert result.returncode == 0, result.stdout
-

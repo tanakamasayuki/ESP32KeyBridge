@@ -30,4 +30,11 @@ uv run --env-file .env pytest single/
 uv run --env-file .env pytest peer/
 ```
 
+examples compile は通常全 example を確認します。開発中に対象を絞る場合は `ESP32KEYBRIDGE_EXAMPLES` に example 名を comma 区切りで指定します。
+
+```sh
+ESP32KEYBRIDGE_EXAMPLES=Basic uv run pytest examples_compile/
+ESP32KEYBRIDGE_EXAMPLES=Basic,HardcodedRemap uv run pytest examples_compile/
+```
+
 現在のカバレッジと追加予定は [TEST_PLAN.ja.md](TEST_PLAN.ja.md) を参照してください。
