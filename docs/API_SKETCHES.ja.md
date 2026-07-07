@@ -108,6 +108,7 @@ bridge.applyConfig(config);
 
 同じ `Enter` でも、通常 keyboard と barcode reader で異なる扱いにできます。
 現在の core MVP では入力追加順の index で指定します。将来、device ID や profile matching を追加する可能性があります。
+最小 example は [examples/PerInputRemap](../examples/PerInputRemap/README.ja.md) に置きます。
 
 ## Global Remap
 

@@ -201,12 +201,22 @@ public:
 
   TransformConfig &input(size_t index)
   {
-    return inputTransforms_[index < MaxInputConfigs ? index : 0];
+    return index < MaxInputConfigs ? inputTransforms_[index] : invalidInputTransform_;
   }
 
   const TransformConfig &input(size_t index) const
   {
-    return inputTransforms_[index < MaxInputConfigs ? index : 0];
+    return index < MaxInputConfigs ? inputTransforms_[index] : invalidInputTransform_;
+  }
+
+  TransformConfig *tryInput(size_t index)
+  {
+    return index < MaxInputConfigs ? &inputTransforms_[index] : nullptr;
+  }
+
+  const TransformConfig *tryInput(size_t index) const
+  {
+    return index < MaxInputConfigs ? &inputTransforms_[index] : nullptr;
   }
 
   TransformConfig global;
@@ -214,6 +224,7 @@ public:
 
 private:
   TransformConfig inputTransforms_[MaxInputConfigs] = {};
+  TransformConfig invalidInputTransform_;
 };
 
 struct ESP32KeyBridgeConfigError

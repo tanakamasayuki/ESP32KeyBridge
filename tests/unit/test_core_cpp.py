@@ -249,3 +249,53 @@ def test_per_input_transform_runs_before_merge_and_global_transform(tmp_path):
         check=True,
     )
     subprocess.run([str(binary)], check=True)
+
+
+def test_config_try_input_reports_out_of_range(tmp_path):
+    source = tmp_path / "config_bounds_test.cpp"
+    binary = tmp_path / "config_bounds_test"
+
+    source.write_text(
+        textwrap.dedent(
+            r'''
+            #include <ESP32KeyBridge.h>
+            #include <cassert>
+
+            int main()
+            {
+              esp32keybridge::ESP32KeyBridgeConfig config;
+
+              assert(config.tryInput(0) != nullptr);
+              assert(config.tryInput(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs - 1) != nullptr);
+              assert(config.tryInput(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs) == nullptr);
+
+              config.input(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs).remap(
+                esp32keybridge::Key::A,
+                esp32keybridge::Key::B
+              );
+
+              assert(config.input(0).map(esp32keybridge::Key::A) == esp32keybridge::Key::A);
+
+              return 0;
+            }
+            '''
+        ),
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [
+            "g++",
+            "-std=c++17",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(ROOT / "src"),
+            str(source),
+            "-o",
+            str(binary),
+        ],
+        check=True,
+    )
+    subprocess.run([str(binary)], check=True)
