@@ -23,6 +23,7 @@ def test_required_project_files_exist():
         "docs/RELEASE_CHECKLIST.ja.md",
         "tests/README.ja.md",
         "tests/TEST_PLAN.ja.md",
+        "tests/single/README.ja.md",
     ]
 
     missing = [path for path in required if not (ROOT / path).exists()]

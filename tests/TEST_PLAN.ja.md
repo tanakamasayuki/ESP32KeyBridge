@@ -47,6 +47,7 @@ ESP32-P4 は常時接続の自動テスト環境には含めません。P4 は U
 | layer 基本動作 | 予定 | | | | |
 | macro 基本動作 | 予定 | | | | |
 | 設定 object の適用 | 予定 | | 予定 | | |
+| Arduino runtime core smoke | | | 予定 | | |
 | hardcoded config example | | 予定 | 予定 | | |
 | 設定の保存 / 読み込み reference example | | 予定 | 予定 | | storage 差分確認 |
 | CDC serial 設定 reference example | | 予定 | 予定 | | WebSerial 確認 |
