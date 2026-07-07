@@ -71,6 +71,11 @@ def test_core_merge_and_transform(tmp_path):
               assert(!output.last_.isPressed(esp32keybridge::Key::CapsLock));
               assert(!output.last_.isPressed(esp32keybridge::Key::Insert));
               assert(output.last_.keyCount() == 3);
+              assert(bridge.mergedState().isPressed(esp32keybridge::Key::CapsLock));
+              assert(bridge.mergedState().isPressed(esp32keybridge::Key::Insert));
+              assert(!bridge.outputState().isPressed(esp32keybridge::Key::CapsLock));
+              assert(!bridge.outputState().isPressed(esp32keybridge::Key::Insert));
+              assert(bridge.outputState().isPressed(esp32keybridge::Key::LeftCtrl));
 
               return 0;
             }

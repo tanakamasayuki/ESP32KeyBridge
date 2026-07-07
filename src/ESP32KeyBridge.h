@@ -451,26 +451,36 @@ public:
 
   void update()
   {
-    KeyboardState merged;
+    mergedState_.clear();
     for (size_t i = 0; i < inputCount_; ++i)
     {
       inputs_[i]->update();
       KeyboardState deviceState;
       applyTransform(inputs_[i]->state(), config_.input(i), deviceState);
-      mergeInput(deviceState, merged);
+      mergeInput(deviceState, mergedState_);
     }
 
-    KeyboardState output;
+    outputState_.clear();
     KeyboardState layered;
-    applyLayer(merged, layered);
+    applyLayer(mergedState_, layered);
     KeyboardState layoutConverted;
     applyLayout(layered, layoutConverted);
-    applyTransform(layoutConverted, config_.global, output);
+    applyTransform(layoutConverted, config_.global, outputState_);
 
     for (size_t i = 0; i < outputCount_; ++i)
     {
-      outputs_[i]->write(output);
+      outputs_[i]->write(outputState_);
     }
+  }
+
+  const KeyboardState &mergedState() const
+  {
+    return mergedState_;
+  }
+
+  const KeyboardState &outputState() const
+  {
+    return outputState_;
   }
 
 private:
@@ -542,6 +552,8 @@ private:
   OutputAdapter *outputs_[MaxOutputs] = {};
   size_t outputCount_ = 0;
   ESP32KeyBridgeConfig config_;
+  KeyboardState mergedState_;
+  KeyboardState outputState_;
 };
 
 } // namespace esp32keybridge

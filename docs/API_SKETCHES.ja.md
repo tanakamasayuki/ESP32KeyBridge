@@ -45,6 +45,7 @@ void loop()
 ```
 
 この使い方では、保存先や設定 UI は存在しません。ビルド時に決めた変換だけを実行します。
+`bridge.outputState()` を読むと、最後の `update()` で生成された出力 state を debug や single-board smoke test で確認できます。
 
 ## Multi Keyboard Merge
 
