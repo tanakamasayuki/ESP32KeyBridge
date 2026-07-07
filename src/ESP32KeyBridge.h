@@ -197,8 +197,23 @@ struct MergeConfig
 class ESP32KeyBridgeConfig
 {
 public:
+  static constexpr size_t MaxInputConfigs = 8;
+
+  TransformConfig &input(size_t index)
+  {
+    return inputTransforms_[index < MaxInputConfigs ? index : 0];
+  }
+
+  const TransformConfig &input(size_t index) const
+  {
+    return inputTransforms_[index < MaxInputConfigs ? index : 0];
+  }
+
   TransformConfig global;
   MergeConfig merge;
+
+private:
+  TransformConfig inputTransforms_[MaxInputConfigs] = {};
 };
 
 struct ESP32KeyBridgeConfigError
@@ -251,11 +266,13 @@ public:
     for (size_t i = 0; i < inputCount_; ++i)
     {
       inputs_[i]->update();
-      mergeInput(inputs_[i]->state(), merged);
+      KeyboardState deviceState;
+      applyTransform(inputs_[i]->state(), config_.input(i), deviceState);
+      mergeInput(deviceState, merged);
     }
 
     KeyboardState output;
-    applyGlobalTransform(merged, output);
+    applyTransform(merged, config_.global, output);
 
     for (size_t i = 0; i < outputCount_; ++i)
     {
@@ -283,16 +300,16 @@ private:
     }
   }
 
-  void applyGlobalTransform(const KeyboardState &input, KeyboardState &output) const
+  void applyTransform(const KeyboardState &input, const TransformConfig &transform, KeyboardState &output) const
   {
     for (size_t i = 0; i < input.keyCount(); ++i)
     {
       const Key key = input.keyAt(i);
-      if (config_.global.isDisabled(key))
+      if (transform.isDisabled(key))
       {
         continue;
       }
-      output.press(config_.global.map(key));
+      output.press(transform.map(key));
     }
   }
 

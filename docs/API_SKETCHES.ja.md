@@ -96,16 +96,17 @@ output: LeftShift + A
 ```cpp
 esp32keybridge::ESP32KeyBridgeConfig config;
 
-auto keyboard = config.input("main_keyboard");
+auto keyboard = config.input(0);
 keyboard.remap(esp32keybridge::Key::CapsLock, esp32keybridge::Key::LeftCtrl);
 
-auto scanner = config.input("barcode_scanner");
+auto scanner = config.input(1);
 scanner.remap(esp32keybridge::Key::Enter, esp32keybridge::Key::Tab);
 
 bridge.applyConfig(config);
 ```
 
 同じ `Enter` でも、通常 keyboard と barcode reader で異なる扱いにできます。
+現在の core MVP では入力追加順の index で指定します。将来、device ID や profile matching を追加する可能性があります。
 
 ## Global Remap
 

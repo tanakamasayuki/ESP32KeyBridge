@@ -168,3 +168,84 @@ def test_core_merge_options(tmp_path):
         check=True,
     )
     subprocess.run([str(binary)], check=True)
+
+
+def test_per_input_transform_runs_before_merge_and_global_transform(tmp_path):
+    source = tmp_path / "per_input_test.cpp"
+    binary = tmp_path / "per_input_test"
+
+    source.write_text(
+        textwrap.dedent(
+            r'''
+            #include <ESP32KeyBridge.h>
+            #include <cassert>
+
+            class VirtualInput : public esp32keybridge::InputAdapter
+            {
+            public:
+              void update() override {}
+              const esp32keybridge::KeyboardState &state() const override { return state_; }
+              esp32keybridge::KeyboardState state_;
+            };
+
+            class RecordingOutput : public esp32keybridge::OutputAdapter
+            {
+            public:
+              void write(const esp32keybridge::KeyboardState &state) override { last_ = state; }
+              esp32keybridge::KeyboardState last_;
+            };
+
+            int main()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput keyboard;
+              VirtualInput scanner;
+              RecordingOutput output;
+
+              assert(bridge.addInput(keyboard));
+              assert(bridge.addInput(scanner));
+              assert(bridge.addOutput(output));
+
+              esp32keybridge::ESP32KeyBridgeConfig config;
+              assert(config.input(1).remap(esp32keybridge::Key::Enter, esp32keybridge::Key::Tab));
+              assert(config.input(0).disable(esp32keybridge::Key::Insert));
+              assert(config.global.remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+              bridge.applyConfig(config);
+
+              keyboard.state_.press(esp32keybridge::Key::Enter);
+              keyboard.state_.press(esp32keybridge::Key::Insert);
+              scanner.state_.press(esp32keybridge::Key::Enter);
+              scanner.state_.press(esp32keybridge::Key::A);
+
+              bridge.update();
+
+              assert(output.last_.isPressed(esp32keybridge::Key::Enter));
+              assert(output.last_.isPressed(esp32keybridge::Key::Tab));
+              assert(output.last_.isPressed(esp32keybridge::Key::B));
+              assert(!output.last_.isPressed(esp32keybridge::Key::A));
+              assert(!output.last_.isPressed(esp32keybridge::Key::Insert));
+              assert(output.last_.keyCount() == 3);
+
+              return 0;
+            }
+            '''
+        ),
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [
+            "g++",
+            "-std=c++17",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(ROOT / "src"),
+            str(source),
+            "-o",
+            str(binary),
+        ],
+        check=True,
+    )
+    subprocess.run([str(binary)], check=True)

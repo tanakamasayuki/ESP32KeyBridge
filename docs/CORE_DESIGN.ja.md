@@ -173,5 +173,6 @@ external config
 - key disable
 - 2つの keyboard state merge
 - Shift 共有
+- 入力追加順 index による per-input remap
 
 USB Host / USB Device adapter、WebSerial reference example、GPIO matrix adapter は、core MVP が固まってから追加します。
