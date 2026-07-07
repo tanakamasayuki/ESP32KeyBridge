@@ -13,6 +13,8 @@ def test_required_project_files_exist():
         "CHANGELOG.md",
         "src/ESP32KeyBridge.h",
         "src/ESP32KeyBridge.cpp",
+        "examples/README.ja.md",
+        "examples/README.md",
         "docs/REQUIREMENTS.ja.md",
         "docs/CORE_DESIGN.ja.md",
         "docs/API_SKETCHES.ja.md",

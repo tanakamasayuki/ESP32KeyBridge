@@ -29,6 +29,10 @@ uv run pytest
 
 See [tests/README.ja.md](tests/README.ja.md) and [tests/TEST_PLAN.ja.md](tests/TEST_PLAN.ja.md).
 
+## Examples
+
+See [examples/README.md](examples/README.md).
+
 ## Release
 
 Release automation and GitHub Actions are shared across projects. This repository should not rely on copied, per-project customized workflows.

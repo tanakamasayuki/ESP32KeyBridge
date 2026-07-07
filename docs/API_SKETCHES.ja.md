@@ -88,6 +88,7 @@ output: LeftShift + A
 ```
 
 このユースケースでは、入力ごとの状態を持ち、merge layer で統合してから出力します。
+最小 example は [examples/MultiKeyboardMerge](../examples/MultiKeyboardMerge/README.ja.md) に置きます。
 
 ## Per-Input Remap
 

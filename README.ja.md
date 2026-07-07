@@ -42,6 +42,10 @@ uv run pytest
 
 初期段階では、実装済み core API の unit test と build-only smoke test から追加します。詳しくは [tests/README.ja.md](tests/README.ja.md) と [tests/TEST_PLAN.ja.md](tests/TEST_PLAN.ja.md) を参照してください。
 
+## Examples
+
+現在の example は [examples/README.ja.md](examples/README.ja.md) にまとめています。
+
 ## リリース
 
 リリース、バージョン更新、GitHub Actions は全プロジェクト共通の運用に従います。このリポジトリ固有の workflow をコピーして個別カスタマイズする前提にはしません。

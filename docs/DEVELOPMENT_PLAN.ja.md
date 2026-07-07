@@ -18,7 +18,7 @@ core は特定の transport、保存先、設定 UI に依存しません。USB 
 2. [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) で data flow、state、adapter、configuration boundary を固める。
 3. 共通 event / state 型と press / release の基本表現を決める。
 4. 入力 adapter、processor、出力 adapter の最小 interface を決める。
-5. virtual input / output を使った unit test で merge、remap、disable を固定する。
+5. virtual input / output を使った unit test と example で merge、remap、disable を固定する。
 6. hardcoded config と外部設定 object の両方で使える設定適用 API を決める。
 7. GPIO matrix 入力、USB HID 入出力などの adapter example を追加する。
 8. WebSerial 設定画面は core 実装後にリファレンス example として追加を検討する。
