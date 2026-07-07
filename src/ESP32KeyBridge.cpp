@@ -410,6 +410,26 @@ bool ESP32KeyBridge::addOutput(OutputAdapter &output)
   return true;
 }
 
+void ESP32KeyBridge::clearInputs()
+{
+  for (size_t i = 0; i < inputCount_; ++i)
+  {
+    inputs_[i] = nullptr;
+  }
+  inputCount_ = 0;
+  mergedState_.clear();
+  outputState_.clear();
+}
+
+void ESP32KeyBridge::clearOutputs()
+{
+  for (size_t i = 0; i < outputCount_; ++i)
+  {
+    outputs_[i] = nullptr;
+  }
+  outputCount_ = 0;
+}
+
 bool ESP32KeyBridge::validateConfig(const ESP32KeyBridgeConfig &config, ESP32KeyBridgeConfigError &error) const
 {
   if (config.hasInvalidInputConfig())

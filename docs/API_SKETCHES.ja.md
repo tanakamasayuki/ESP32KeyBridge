@@ -234,6 +234,20 @@ void loop()
 `configService` と `configStorage` は example またはユーザー実装です。WebSerial、UART、BLE、NVS、LittleFS、JSON などはここで選択します。
 最小 example は [examples/RuntimeConfigApply](../examples/RuntimeConfigApply/README.ja.md) に置きます。
 
+## Runtime Adapter Reconfigure
+
+入力や出力 adapter を実行中に差し替える場合は、bridge 側の登録を clear してから再登録します。
+
+```cpp
+bridge.clearInputs();
+bridge.clearOutputs();
+
+bridge.addInput(nextInput);
+bridge.addOutput(nextOutput);
+```
+
+`clearInputs()` は bridge の登録を外すだけで、adapter object 自体の state は消しません。必要なら adapter 側の `clear()` などを呼びます。
+
 ## Reference WebSerial Config
 
 WebSerial 設定画面は core ではなく reference example として提供します。

@@ -161,6 +161,36 @@ def test_core_cpp_behaviors(tmp_path):
               assert(output.last_.keyCount() == 0);
             }
 
+            static void test_bridge_can_clear_inputs_and_outputs()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              esp32keybridge::EventInputAdapter input;
+              RecordingOutput output;
+
+              assert(bridge.addInput(input));
+              assert(bridge.addOutput(output));
+
+              input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true));
+              bridge.update();
+              assert(output.writeCount_ == 1);
+              assert(output.last_.isPressed(esp32keybridge::Key::A));
+
+              bridge.clearInputs();
+              bridge.update();
+              assert(output.writeCount_ == 2);
+              assert(output.last_.keyCount() == 0);
+              assert(bridge.mergedState().keyCount() == 0);
+              assert(bridge.outputState().keyCount() == 0);
+
+              assert(bridge.addInput(input));
+              input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::B, true));
+              bridge.clearOutputs();
+              bridge.update();
+              assert(output.writeCount_ == 2);
+              assert(bridge.outputState().isPressed(esp32keybridge::Key::A));
+              assert(bridge.outputState().isPressed(esp32keybridge::Key::B));
+            }
+
             static void test_core_merge_options()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -403,6 +433,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("keyboard_state_accepts_keyboard_input_code", test_keyboard_state_accepts_keyboard_input_code);
               run("keyboard_state_applies_input_events", test_keyboard_state_applies_input_events);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
+              run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);
               run("core_merge_options", test_core_merge_options);
               run("per_input_transform_runs_before_merge_and_global_transform", test_per_input_transform_runs_before_merge_and_global_transform);
               run("config_try_input_reports_out_of_range", test_config_try_input_reports_out_of_range);

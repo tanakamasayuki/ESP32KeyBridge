@@ -210,6 +210,8 @@ public:
 
   bool addInput(InputAdapter &input);
   bool addOutput(OutputAdapter &output);
+  void clearInputs();
+  void clearOutputs();
   bool validateConfig(const ESP32KeyBridgeConfig &config, ESP32KeyBridgeConfigError &error) const;
   void applyConfig(const ESP32KeyBridgeConfig &config);
   void begin();
