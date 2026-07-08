@@ -507,6 +507,28 @@ void RecordingOutputAdapter::clear()
   writeCount_ = 0;
 }
 
+void RecordingHidKeyboardOutputAdapter::write(const InputState &state)
+{
+  report_ = buildHidKeyboardReport(state);
+  ++writeCount_;
+}
+
+const HidKeyboardReport &RecordingHidKeyboardOutputAdapter::report() const
+{
+  return report_;
+}
+
+size_t RecordingHidKeyboardOutputAdapter::writeCount() const
+{
+  return writeCount_;
+}
+
+void RecordingHidKeyboardOutputAdapter::clear()
+{
+  report_ = HidKeyboardReport{};
+  writeCount_ = 0;
+}
+
 bool TransformConfig::remap(Key from, Key to)
 {
   return remap(keyboardCode(from), keyboardCode(to));

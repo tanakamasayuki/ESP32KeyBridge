@@ -258,6 +258,36 @@ def test_core_cpp_behaviors(tmp_path):
               assert(report.overflow);
             }
 
+            static void test_recording_hid_keyboard_output_adapter()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput input;
+              esp32keybridge::RecordingHidKeyboardOutputAdapter output;
+
+              assert(bridge.addInput(input));
+              assert(bridge.addOutput(output));
+
+              esp32keybridge::ESP32KeyBridgeConfig config;
+              assert(config.global.remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+              bridge.applyConfig(config);
+
+              input.state_.press(esp32keybridge::Key::LeftCtrl);
+              input.state_.press(esp32keybridge::Key::A);
+
+              bridge.update();
+
+              assert(output.writeCount() == 1);
+              assert(output.report().modifiers == 1u);
+              assert(output.report().keyCount == 1);
+              assert(output.report().keys[0] == 0x05);
+              assert(!output.report().overflow);
+
+              output.clear();
+              assert(output.writeCount() == 0);
+              assert(output.report().modifiers == 0);
+              assert(output.report().keyCount == 0);
+            }
+
             static void test_event_input_adapter_applies_events()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -713,6 +743,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("input_state_applies_input_events", test_input_state_applies_input_events);
               run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
               run("hid_keyboard_report_builder_reports_overflow", test_hid_keyboard_report_builder_reports_overflow);
+              run("recording_hid_keyboard_output_adapter", test_recording_hid_keyboard_output_adapter);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);
               run("core_merge_options", test_core_merge_options);

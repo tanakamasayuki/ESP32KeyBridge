@@ -237,6 +237,19 @@ private:
   size_t writeCount_ = 0;
 };
 
+class RecordingHidKeyboardOutputAdapter : public OutputAdapter
+{
+public:
+  void write(const InputState &state) override;
+  const HidKeyboardReport &report() const;
+  size_t writeCount() const;
+  void clear();
+
+private:
+  HidKeyboardReport report_;
+  size_t writeCount_ = 0;
+};
+
 struct CodeRemap
 {
   InputCode from;
