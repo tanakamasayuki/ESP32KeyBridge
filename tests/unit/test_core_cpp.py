@@ -109,6 +109,10 @@ def test_core_cpp_behaviors(tmp_path):
               assert(esp32keybridge::hidUsageFromKey(esp32keybridge::Key::A) == 0x04);
               assert(esp32keybridge::hidUsageFromKey(esp32keybridge::Key::RightGui) == 0xe7);
               assert(esp32keybridge::hidUsageFromKey(esp32keybridge::Key::Fn1) == 0);
+              assert(esp32keybridge::isHidKeyboardKey(esp32keybridge::Key::A));
+              assert(esp32keybridge::isHidKeyboardKey(esp32keybridge::Key::Lang1));
+              assert(!esp32keybridge::isHidKeyboardKey(esp32keybridge::Key::None));
+              assert(!esp32keybridge::isHidKeyboardKey(esp32keybridge::Key::Fn1));
               assert(esp32keybridge::keyFromHidUsage(0x04) == esp32keybridge::Key::A);
               assert(esp32keybridge::keyFromHidUsage(0x90) == esp32keybridge::Key::Lang1);
               assert(esp32keybridge::keyFromHidUsage(0) == esp32keybridge::Key::None);

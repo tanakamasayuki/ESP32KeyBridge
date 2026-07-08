@@ -150,6 +150,7 @@ InputCode pointerAxisCode(uint16_t code);
 InputCode vendorCode(uint16_t code);
 uint16_t hidUsageFromKey(Key key);
 Key keyFromHidUsage(uint16_t usage);
+bool isHidKeyboardKey(Key key);
 Key keyFromCode(InputCode code);
 const char *inputDomainName(InputDomain domain);
 bool isValid(InputCode code);

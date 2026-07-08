@@ -40,13 +40,18 @@ InputCode vendorCode(uint16_t code)
 
 uint16_t hidUsageFromKey(Key key)
 {
-  const uint16_t usage = static_cast<uint16_t>(key);
-  return usage <= 0xff ? usage : 0;
+  return isHidKeyboardKey(key) ? static_cast<uint16_t>(key) : 0;
 }
 
 Key keyFromHidUsage(uint16_t usage)
 {
   return usage == 0 || usage > 0xff ? Key::None : static_cast<Key>(usage);
+}
+
+bool isHidKeyboardKey(Key key)
+{
+  const uint16_t usage = static_cast<uint16_t>(key);
+  return usage != 0 && usage <= 0xff;
 }
 
 Key keyFromCode(InputCode code)
