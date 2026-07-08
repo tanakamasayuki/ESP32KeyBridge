@@ -127,6 +127,34 @@ enum class InputDomain : uint8_t
   Vendor = 255,
 };
 
+enum class ConsumerUsage : uint16_t
+{
+  None = 0,
+  Power = 0x0030,
+  Sleep = 0x0032,
+  Menu = 0x0040,
+  Play = 0x00b0,
+  Pause = 0x00b1,
+  Record = 0x00b2,
+  FastForward = 0x00b3,
+  Rewind = 0x00b4,
+  ScanNextTrack = 0x00b5,
+  ScanPreviousTrack = 0x00b6,
+  Stop = 0x00b7,
+  Eject = 0x00b8,
+  PlayPause = 0x00cd,
+  Mute = 0x00e2,
+  BassBoost = 0x00e5,
+  VolumeIncrement = 0x00e9,
+  VolumeDecrement = 0x00ea,
+  BrowserSearch = 0x0221,
+  BrowserHome = 0x0223,
+  BrowserBack = 0x0224,
+  BrowserForward = 0x0225,
+  BrowserRefresh = 0x0227,
+  BrowserBookmarks = 0x022a,
+};
+
 struct InputCode
 {
   InputDomain domain = InputDomain::Keyboard;
@@ -145,6 +173,7 @@ struct InputEvent
 
 InputCode keyboardCode(Key key);
 InputCode consumerCode(uint16_t code);
+InputCode consumerCode(ConsumerUsage usage);
 InputCode pointerButtonCode(uint16_t code);
 InputCode pointerAxisCode(uint16_t code);
 InputCode vendorCode(uint16_t code);
@@ -159,6 +188,7 @@ InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs = 0);
 
 bool isModifierKey(Key key);
 const char *keyName(Key key);
+const char *consumerUsageName(ConsumerUsage usage);
 
 struct HidKeyboardReport
 {
@@ -173,6 +203,18 @@ struct HidKeyboardReport
   void clear();
   bool empty() const;
   bool writeBootReport(uint8_t *buffer, size_t size) const;
+};
+
+struct HidConsumerReport
+{
+  static constexpr size_t ReportSize = 2;
+
+  uint16_t usage = 0;
+  bool overflow = false;
+
+  void clear();
+  bool empty() const;
+  bool writeReport(uint8_t *buffer, size_t size) const;
 };
 
 class InputState
@@ -201,6 +243,7 @@ private:
 };
 
 HidKeyboardReport buildHidKeyboardReport(const InputState &state);
+HidConsumerReport buildHidConsumerReport(const InputState &state);
 
 class InputAdapter
 {

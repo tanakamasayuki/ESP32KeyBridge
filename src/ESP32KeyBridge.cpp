@@ -23,6 +23,11 @@ InputCode consumerCode(uint16_t code)
   return {InputDomain::Consumer, code};
 }
 
+InputCode consumerCode(ConsumerUsage usage)
+{
+  return consumerCode(static_cast<uint16_t>(usage));
+}
+
 InputCode pointerButtonCode(uint16_t code)
 {
   return {InputDomain::PointerButton, code};
@@ -326,6 +331,62 @@ const char *keyName(Key key)
   return "Unknown";
 }
 
+const char *consumerUsageName(ConsumerUsage usage)
+{
+  switch (usage)
+  {
+  case ConsumerUsage::None:
+    return "None";
+  case ConsumerUsage::Power:
+    return "Power";
+  case ConsumerUsage::Sleep:
+    return "Sleep";
+  case ConsumerUsage::Menu:
+    return "Menu";
+  case ConsumerUsage::Play:
+    return "Play";
+  case ConsumerUsage::Pause:
+    return "Pause";
+  case ConsumerUsage::Record:
+    return "Record";
+  case ConsumerUsage::FastForward:
+    return "FastForward";
+  case ConsumerUsage::Rewind:
+    return "Rewind";
+  case ConsumerUsage::ScanNextTrack:
+    return "ScanNextTrack";
+  case ConsumerUsage::ScanPreviousTrack:
+    return "ScanPreviousTrack";
+  case ConsumerUsage::Stop:
+    return "Stop";
+  case ConsumerUsage::Eject:
+    return "Eject";
+  case ConsumerUsage::PlayPause:
+    return "PlayPause";
+  case ConsumerUsage::Mute:
+    return "Mute";
+  case ConsumerUsage::BassBoost:
+    return "BassBoost";
+  case ConsumerUsage::VolumeIncrement:
+    return "VolumeIncrement";
+  case ConsumerUsage::VolumeDecrement:
+    return "VolumeDecrement";
+  case ConsumerUsage::BrowserSearch:
+    return "BrowserSearch";
+  case ConsumerUsage::BrowserHome:
+    return "BrowserHome";
+  case ConsumerUsage::BrowserBack:
+    return "BrowserBack";
+  case ConsumerUsage::BrowserForward:
+    return "BrowserForward";
+  case ConsumerUsage::BrowserRefresh:
+    return "BrowserRefresh";
+  case ConsumerUsage::BrowserBookmarks:
+    return "BrowserBookmarks";
+  }
+  return "Unknown";
+}
+
 void InputState::clear()
 {
   codeCount_ = 0;
@@ -465,6 +526,29 @@ bool HidKeyboardReport::writeBootReport(uint8_t *buffer, size_t size) const
   return true;
 }
 
+void HidConsumerReport::clear()
+{
+  usage = 0;
+  overflow = false;
+}
+
+bool HidConsumerReport::empty() const
+{
+  return usage == 0 && !overflow;
+}
+
+bool HidConsumerReport::writeReport(uint8_t *buffer, size_t size) const
+{
+  if (buffer == nullptr || size < ReportSize)
+  {
+    return false;
+  }
+
+  buffer[0] = static_cast<uint8_t>(usage & 0xff);
+  buffer[1] = static_cast<uint8_t>((usage >> 8) & 0xff);
+  return true;
+}
+
 HidKeyboardReport buildHidKeyboardReport(const InputState &state)
 {
   HidKeyboardReport report;
@@ -496,6 +580,28 @@ HidKeyboardReport buildHidKeyboardReport(const InputState &state)
     }
 
     report.keys[report.keyCount++] = static_cast<uint8_t>(usage);
+  }
+  return report;
+}
+
+HidConsumerReport buildHidConsumerReport(const InputState &state)
+{
+  HidConsumerReport report;
+  for (size_t i = 0; i < state.codeCount(); ++i)
+  {
+    const InputCode code = state.codeAt(i);
+    if (code.domain != InputDomain::Consumer || !isValid(code))
+    {
+      continue;
+    }
+
+    if (report.usage != 0)
+    {
+      report.overflow = true;
+      continue;
+    }
+
+    report.usage = code.code;
   }
   return report;
 }

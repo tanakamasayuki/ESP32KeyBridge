@@ -145,6 +145,8 @@ USB Device adapter が `EspUsbDevice` を使う場合でも、その依存は ad
 
 USB boot keyboard 形式の 6KRO report に詰める純粋処理として、core は `esp32keybridge::buildHidKeyboardReport()` を提供します。これは `esp32keybridge::InputState` から modifier byte と最大 6 個の key usage を作り、入りきらない場合は report の `overflow` を立てます。`esp32keybridge::HidKeyboardReport` は `clear()`、`empty()`、8バイト boot report へ書き出す `writeBootReport()` を持ちます。実際の送信、NKRO、複合 HID descriptor などは output adapter 側の責務です。
 
+Consumer Control の最小 report として、core は `esp32keybridge::buildHidConsumerReport()` も提供します。これは最初の Consumer usage を 16-bit report として扱い、複数の Consumer usage が同時にある場合は `overflow` を立てます。`esp32keybridge::ConsumerUsage` には volume、media transport、browser navigation など代表的な usage を置き、未登録の usage は `esp32keybridge::consumerCode(uint16_t)` で直接表現します。複数 Consumer usage を同時送信する descriptor や report 形式は output adapter 側で拡張します。
+
 `ESP32KeyBridge` は最後の `update()` で作られた merged state と output state を参照できる API を持ちます。これは debug、single-board smoke test、reference example の状態表示に使います。実際の出力は引き続き output adapter の責務です。
 
 ## Configuration Boundary

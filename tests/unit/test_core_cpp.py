@@ -118,6 +118,8 @@ def test_core_cpp_behaviors(tmp_path):
               assert(esp32keybridge::keyFromHidUsage(0) == esp32keybridge::Key::None);
               assert(esp32keybridge::keyFromHidUsage(0x0100) == esp32keybridge::Key::None);
               assert(consumer.domain == esp32keybridge::InputDomain::Consumer);
+              assert(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement).domain == esp32keybridge::InputDomain::Consumer);
+              assert(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement).code == 0x00e9);
               assert(pointerButton.domain == esp32keybridge::InputDomain::PointerButton);
               assert(pointerAxis.domain == esp32keybridge::InputDomain::PointerAxis);
               assert(vendor.domain == esp32keybridge::InputDomain::Vendor);
@@ -130,6 +132,15 @@ def test_core_cpp_behaviors(tmp_path):
               assert(std::strcmp(esp32keybridge::inputDomainName(esp32keybridge::InputDomain::Keyboard), "Keyboard") == 0);
               assert(std::strcmp(esp32keybridge::inputDomainName(esp32keybridge::InputDomain::Consumer), "Consumer") == 0);
               assert(std::strcmp(esp32keybridge::inputDomainName(static_cast<esp32keybridge::InputDomain>(77)), "Unknown") == 0);
+            }
+
+            static void test_consumer_usage_names()
+            {
+              assert(std::strcmp(esp32keybridge::consumerUsageName(esp32keybridge::ConsumerUsage::None), "None") == 0);
+              assert(std::strcmp(esp32keybridge::consumerUsageName(esp32keybridge::ConsumerUsage::PlayPause), "PlayPause") == 0);
+              assert(std::strcmp(esp32keybridge::consumerUsageName(esp32keybridge::ConsumerUsage::VolumeIncrement), "VolumeIncrement") == 0);
+              assert(std::strcmp(esp32keybridge::consumerUsageName(esp32keybridge::ConsumerUsage::BrowserBack), "BrowserBack") == 0);
+              assert(std::strcmp(esp32keybridge::consumerUsageName(static_cast<esp32keybridge::ConsumerUsage>(0xffff)), "Unknown") == 0);
             }
 
             static void test_input_state_accepts_input_codes()
@@ -292,6 +303,47 @@ def test_core_cpp_behaviors(tmp_path):
               assert(report.modifiers == 0);
               assert(report.keys[0] == 0);
               assert(report.keyCount == 0);
+              assert(!report.overflow);
+              assert(report.empty());
+            }
+
+            static void test_hid_consumer_report_builder()
+            {
+              esp32keybridge::HidConsumerReport emptyReport;
+              assert(emptyReport.empty());
+
+              esp32keybridge::InputState state;
+              assert(state.press(esp32keybridge::Key::A));
+              assert(state.press(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement)));
+
+              const esp32keybridge::HidConsumerReport report = esp32keybridge::buildHidConsumerReport(state);
+
+              assert(report.usage == 0x00e9);
+              assert(!report.overflow);
+              assert(!report.empty());
+
+              uint8_t bytes[esp32keybridge::HidConsumerReport::ReportSize] = {};
+              assert(report.writeReport(bytes, sizeof(bytes)));
+              assert(bytes[0] == 0xe9);
+              assert(bytes[1] == 0x00);
+              assert(!report.writeReport(bytes, esp32keybridge::HidConsumerReport::ReportSize - 1));
+              assert(!report.writeReport(nullptr, esp32keybridge::HidConsumerReport::ReportSize));
+            }
+
+            static void test_hid_consumer_report_builder_reports_overflow()
+            {
+              esp32keybridge::InputState state;
+              assert(state.press(esp32keybridge::consumerCode(0x00e9)));
+              assert(state.press(esp32keybridge::consumerCode(0x00ea)));
+
+              esp32keybridge::HidConsumerReport report = esp32keybridge::buildHidConsumerReport(state);
+
+              assert(report.usage == 0x00e9);
+              assert(report.overflow);
+              assert(!report.empty());
+
+              report.clear();
+              assert(report.usage == 0);
               assert(!report.overflow);
               assert(report.empty());
             }
@@ -774,6 +826,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("core_merge_and_transform", test_core_merge_and_transform);
               run("key_name_helper", test_key_name_helper);
               run("input_code_helpers", test_input_code_helpers);
+              run("consumer_usage_names", test_consumer_usage_names);
               run("input_state_accepts_input_codes", test_input_state_accepts_input_codes);
               run("input_state_accepts_non_keyboard_input_code", test_input_state_accepts_non_keyboard_input_code);
               run("input_state_can_merge_other_state", test_input_state_can_merge_other_state);
@@ -781,6 +834,8 @@ def test_core_cpp_behaviors(tmp_path):
               run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
               run("hid_keyboard_report_builder_reports_overflow", test_hid_keyboard_report_builder_reports_overflow);
               run("hid_keyboard_report_can_clear", test_hid_keyboard_report_can_clear);
+              run("hid_consumer_report_builder", test_hid_consumer_report_builder);
+              run("hid_consumer_report_builder_reports_overflow", test_hid_consumer_report_builder_reports_overflow);
               run("recording_hid_keyboard_output_adapter", test_recording_hid_keyboard_output_adapter);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);
