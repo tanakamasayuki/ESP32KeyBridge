@@ -10,18 +10,29 @@
 
 core は特定の transport、保存先、設定 UI に依存しません。USB Host / USB Device adapter では `EspUsbHost` / `EspUsbDevice` を利用できますが、依存は adapter 側に閉じ込めます。USB HID + CDC 複合デバイスや WebSerial 設定画面のような複雑な構成は、まず examples 側のリファレンス実装として検討します。
 
-## 初期マイルストーン
+## 現在のマイルストーン
 
-最初のマイルストーンでは、実ハードウェア依存を増やす前に、core の境界を unit test で固定します。
+最初の core MVP は、実ハードウェア依存を増やす前に host unit test と build-only example で固定します。
 
-1. [API_SKETCHES.ja.md](API_SKETCHES.ja.md) でユーザー側 API の初期案を固める。
-2. [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) で data flow、state、adapter、configuration boundary を固める。
-3. 共通 event / state 型と press / release の基本表現を決める。
-4. 入力 adapter、processor、出力 adapter の最小 interface を決める。
-5. virtual input / output を使った unit test と example で merge、remap、disable を固定する。
-6. hardcoded config と外部設定 object の両方で使える設定適用 API を決める。
-7. GPIO matrix 入力、USB HID 入出力などの adapter example を追加する。
-8. WebSerial 設定画面は core 実装後にリファレンス example として追加を検討する。
+完了済み:
+
+- [API_SKETCHES.ja.md](API_SKETCHES.ja.md) でユーザー側 API の初期案を整理する。
+- [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) で data flow、state、adapter、configuration boundary を整理する。
+- `esp32keybridge::InputCode` / `esp32keybridge::InputState` と press / release の基本表現を実装する。
+- `esp32keybridge::InputValueEvent` で pointer axis のような値付き入力を表現する。
+- input adapter / output adapter の最小 interface を実装する。
+- virtual input / recording output を使った unit test と example で merge、remap、disable を固定する。
+- hardcoded config と外部設定 object の両方で使える設定適用 API を実装する。
+- per-input remap、明示 config index、layer、macro、layout conversion を core test で固定する。
+- keyboard / consumer / pointer の最小 HID report builder を実装する。
+
+次に検討するもの:
+
+- USB HID keyboard の Host input adapter example。
+- USB HID keyboard / consumer / pointer の Device output adapter example。
+- GPIO matrix input adapter example。
+- WebSerial 設定画面 reference example。
+- pointer axis の event queue / output adapter 連携方式。
 
 ## 対応予定の入力
 
@@ -49,7 +60,7 @@ core は特定の transport、保存先、設定 UI に依存しません。USB 
 - キーマップ、レイヤー、マクロは C++ コードで決め打ちする使い方と、外部設定を適用する使い方の両方を許容する。
 - core は設定転送手段と永続化先を固定しない。NVS、LittleFS、SPIFFS、SD card、USB CDC、BLE、UART、TCP などは examples / adapter 側の選択肢として扱う。
 - SoC ごとの USB / Bluetooth / peripheral 差は adapter 層に閉じ込める。
-- keyboard / consumer control を主対象にしつつ、mouse、trackpad、pointer 系の event domain を後から追加しても pipeline が破綻しない設計にする。
+- keyboard / consumer control を主対象にしつつ、mouse、trackpad、pointer 系の event domain を追加しても pipeline が破綻しない設計にする。pointer button は state として扱い、pointer axis は値付き event として扱う。
 
 設定と WebSerial の詳細は [CONFIGURATION.ja.md](CONFIGURATION.ja.md) を参照してください。
 

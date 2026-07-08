@@ -185,21 +185,32 @@ external config
   -> optional user/example storage
 ```
 
-## 最初の実装対象
+## 実装済み Core MVP
 
-最初の core MVP は実 USB adapter ではなく、virtual input / output を使った unit test で固定します。
+core MVP は実 USB adapter ではなく、virtual input / recording output と host unit test で固定します。
 
-候補:
+実装済み:
 
-- `VirtualKeyboardInput`
-- `RecordingKeyboardOutput`
-- CapsLock -> LeftCtrl remap
+- `esp32keybridge::InputCode` / `esp32keybridge::InputState`
+- `esp32keybridge::InputEvent` と `esp32keybridge::EventInputAdapter`
+- `esp32keybridge::InputValueEvent` と pointer axis delta 表現
+- `esp32keybridge::RecordingOutputAdapter`
+- `esp32keybridge::RecordingHidKeyboardOutputAdapter`
+- `esp32keybridge::RecordingHidConsumerOutputAdapter`
+- `esp32keybridge::RecordingHidPointerOutputAdapter`
+- CapsLock -> LeftCtrl のような remap
 - key disable
-- 2つの keyboard state merge
-- Shift 共有
+- 複数入力の merge と modifier 共有
+- domain 別の merge option
 - 入力追加順 index による per-input remap
 - 明示 config index による input と per-input config の紐付け
 - state 変換としての単純 macro
 - key mapping table としての layout conversion
+- HID keyboard / consumer / pointer の最小 report builder
 
-USB Host / USB Device adapter、WebSerial reference example、GPIO matrix adapter は、core MVP が固まってから追加します。
+次に adapter / example 側で検討するもの:
+
+- USB Host keyboard input adapter
+- USB Device keyboard / consumer / pointer output adapter
+- GPIO matrix input adapter
+- WebSerial reference configuration example
