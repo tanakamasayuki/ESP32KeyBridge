@@ -240,6 +240,14 @@ def test_core_cpp_behaviors(tmp_path):
               assert(report.keys[1] == 0x87);
               assert(!report.overflow);
               assert(!report.empty());
+
+              uint8_t bytes[esp32keybridge::HidKeyboardReport::BootReportSize] = {};
+              assert(report.writeBootReport(bytes, sizeof(bytes)));
+              assert(bytes[0] == ((1u << 0) | (1u << 5)));
+              assert(bytes[1] == 0);
+              assert(bytes[2] == 0x04);
+              assert(bytes[3] == 0x87);
+              assert(bytes[4] == 0);
             }
 
             static void test_hid_keyboard_report_builder_reports_overflow()
@@ -261,6 +269,13 @@ def test_core_cpp_behaviors(tmp_path):
               assert(report.keys[5] == 0x09);
               assert(report.overflow);
               assert(!report.empty());
+
+              uint8_t bytes[esp32keybridge::HidKeyboardReport::BootReportSize] = {};
+              assert(report.writeBootReport(bytes, sizeof(bytes)));
+              assert(bytes[2] == 0x04);
+              assert(bytes[7] == 0x09);
+              assert(!report.writeBootReport(bytes, esp32keybridge::HidKeyboardReport::BootReportSize - 1));
+              assert(!report.writeBootReport(nullptr, esp32keybridge::HidKeyboardReport::BootReportSize));
             }
 
             static void test_hid_keyboard_report_can_clear()

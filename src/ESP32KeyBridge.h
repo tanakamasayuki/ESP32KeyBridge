@@ -163,6 +163,7 @@ const char *keyName(Key key);
 struct HidKeyboardReport
 {
   static constexpr size_t MaxKeys = 6;
+  static constexpr size_t BootReportSize = 8;
 
   uint8_t modifiers = 0;
   uint8_t keys[MaxKeys] = {};
@@ -171,6 +172,7 @@ struct HidKeyboardReport
 
   void clear();
   bool empty() const;
+  bool writeBootReport(uint8_t *buffer, size_t size) const;
 };
 
 class InputState

@@ -449,6 +449,22 @@ bool HidKeyboardReport::empty() const
   return modifiers == 0 && keyCount == 0 && !overflow;
 }
 
+bool HidKeyboardReport::writeBootReport(uint8_t *buffer, size_t size) const
+{
+  if (buffer == nullptr || size < BootReportSize)
+  {
+    return false;
+  }
+
+  buffer[0] = modifiers;
+  buffer[1] = 0;
+  for (size_t i = 0; i < MaxKeys; ++i)
+  {
+    buffer[2 + i] = i < keyCount ? keys[i] : 0;
+  }
+  return true;
+}
+
 HidKeyboardReport buildHidKeyboardReport(const InputState &state)
 {
   HidKeyboardReport report;
