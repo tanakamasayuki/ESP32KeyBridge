@@ -219,6 +219,45 @@ def test_core_cpp_behaviors(tmp_path):
               assert(!state.apply(release));
             }
 
+            static void test_hid_keyboard_report_builder()
+            {
+              esp32keybridge::InputState state;
+              assert(state.press(esp32keybridge::Key::LeftCtrl));
+              assert(state.press(esp32keybridge::Key::RightShift));
+              assert(state.press(esp32keybridge::Key::A));
+              assert(state.press(esp32keybridge::Key::International1));
+              assert(state.press(esp32keybridge::Key::Fn1));
+              assert(state.press(esp32keybridge::consumerCode(0x00e9)));
+
+              const esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(state);
+
+              assert(report.modifiers == ((1u << 0) | (1u << 5)));
+              assert(report.keyCount == 2);
+              assert(report.keys[0] == 0x04);
+              assert(report.keys[1] == 0x87);
+              assert(!report.overflow);
+            }
+
+            static void test_hid_keyboard_report_builder_reports_overflow()
+            {
+              esp32keybridge::InputState state;
+              assert(state.press(esp32keybridge::Key::A));
+              assert(state.press(esp32keybridge::Key::B));
+              assert(state.press(esp32keybridge::Key::C));
+              assert(state.press(esp32keybridge::Key::D));
+              assert(state.press(esp32keybridge::Key::E));
+              assert(state.press(esp32keybridge::Key::F));
+              assert(state.press(esp32keybridge::Key::G));
+
+              const esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(state);
+
+              assert(report.modifiers == 0);
+              assert(report.keyCount == esp32keybridge::HidKeyboardReport::MaxKeys);
+              assert(report.keys[0] == 0x04);
+              assert(report.keys[5] == 0x09);
+              assert(report.overflow);
+            }
+
             static void test_event_input_adapter_applies_events()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -672,6 +711,8 @@ def test_core_cpp_behaviors(tmp_path):
               run("input_state_accepts_non_keyboard_input_code", test_input_state_accepts_non_keyboard_input_code);
               run("input_state_can_merge_other_state", test_input_state_can_merge_other_state);
               run("input_state_applies_input_events", test_input_state_applies_input_events);
+              run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
+              run("hid_keyboard_report_builder_reports_overflow", test_hid_keyboard_report_builder_reports_overflow);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);
               run("core_merge_options", test_core_merge_options);

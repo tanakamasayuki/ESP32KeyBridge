@@ -433,6 +433,41 @@ InputCode InputState::codeAt(size_t index) const
   return index < codeCount_ ? codes_[index] : keyboardCode(Key::None);
 }
 
+HidKeyboardReport buildHidKeyboardReport(const InputState &state)
+{
+  HidKeyboardReport report;
+  for (size_t i = 0; i < state.codeCount(); ++i)
+  {
+    const InputCode code = state.codeAt(i);
+    if (code.domain != InputDomain::Keyboard)
+    {
+      continue;
+    }
+
+    const Key key = keyFromCode(code);
+    const uint16_t usage = hidUsageFromKey(key);
+    if (usage == 0)
+    {
+      continue;
+    }
+
+    if (usage >= 0xe0 && usage <= 0xe7)
+    {
+      report.modifiers |= static_cast<uint8_t>(1u << (usage - 0xe0));
+      continue;
+    }
+
+    if (report.keyCount >= HidKeyboardReport::MaxKeys)
+    {
+      report.overflow = true;
+      continue;
+    }
+
+    report.keys[report.keyCount++] = static_cast<uint8_t>(usage);
+  }
+  return report;
+}
+
 void EventInputAdapter::update() {}
 
 const InputState &EventInputAdapter::state() const

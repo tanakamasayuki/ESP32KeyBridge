@@ -160,6 +160,16 @@ InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs = 0);
 bool isModifierKey(Key key);
 const char *keyName(Key key);
 
+struct HidKeyboardReport
+{
+  static constexpr size_t MaxKeys = 6;
+
+  uint8_t modifiers = 0;
+  uint8_t keys[MaxKeys] = {};
+  size_t keyCount = 0;
+  bool overflow = false;
+};
+
 class InputState
 {
 public:
@@ -184,6 +194,8 @@ private:
   InputCode codes_[MaxCodes] = {};
   size_t codeCount_ = 0;
 };
+
+HidKeyboardReport buildHidKeyboardReport(const InputState &state);
 
 class InputAdapter
 {
