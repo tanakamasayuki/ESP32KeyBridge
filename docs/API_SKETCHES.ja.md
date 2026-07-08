@@ -43,6 +43,12 @@ esp32keybridge::InputEvent event = esp32keybridge::keyEvent(esp32keybridge::Key:
 ```
 `esp32keybridge::EventInputAdapter` は event を投入して keyboard state を作る最小 adapter です。
 `esp32keybridge::RecordingOutputAdapter` は最後に出力された state を保持する最小 output adapter です。unit test、single-board smoke、debug 用途で使えます。
+`esp32keybridge::InputValueEvent` は pointer axis のような値付き入力を表します。押下状態の集合である `esp32keybridge::InputState` には入れず、`esp32keybridge::HidPointerReport::apply()` など値付き入力を扱う側へ渡します。
+
+```cpp
+esp32keybridge::InputValueEvent move =
+    esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::X, 12);
+```
 
 ## Hardcoded Remap
 
@@ -53,8 +59,8 @@ esp32keybridge::InputEvent event = esp32keybridge::keyEvent(esp32keybridge::Key:
 
 esp32keybridge::ESP32KeyBridge bridge;
 
-esp32keybridge::usb::UsbKeyboardInput input;
-esp32keybridge::usb::UsbKeyboardOutput output;
+esp32keybridge::EventInputAdapter input;
+esp32keybridge::RecordingOutputAdapter output;
 
 void setup()
 {
@@ -71,12 +77,14 @@ void setup()
 
 void loop()
 {
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::CapsLock, true));
   bridge.update();
 }
 ```
 
 この使い方では、保存先や設定 UI は存在しません。ビルド時に決めた変換だけを実行します。
 `bridge.outputState()` を読むと、最後の `update()` で生成された出力 state を debug や single-board smoke test で確認できます。
+USB Host / USB Device を使う場合は、ここで使っている `esp32keybridge::EventInputAdapter` と `esp32keybridge::RecordingOutputAdapter` を adapter 実装に差し替えます。core はその adapter の依存を持ちません。
 
 ## Multi Keyboard Merge
 
@@ -87,9 +95,9 @@ void loop()
 
 esp32keybridge::ESP32KeyBridge bridge;
 
-esp32keybridge::usb::UsbKeyboardInput keyboardA;
-esp32keybridge::usb::UsbKeyboardInput keyboardB;
-esp32keybridge::usb::UsbKeyboardOutput output;
+esp32keybridge::EventInputAdapter keyboardA;
+esp32keybridge::EventInputAdapter keyboardB;
+esp32keybridge::RecordingOutputAdapter output;
 
 void setup()
 {
@@ -107,6 +115,8 @@ void setup()
 
 void loop()
 {
+  keyboardA.apply(esp32keybridge::keyEvent(esp32keybridge::Key::LeftShift, true));
+  keyboardB.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true));
   bridge.update();
 }
 ```
@@ -216,6 +226,25 @@ bridge.applyConfig(config);
 ```
 
 現在の layout conversion は汎用的な key mapping table として扱います。US/JA などの実 layout 定義、文字意味ベースの decode / encode、修飾キー付き記号変換は今後検討します。最小 example は [examples/LayoutConversion](../examples/LayoutConversion/README.ja.md) に置きます。
+
+## Non-Keyboard Reports
+
+keyboard 以外の domain も `esp32keybridge::InputCode` として pipeline を通せます。HID report へ詰める純粋処理は core に置きますが、USB descriptor や実送信は output adapter 側に置きます。
+
+```cpp
+esp32keybridge::InputState state;
+state.press(esp32keybridge::Key::A);
+state.press(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement));
+state.press(esp32keybridge::pointerButtonCode(1));
+
+esp32keybridge::HidKeyboardReport keyboard = esp32keybridge::buildHidKeyboardReport(state);
+esp32keybridge::HidConsumerReport consumer = esp32keybridge::buildHidConsumerReport(state);
+esp32keybridge::HidPointerReport pointer = esp32keybridge::buildHidPointerReport(state);
+
+pointer.apply(esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::Wheel, 1));
+```
+
+`esp32keybridge::RecordingHidKeyboardOutputAdapter`、`esp32keybridge::RecordingHidConsumerOutputAdapter`、`esp32keybridge::RecordingHidPointerOutputAdapter` は、実出力なしで report 化結果を確認するための adapter です。最小 example は [examples/NonKeyboardReports](../examples/NonKeyboardReports/README.ja.md) に置きます。
 
 ## Runtime Config Apply
 
