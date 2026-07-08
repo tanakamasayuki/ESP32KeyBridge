@@ -155,6 +155,15 @@ enum class ConsumerUsage : uint16_t
   BrowserBookmarks = 0x022a,
 };
 
+enum class PointerAxis : uint16_t
+{
+  None = 0,
+  X = 1,
+  Y = 2,
+  Wheel = 3,
+  Pan = 4,
+};
+
 struct InputCode
 {
   InputDomain domain = InputDomain::Keyboard;
@@ -171,11 +180,19 @@ struct InputEvent
   uint32_t timestampMs = 0;
 };
 
+struct InputValueEvent
+{
+  InputCode code;
+  int16_t value = 0;
+  uint32_t timestampMs = 0;
+};
+
 InputCode keyboardCode(Key key);
 InputCode consumerCode(uint16_t code);
 InputCode consumerCode(ConsumerUsage usage);
 InputCode pointerButtonCode(uint16_t code);
 InputCode pointerAxisCode(uint16_t code);
+InputCode pointerAxisCode(PointerAxis axis);
 InputCode vendorCode(uint16_t code);
 uint16_t hidUsageFromKey(Key key);
 Key keyFromHidUsage(uint16_t usage);
@@ -185,10 +202,13 @@ const char *inputDomainName(InputDomain domain);
 bool isValid(InputCode code);
 InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs = 0);
 InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs = 0);
+InputValueEvent inputValueEvent(InputCode code, int16_t value, uint32_t timestampMs = 0);
+InputValueEvent pointerAxisValueEvent(PointerAxis axis, int16_t value, uint32_t timestampMs = 0);
 
 bool isModifierKey(Key key);
 const char *keyName(Key key);
 const char *consumerUsageName(ConsumerUsage usage);
+const char *pointerAxisName(PointerAxis axis);
 
 struct HidKeyboardReport
 {

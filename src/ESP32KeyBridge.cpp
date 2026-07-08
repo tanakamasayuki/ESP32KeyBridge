@@ -38,6 +38,11 @@ InputCode pointerAxisCode(uint16_t code)
   return {InputDomain::PointerAxis, code};
 }
 
+InputCode pointerAxisCode(PointerAxis axis)
+{
+  return pointerAxisCode(static_cast<uint16_t>(axis));
+}
+
 InputCode vendorCode(uint16_t code)
 {
   return {InputDomain::Vendor, code};
@@ -76,6 +81,16 @@ InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs)
 InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs)
 {
   return inputEvent(keyboardCode(key), pressed, timestampMs);
+}
+
+InputValueEvent inputValueEvent(InputCode code, int16_t value, uint32_t timestampMs)
+{
+  return {code, value, timestampMs};
+}
+
+InputValueEvent pointerAxisValueEvent(PointerAxis axis, int16_t value, uint32_t timestampMs)
+{
+  return inputValueEvent(pointerAxisCode(axis), value, timestampMs);
 }
 
 const char *inputDomainName(InputDomain domain)
@@ -383,6 +398,24 @@ const char *consumerUsageName(ConsumerUsage usage)
     return "BrowserRefresh";
   case ConsumerUsage::BrowserBookmarks:
     return "BrowserBookmarks";
+  }
+  return "Unknown";
+}
+
+const char *pointerAxisName(PointerAxis axis)
+{
+  switch (axis)
+  {
+  case PointerAxis::None:
+    return "None";
+  case PointerAxis::X:
+    return "X";
+  case PointerAxis::Y:
+    return "Y";
+  case PointerAxis::Wheel:
+    return "Wheel";
+  case PointerAxis::Pan:
+    return "Pan";
   }
   return "Unknown";
 }

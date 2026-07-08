@@ -94,6 +94,7 @@ def test_core_cpp_behaviors(tmp_path):
               const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
               const esp32keybridge::InputCode pointerButton = esp32keybridge::pointerButtonCode(1);
               const esp32keybridge::InputCode pointerAxis = esp32keybridge::pointerAxisCode(2);
+              const esp32keybridge::InputCode pointerX = esp32keybridge::pointerAxisCode(esp32keybridge::PointerAxis::X);
               const esp32keybridge::InputCode vendor = esp32keybridge::vendorCode(0x1001);
 
               assert(a == anotherA);
@@ -122,6 +123,8 @@ def test_core_cpp_behaviors(tmp_path):
               assert(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement).code == 0x00e9);
               assert(pointerButton.domain == esp32keybridge::InputDomain::PointerButton);
               assert(pointerAxis.domain == esp32keybridge::InputDomain::PointerAxis);
+              assert(pointerX.domain == esp32keybridge::InputDomain::PointerAxis);
+              assert(pointerX.code == 1);
               assert(vendor.domain == esp32keybridge::InputDomain::Vendor);
               assert(esp32keybridge::isValid(a));
               assert(esp32keybridge::isValid(consumer));
@@ -141,6 +144,27 @@ def test_core_cpp_behaviors(tmp_path):
               assert(std::strcmp(esp32keybridge::consumerUsageName(esp32keybridge::ConsumerUsage::VolumeIncrement), "VolumeIncrement") == 0);
               assert(std::strcmp(esp32keybridge::consumerUsageName(esp32keybridge::ConsumerUsage::BrowserBack), "BrowserBack") == 0);
               assert(std::strcmp(esp32keybridge::consumerUsageName(static_cast<esp32keybridge::ConsumerUsage>(0xffff)), "Unknown") == 0);
+            }
+
+            static void test_pointer_axis_helpers()
+            {
+              const esp32keybridge::InputValueEvent moveX = esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::X, -12, 123);
+              assert(moveX.code.domain == esp32keybridge::InputDomain::PointerAxis);
+              assert(moveX.code.code == 1);
+              assert(moveX.value == -12);
+              assert(moveX.timestampMs == 123);
+
+              const esp32keybridge::InputValueEvent wheel = esp32keybridge::inputValueEvent(
+                  esp32keybridge::pointerAxisCode(esp32keybridge::PointerAxis::Wheel), 3, 456);
+              assert(wheel.code.domain == esp32keybridge::InputDomain::PointerAxis);
+              assert(wheel.code.code == 3);
+              assert(wheel.value == 3);
+              assert(wheel.timestampMs == 456);
+
+              assert(std::strcmp(esp32keybridge::pointerAxisName(esp32keybridge::PointerAxis::None), "None") == 0);
+              assert(std::strcmp(esp32keybridge::pointerAxisName(esp32keybridge::PointerAxis::X), "X") == 0);
+              assert(std::strcmp(esp32keybridge::pointerAxisName(esp32keybridge::PointerAxis::Wheel), "Wheel") == 0);
+              assert(std::strcmp(esp32keybridge::pointerAxisName(static_cast<esp32keybridge::PointerAxis>(999)), "Unknown") == 0);
             }
 
             static void test_input_state_accepts_input_codes()
@@ -827,6 +851,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("key_name_helper", test_key_name_helper);
               run("input_code_helpers", test_input_code_helpers);
               run("consumer_usage_names", test_consumer_usage_names);
+              run("pointer_axis_helpers", test_pointer_axis_helpers);
               run("input_state_accepts_input_codes", test_input_state_accepts_input_codes);
               run("input_state_accepts_non_keyboard_input_code", test_input_state_accepts_non_keyboard_input_code);
               run("input_state_can_merge_other_state", test_input_state_can_merge_other_state);

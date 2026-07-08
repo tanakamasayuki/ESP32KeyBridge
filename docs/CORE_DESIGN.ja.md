@@ -88,6 +88,7 @@ HID adapter は `esp32keybridge::keyFromHidUsage()` と `esp32keybridge::hidUsag
 layout conversion と state macro は現時点では keyboard domain 中心です。keyboard 以外の domain は、明示的に remap / disable されない限り pipeline を通過します。
 
 press / release の差分には `esp32keybridge::InputEvent` を使います。`esp32keybridge::InputState::apply(event)` で event を state に反映できます。debounce、hold/tap、event macro sequence などはこの event 表現を使って後から追加する想定です。
+pointer axis のような値付き入力は、押下状態とは別に `esp32keybridge::InputValueEvent` で表します。`esp32keybridge::PointerAxis` は `X`、`Y`、`Wheel`、`Pan` を持ち、`esp32keybridge::pointerAxisValueEvent()` で delta を表現できます。値付き入力を state pipeline に統合するか、output adapter / example 側で別 queue として扱うかは、mouse / trackpad の実装時にユースケースを見て決めます。
 `esp32keybridge::EventInputAdapter` は、この event 表現を使って state を作る最小 input adapter です。実 adapter は raw input を `InputEvent` に変換し、同じ state 更新の考え方を使えます。
 `esp32keybridge::RecordingOutputAdapter` は最後に出力された state と write count を保持する最小 output adapter です。`esp32keybridge::RecordingHidKeyboardOutputAdapter` は最後に生成された `esp32keybridge::HidKeyboardReport` と write count を保持します。どちらも実出力を持たない test / smoke / debug で使います。
 
