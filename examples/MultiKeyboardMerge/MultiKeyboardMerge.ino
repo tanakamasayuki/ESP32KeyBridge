@@ -57,7 +57,7 @@ void setup()
 
   esp32keybridge::ESP32KeyBridgeConfig config;
   config.merge.shareModifiers = true;
-  config.merge.shareKeys = true;
+  config.merge.shareKeyboardKeys = true;
 
   bridge.applyConfig(config);
   bridge.begin();

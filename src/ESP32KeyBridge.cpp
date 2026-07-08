@@ -567,30 +567,38 @@ const InputState &ESP32KeyBridge::outputState() const
   return outputState_;
 }
 
+bool ESP32KeyBridge::shouldMerge(InputCode code) const
+{
+  if (code.domain == InputDomain::Keyboard)
+  {
+    const Key key = keyFromCode(code);
+    return isModifierKey(key) ? config_.merge.shareModifiers : config_.merge.shareKeyboardKeys;
+  }
+
+  switch (code.domain)
+  {
+  case InputDomain::Consumer:
+    return config_.merge.shareConsumer;
+  case InputDomain::PointerButton:
+    return config_.merge.sharePointerButtons;
+  case InputDomain::PointerAxis:
+    return config_.merge.sharePointerAxes;
+  case InputDomain::Vendor:
+    return config_.merge.shareVendor;
+  case InputDomain::Keyboard:
+    break;
+  }
+  return false;
+}
+
 void ESP32KeyBridge::mergeInput(const InputState &input, InputState &merged) const
 {
   for (size_t i = 0; i < input.codeCount(); ++i)
   {
     const InputCode code = input.codeAt(i);
-    if (code.domain != InputDomain::Keyboard)
+    if (shouldMerge(code))
     {
-      if (config_.merge.shareKeys)
-      {
-        merged.press(code);
-      }
-      continue;
-    }
-    const Key key = input.keyAt(i);
-    if (isModifierKey(key))
-    {
-      if (config_.merge.shareModifiers)
-      {
-        merged.press(key);
-      }
-    }
-    else if (config_.merge.shareKeys)
-    {
-      merged.press(key);
+      merged.press(code);
     }
   }
 }

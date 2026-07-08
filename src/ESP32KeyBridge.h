@@ -163,7 +163,11 @@ private:
 struct MergeConfig
 {
   bool shareModifiers = true;
-  bool shareKeys = true;
+  bool shareKeyboardKeys = true;
+  bool shareConsumer = true;
+  bool sharePointerButtons = true;
+  bool sharePointerAxes = true;
+  bool shareVendor = true;
 };
 
 class LayerConfig
@@ -242,6 +246,7 @@ public:
   const InputState &outputState() const;
 
 private:
+  bool shouldMerge(InputCode code) const;
   void mergeInput(const InputState &input, InputState &merged) const;
   void applyTransform(const InputState &input, const TransformConfig &transform, InputState &output) const;
   void applyLayer(const InputState &input, InputState &output) const;

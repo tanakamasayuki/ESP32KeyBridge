@@ -105,8 +105,11 @@ merged: LeftShift + A
 
 - modifier を共有できる。
 - 通常キーを共有できる。
+- Consumer Control、pointer button、pointer axis、vendor code を domain ごとに共有できる。
 - 入力デバイスを単一 keyboard として扱える。
 - 競合や rollover 制限は output adapter の都合と分けて扱う。
+
+`esp32keybridge::MergeConfig` は `shareModifiers`、`shareKeyboardKeys`、`shareConsumer`、`sharePointerButtons`、`sharePointerAxes`、`shareVendor` を持ちます。複数 keyboard の modifier 共有だけ有効にしつつ、pointer や vendor event は merge しない、といった使い分けを core 側で表現できます。
 
 USB HID boot keyboard の 6KRO 制限は output adapter 側の制約です。core の merged state は、可能な限り出力形式に依存しない状態で保持します。
 

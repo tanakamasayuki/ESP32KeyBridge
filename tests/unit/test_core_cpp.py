@@ -212,7 +212,7 @@ def test_core_cpp_behaviors(tmp_path):
 
               esp32keybridge::ESP32KeyBridgeConfig config;
               config.merge.shareModifiers = true;
-              config.merge.shareKeys = false;
+              config.merge.shareKeyboardKeys = false;
               bridge.applyConfig(config);
 
               input.state_.press(esp32keybridge::Key::LeftShift);
@@ -223,6 +223,42 @@ def test_core_cpp_behaviors(tmp_path):
               assert(output.state().isPressed(esp32keybridge::Key::LeftShift));
               assert(!output.state().isPressed(esp32keybridge::Key::A));
               assert(output.state().codeCount() == 1);
+            }
+
+            static void test_core_merge_options_are_domain_specific()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput input;
+              esp32keybridge::RecordingOutputAdapter output;
+              const esp32keybridge::InputCode consumer{esp32keybridge::InputDomain::Consumer, 0x00e9};
+              const esp32keybridge::InputCode pointerButton{esp32keybridge::InputDomain::PointerButton, 1};
+              const esp32keybridge::InputCode vendor{esp32keybridge::InputDomain::Vendor, 0x1001};
+
+              assert(bridge.addInput(input));
+              assert(bridge.addOutput(output));
+
+              esp32keybridge::ESP32KeyBridgeConfig config;
+              config.merge.shareModifiers = true;
+              config.merge.shareKeyboardKeys = false;
+              config.merge.shareConsumer = true;
+              config.merge.sharePointerButtons = false;
+              config.merge.shareVendor = false;
+              bridge.applyConfig(config);
+
+              input.state_.press(esp32keybridge::Key::LeftShift);
+              input.state_.press(esp32keybridge::Key::A);
+              input.state_.press(consumer);
+              input.state_.press(pointerButton);
+              input.state_.press(vendor);
+
+              bridge.update();
+
+              assert(output.state().isPressed(esp32keybridge::Key::LeftShift));
+              assert(!output.state().isPressed(esp32keybridge::Key::A));
+              assert(output.state().isPressed(consumer));
+              assert(!output.state().isPressed(pointerButton));
+              assert(!output.state().isPressed(vendor));
+              assert(output.state().codeCount() == 2);
             }
 
             static void test_per_input_transform_runs_before_merge_and_global_transform()
@@ -330,7 +366,7 @@ def test_core_cpp_behaviors(tmp_path):
               config.layer.setMomentary(esp32keybridge::Key::Fn1);
               assert(config.layer.remap(esp32keybridge::Key::A, esp32keybridge::Key::C));
               assert(config.layout.map(esp32keybridge::Key::A, esp32keybridge::Key::B));
-              config.merge.shareKeys = false;
+              config.merge.shareKeyboardKeys = false;
 
               assert(!bridge.validateConfig(config, error));
               config.clear();
@@ -342,7 +378,11 @@ def test_core_cpp_behaviors(tmp_path):
               assert(!config.layer.enabled());
               assert(config.layout.convert(esp32keybridge::Key::A) == esp32keybridge::Key::A);
               assert(config.merge.shareModifiers);
-              assert(config.merge.shareKeys);
+              assert(config.merge.shareKeyboardKeys);
+              assert(config.merge.shareConsumer);
+              assert(config.merge.sharePointerButtons);
+              assert(config.merge.sharePointerAxes);
+              assert(config.merge.shareVendor);
             }
 
             static void test_momentary_layer_remaps_while_trigger_is_pressed()
@@ -558,6 +598,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);
               run("core_merge_options", test_core_merge_options);
+              run("core_merge_options_are_domain_specific", test_core_merge_options_are_domain_specific);
               run("per_input_transform_runs_before_merge_and_global_transform", test_per_input_transform_runs_before_merge_and_global_transform);
               run("input_can_bind_to_explicit_config_index", test_input_can_bind_to_explicit_config_index);
               run("config_try_input_reports_out_of_range", test_config_try_input_reports_out_of_range);
