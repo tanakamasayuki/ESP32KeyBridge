@@ -53,6 +53,7 @@ InputCode pointerAxisCode(uint16_t code);
 InputCode vendorCode(uint16_t code);
 Key keyFromCode(InputCode code);
 const char *inputDomainName(InputDomain domain);
+bool isValid(InputCode code);
 InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs = 0);
 InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs = 0);
 

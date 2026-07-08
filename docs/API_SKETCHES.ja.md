@@ -22,6 +22,7 @@ esp32keybridge::InputCode code = esp32keybridge::keyboardCode(esp32keybridge::Ke
 ```
 
 `esp32keybridge::InputState` は `esp32keybridge::InputCode` の集合を保持します。keyboard、consumer control、pointer、vendor などを同じ state として扱い、keyboard 専用の変換は keyboard domain の code にだけ適用します。
+`esp32keybridge::InputCode` は code `0` を無効値として扱い、`esp32keybridge::isValid()` で確認できます。
 state に code が含まれるかは `esp32keybridge::InputState::contains()` で確認します。keyboard 用の `isPressed()` は convenience として残します。
 複数の state を set 的に合わせる場合は `esp32keybridge::InputState::mergeFrom()` を使えます。
 

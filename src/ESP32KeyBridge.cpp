@@ -75,6 +75,11 @@ const char *inputDomainName(InputDomain domain)
   return "Unknown";
 }
 
+bool isValid(InputCode code)
+{
+  return code.code != 0;
+}
+
 bool isModifierKey(Key key)
 {
   return key == Key::LeftCtrl || key == Key::LeftShift;
@@ -122,7 +127,7 @@ bool InputState::press(Key key)
 
 bool InputState::press(InputCode code)
 {
-  if (code.code == 0)
+  if (!isValid(code))
   {
     return false;
   }
@@ -263,7 +268,7 @@ bool TransformConfig::remap(Key from, Key to)
 
 bool TransformConfig::remap(InputCode from, InputCode to)
 {
-  if (from.code == 0 || to.code == 0)
+  if (!isValid(from) || !isValid(to))
   {
     return false;
   }
@@ -290,9 +295,9 @@ bool TransformConfig::disable(Key key)
 
 bool TransformConfig::disable(InputCode code)
 {
-  if (code.code == 0 || isDisabled(code))
+  if (!isValid(code) || isDisabled(code))
   {
-    return code.code != 0;
+    return isValid(code);
   }
   if (disabledCodeCount_ >= MaxDisabledKeys)
   {

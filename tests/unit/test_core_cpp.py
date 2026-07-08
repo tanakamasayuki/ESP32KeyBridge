@@ -91,6 +91,10 @@ def test_core_cpp_behaviors(tmp_path):
               assert(pointerButton.domain == esp32keybridge::InputDomain::PointerButton);
               assert(pointerAxis.domain == esp32keybridge::InputDomain::PointerAxis);
               assert(vendor.domain == esp32keybridge::InputDomain::Vendor);
+              assert(esp32keybridge::isValid(a));
+              assert(esp32keybridge::isValid(consumer));
+              assert(!esp32keybridge::isValid(esp32keybridge::keyboardCode(esp32keybridge::Key::None)));
+              assert(!esp32keybridge::isValid(esp32keybridge::consumerCode(0)));
               assert(esp32keybridge::keyFromCode(a) == esp32keybridge::Key::A);
               assert(esp32keybridge::keyFromCode(consumer) == esp32keybridge::Key::None);
               assert(std::strcmp(esp32keybridge::inputDomainName(esp32keybridge::InputDomain::Keyboard), "Keyboard") == 0);
@@ -121,6 +125,7 @@ def test_core_cpp_behaviors(tmp_path):
               assert(!state.contains(a));
               assert(!state.isPressed(a));
               assert(state.codeCount() == 1);
+              assert(!state.press(esp32keybridge::consumerCode(0)));
             }
 
             static void test_input_state_accepts_non_keyboard_input_code()
