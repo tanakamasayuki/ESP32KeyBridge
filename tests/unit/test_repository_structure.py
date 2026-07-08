@@ -50,3 +50,14 @@ def test_examples_readme_lists_current_examples():
     listed = sorted(re.findall(r"- `([^`]+)`:", core_section))
 
     assert listed == example_dirs
+
+
+def test_examples_have_docs_and_compile_profiles():
+    missing = []
+    for ino in sorted((ROOT / "examples").glob("*/*.ino")):
+        example_dir = ino.parent
+        for required in ["README.ja.md", "sketch.yaml"]:
+            if not (example_dir / required).exists():
+                missing.append(str((example_dir / required).relative_to(ROOT)))
+
+    assert missing == []
