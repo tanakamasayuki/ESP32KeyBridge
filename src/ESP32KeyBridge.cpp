@@ -138,6 +138,19 @@ bool InputState::press(InputCode code)
   return true;
 }
 
+bool InputState::mergeFrom(const InputState &other)
+{
+  bool mergedAll = true;
+  for (size_t i = 0; i < other.codeCount(); ++i)
+  {
+    if (!press(other.codeAt(i)))
+    {
+      mergedAll = false;
+    }
+  }
+  return mergedAll;
+}
+
 bool InputState::release(Key key)
 {
   return release(keyboardCode(key));

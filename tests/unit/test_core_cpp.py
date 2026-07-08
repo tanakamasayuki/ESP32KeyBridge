@@ -145,6 +145,24 @@ def test_core_cpp_behaviors(tmp_path):
               assert(state.codeCount() == 1);
             }
 
+            static void test_input_state_can_merge_other_state()
+            {
+              esp32keybridge::InputState left;
+              esp32keybridge::InputState right;
+              const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
+
+              assert(left.press(esp32keybridge::Key::A));
+              assert(left.press(consumer));
+              assert(right.press(consumer));
+              assert(right.press(esp32keybridge::Key::B));
+
+              assert(left.mergeFrom(right));
+              assert(left.contains(esp32keybridge::Key::A));
+              assert(left.contains(esp32keybridge::Key::B));
+              assert(left.contains(consumer));
+              assert(left.codeCount() == 3);
+            }
+
             static void test_input_state_applies_input_events()
             {
               esp32keybridge::InputState state;
@@ -593,6 +611,15 @@ def test_core_cpp_behaviors(tmp_path):
                 assert(layout.map(static_cast<esp32keybridge::Key>(400 + i), esp32keybridge::Key::B));
               }
               assert(!layout.map(esp32keybridge::Key::A, esp32keybridge::Key::C));
+
+              esp32keybridge::InputState full;
+              esp32keybridge::InputState extra;
+              for (size_t i = 0; i < esp32keybridge::InputState::MaxCodes; ++i)
+              {
+                assert(full.press(esp32keybridge::vendorCode(static_cast<uint16_t>(i + 1))));
+              }
+              assert(extra.press(esp32keybridge::vendorCode(1000)));
+              assert(!full.mergeFrom(extra));
             }
 
             static void run(const char *name, void (*test)())
@@ -608,6 +635,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("input_code_helpers", test_input_code_helpers);
               run("input_state_accepts_input_codes", test_input_state_accepts_input_codes);
               run("input_state_accepts_non_keyboard_input_code", test_input_state_accepts_non_keyboard_input_code);
+              run("input_state_can_merge_other_state", test_input_state_can_merge_other_state);
               run("input_state_applies_input_events", test_input_state_applies_input_events);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);

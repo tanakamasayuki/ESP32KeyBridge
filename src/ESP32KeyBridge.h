@@ -67,6 +67,7 @@ public:
   void clear();
   bool press(Key key);
   bool press(InputCode code);
+  bool mergeFrom(const InputState &other);
   bool release(Key key);
   bool release(InputCode code);
   bool contains(Key key) const;
