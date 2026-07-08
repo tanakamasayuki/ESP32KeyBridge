@@ -465,6 +465,34 @@ def test_core_cpp_behaviors(tmp_path):
               assert(output.state().codeCount() == 3);
             }
 
+            static void test_transform_can_remap_and_disable_input_codes()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput input;
+              esp32keybridge::RecordingOutputAdapter output;
+              const esp32keybridge::InputCode volumeUp{esp32keybridge::InputDomain::Consumer, 0x00e9};
+              const esp32keybridge::InputCode volumeDown{esp32keybridge::InputDomain::Consumer, 0x00ea};
+              const esp32keybridge::InputCode pointerButton{esp32keybridge::InputDomain::PointerButton, 1};
+
+              assert(bridge.addInput(input));
+              assert(bridge.addOutput(output));
+
+              esp32keybridge::ESP32KeyBridgeConfig config;
+              assert(config.global.remap(volumeUp, volumeDown));
+              assert(config.global.disable(pointerButton));
+              bridge.applyConfig(config);
+
+              input.state_.press(volumeUp);
+              input.state_.press(pointerButton);
+
+              bridge.update();
+
+              assert(output.state().isPressed(volumeDown));
+              assert(!output.state().isPressed(volumeUp));
+              assert(!output.state().isPressed(pointerButton));
+              assert(output.state().codeCount() == 1);
+            }
+
             static void test_capacity_limits_report_failure()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -539,6 +567,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("transform_macro_expands_trigger_to_key_sequence", test_transform_macro_expands_trigger_to_key_sequence);
               run("layout_conversion_runs_before_global_transform", test_layout_conversion_runs_before_global_transform);
               run("non_keyboard_codes_pass_through_pipeline", test_non_keyboard_codes_pass_through_pipeline);
+              run("transform_can_remap_and_disable_input_codes", test_transform_can_remap_and_disable_input_codes);
               run("capacity_limits_report_failure", test_capacity_limits_report_failure);
               return 0;
             }

@@ -210,7 +210,12 @@ void RecordingOutputAdapter::clear()
 
 bool TransformConfig::remap(Key from, Key to)
 {
-  if (from == Key::None || to == Key::None)
+  return remap(keyboardCode(from), keyboardCode(to));
+}
+
+bool TransformConfig::remap(InputCode from, InputCode to)
+{
+  if (from.code == 0 || to.code == 0)
   {
     return false;
   }
@@ -232,15 +237,20 @@ bool TransformConfig::remap(Key from, Key to)
 
 bool TransformConfig::disable(Key key)
 {
-  if (key == Key::None || isDisabled(key))
+  return disable(keyboardCode(key));
+}
+
+bool TransformConfig::disable(InputCode code)
+{
+  if (code.code == 0 || isDisabled(code))
   {
-    return key != Key::None;
+    return code.code != 0;
   }
-  if (disabledKeyCount_ >= MaxDisabledKeys)
+  if (disabledCodeCount_ >= MaxDisabledKeys)
   {
     return false;
   }
-  disabledKeys_[disabledKeyCount_++] = key;
+  disabledCodes_[disabledCodeCount_++] = code;
   return true;
 }
 
@@ -289,27 +299,37 @@ bool TransformConfig::macro(Key trigger, const Key *keys, size_t keyCount)
 void TransformConfig::clear()
 {
   remapCount_ = 0;
-  disabledKeyCount_ = 0;
+  disabledCodeCount_ = 0;
   macroCount_ = 0;
 }
 
 Key TransformConfig::map(Key key) const
 {
+  return keyFromCode(map(keyboardCode(key)));
+}
+
+InputCode TransformConfig::map(InputCode code) const
+{
   for (size_t i = 0; i < remapCount_; ++i)
   {
-    if (remaps_[i].from == key)
+    if (remaps_[i].from == code)
     {
       return remaps_[i].to;
     }
   }
-  return key;
+  return code;
 }
 
 bool TransformConfig::isDisabled(Key key) const
 {
-  for (size_t i = 0; i < disabledKeyCount_; ++i)
+  return isDisabled(keyboardCode(key));
+}
+
+bool TransformConfig::isDisabled(InputCode code) const
+{
+  for (size_t i = 0; i < disabledCodeCount_; ++i)
   {
-    if (disabledKeys_[i] == key)
+    if (disabledCodes_[i] == code)
     {
       return true;
     }
@@ -331,7 +351,7 @@ const KeyMacro *TransformConfig::findMacro(Key trigger) const
 
 bool TransformConfig::empty() const
 {
-  return remapCount_ == 0 && disabledKeyCount_ == 0 && macroCount_ == 0;
+  return remapCount_ == 0 && disabledCodeCount_ == 0 && macroCount_ == 0;
 }
 
 void LayerConfig::setMomentary(Key trigger)
@@ -375,9 +395,9 @@ bool LayoutConfig::map(Key from, Key to)
   }
   for (size_t i = 0; i < mappingCount_; ++i)
   {
-    if (mappings_[i].from == from)
+    if (mappings_[i].from == keyboardCode(from))
     {
-      mappings_[i].to = to;
+      mappings_[i].to = keyboardCode(to);
       return true;
     }
   }
@@ -385,7 +405,7 @@ bool LayoutConfig::map(Key from, Key to)
   {
     return false;
   }
-  mappings_[mappingCount_++] = {from, to};
+  mappings_[mappingCount_++] = {keyboardCode(from), keyboardCode(to)};
   return true;
 }
 
@@ -398,9 +418,9 @@ Key LayoutConfig::convert(Key key) const
 {
   for (size_t i = 0; i < mappingCount_; ++i)
   {
-    if (mappings_[i].from == key)
+    if (mappings_[i].from == keyboardCode(key))
     {
-      return mappings_[i].to;
+      return keyFromCode(mappings_[i].to);
     }
   }
   return key;
@@ -580,26 +600,24 @@ void ESP32KeyBridge::applyTransform(const InputState &input, const TransformConf
   for (size_t i = 0; i < input.codeCount(); ++i)
   {
     const InputCode code = input.codeAt(i);
-    if (code.domain != InputDomain::Keyboard)
-    {
-      output.press(code);
-      continue;
-    }
-    const Key key = input.keyAt(i);
-    if (transform.isDisabled(key))
+    if (transform.isDisabled(code))
     {
       continue;
     }
-    const KeyMacro *macro = transform.findMacro(key);
-    if (macro != nullptr)
+    if (code.domain == InputDomain::Keyboard)
     {
-      for (size_t j = 0; j < macro->keyCount; ++j)
+      const Key key = keyFromCode(code);
+      const KeyMacro *macro = transform.findMacro(key);
+      if (macro != nullptr)
       {
-        output.press(macro->keys[j]);
+        for (size_t j = 0; j < macro->keyCount; ++j)
+        {
+          output.press(macro->keys[j]);
+        }
+        continue;
       }
-      continue;
     }
-    output.press(transform.map(key));
+    output.press(transform.map(code));
   }
 }
 

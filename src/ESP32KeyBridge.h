@@ -116,10 +116,10 @@ private:
   size_t writeCount_ = 0;
 };
 
-struct KeyRemap
+struct CodeRemap
 {
-  Key from = Key::None;
-  Key to = Key::None;
+  InputCode from;
+  InputCode to;
 };
 
 struct KeyMacro
@@ -139,19 +139,23 @@ public:
   static constexpr size_t MaxMacros = 16;
 
   bool remap(Key from, Key to);
+  bool remap(InputCode from, InputCode to);
   bool disable(Key key);
+  bool disable(InputCode code);
   bool macro(Key trigger, const Key *keys, size_t keyCount);
   void clear();
   Key map(Key key) const;
+  InputCode map(InputCode code) const;
   bool isDisabled(Key key) const;
+  bool isDisabled(InputCode code) const;
   const KeyMacro *findMacro(Key trigger) const;
   bool empty() const;
 
 private:
-  KeyRemap remaps_[MaxRemaps] = {};
+  CodeRemap remaps_[MaxRemaps] = {};
   size_t remapCount_ = 0;
-  Key disabledKeys_[MaxDisabledKeys] = {};
-  size_t disabledKeyCount_ = 0;
+  InputCode disabledCodes_[MaxDisabledKeys] = {};
+  size_t disabledCodeCount_ = 0;
   KeyMacro macros_[MaxMacros] = {};
   size_t macroCount_ = 0;
 };
@@ -188,7 +192,7 @@ public:
   Key convert(Key key) const;
 
 private:
-  KeyRemap mappings_[MaxMappings] = {};
+  CodeRemap mappings_[MaxMappings] = {};
   size_t mappingCount_ = 0;
 };
 

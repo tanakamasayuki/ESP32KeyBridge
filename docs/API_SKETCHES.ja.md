@@ -23,6 +23,16 @@ esp32keybridge::InputCode code = esp32keybridge::keyboardCode(esp32keybridge::Ke
 
 `esp32keybridge::InputState` は `esp32keybridge::InputCode` の集合を保持します。keyboard、consumer control、pointer、vendor などを同じ state として扱い、keyboard 専用の変換は keyboard domain の code にだけ適用します。
 
+`esp32keybridge::TransformConfig` の remap / disable は `esp32keybridge::InputCode` ベースです。`esp32keybridge::Key` を受け取る API は keyboard domain 用の convenience として扱います。
+
+```cpp
+esp32keybridge::InputCode volumeUp{esp32keybridge::InputDomain::Consumer, 0x00e9};
+esp32keybridge::InputCode volumeDown{esp32keybridge::InputDomain::Consumer, 0x00ea};
+
+esp32keybridge::ESP32KeyBridgeConfig config;
+config.global.remap(volumeUp, volumeDown);
+```
+
 press / release の差分は `esp32keybridge::InputEvent` として表せます。
 
 ```cpp
