@@ -14,6 +14,7 @@
 - `MomentaryLayer`: `Fn1` を押している間だけ layer remap を適用する例。
 - `SimpleMacro`: trigger key を複数 key の state に展開する例。
 - `LayoutConversion`: layout conversion 用の key mapping table を適用する例。
+- `NonKeyboardReports`: Consumer Control や Pointer button / axis を HID report builder へ渡す例。
 - `RuntimeConfigApply`: 外部設定 service が作った設定 object を実行中に適用する例。
 - `RuntimeAdapterReconfigure`: 実行中に input / output adapter 登録を差し替える例。
 
