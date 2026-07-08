@@ -80,6 +80,7 @@ DeviceState
 将来、mouse、trackpad、wheel などを扱えるように event domain を拡張できる余地を残します。ただし MVP は keyboard / consumer control を優先します。
 
 core には `esp32keybridge::InputCode` を置き、keyboard、consumer control、pointer button、pointer axis、vendor などの domain を表せるようにします。`esp32keybridge::InputState` は `InputCode` の集合を保持し、keyboard 以外の code も同じ state として扱います。
+`esp32keybridge::Key` は keyboard domain の convenience enum で、基本キーは USB HID keyboard usage ID に寄せた値を持ちます。adapter は raw HID usage と `esp32keybridge::Key` / `esp32keybridge::InputCode` の対応を単純に扱えるようにします。
 
 `esp32keybridge::TransformConfig` は `InputCode` ベースの remap / disable を持ちます。`esp32keybridge::Key` を受け取る API は keyboard domain 用の convenience です。これにより Consumer Control のような keyboard 以外の code も、同じ transform pipeline で扱えます。
 

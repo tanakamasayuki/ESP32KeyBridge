@@ -69,9 +69,18 @@ def test_core_cpp_behaviors(tmp_path):
             static void test_key_name_helper()
             {
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::A), "A") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Z), "Z") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Num1), "Num1") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Space), "Space") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Slash), "Slash") == 0);
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::CapsLock), "CapsLock") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::RightAlt), "RightAlt") == 0);
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Fn1), "Fn1") == 0);
               assert(std::strcmp(esp32keybridge::keyName(static_cast<esp32keybridge::Key>(999)), "Unknown") == 0);
+              assert(esp32keybridge::isModifierKey(esp32keybridge::Key::LeftCtrl));
+              assert(esp32keybridge::isModifierKey(esp32keybridge::Key::RightShift));
+              assert(esp32keybridge::isModifierKey(esp32keybridge::Key::RightGui));
+              assert(!esp32keybridge::isModifierKey(esp32keybridge::Key::A));
             }
 
             static void test_input_code_helpers()
@@ -86,7 +95,9 @@ def test_core_cpp_behaviors(tmp_path):
               assert(a == anotherA);
               assert(a != consumer);
               assert(a.domain == esp32keybridge::InputDomain::Keyboard);
-              assert(a.code == static_cast<uint16_t>(esp32keybridge::Key::A));
+              assert(a.code == 0x04);
+              assert(esp32keybridge::keyboardCode(esp32keybridge::Key::Enter).code == 0x28);
+              assert(esp32keybridge::keyboardCode(esp32keybridge::Key::RightGui).code == 0xe7);
               assert(consumer.domain == esp32keybridge::InputDomain::Consumer);
               assert(pointerButton.domain == esp32keybridge::InputDomain::PointerButton);
               assert(pointerAxis.domain == esp32keybridge::InputDomain::PointerAxis);
