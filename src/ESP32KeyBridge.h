@@ -168,6 +168,9 @@ struct HidKeyboardReport
   uint8_t keys[MaxKeys] = {};
   size_t keyCount = 0;
   bool overflow = false;
+
+  void clear();
+  bool empty() const;
 };
 
 class InputState

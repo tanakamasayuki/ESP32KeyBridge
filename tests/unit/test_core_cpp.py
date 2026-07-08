@@ -221,6 +221,9 @@ def test_core_cpp_behaviors(tmp_path):
 
             static void test_hid_keyboard_report_builder()
             {
+              esp32keybridge::HidKeyboardReport emptyReport;
+              assert(emptyReport.empty());
+
               esp32keybridge::InputState state;
               assert(state.press(esp32keybridge::Key::LeftCtrl));
               assert(state.press(esp32keybridge::Key::RightShift));
@@ -236,6 +239,7 @@ def test_core_cpp_behaviors(tmp_path):
               assert(report.keys[0] == 0x04);
               assert(report.keys[1] == 0x87);
               assert(!report.overflow);
+              assert(!report.empty());
             }
 
             static void test_hid_keyboard_report_builder_reports_overflow()
@@ -256,6 +260,25 @@ def test_core_cpp_behaviors(tmp_path):
               assert(report.keys[0] == 0x04);
               assert(report.keys[5] == 0x09);
               assert(report.overflow);
+              assert(!report.empty());
+            }
+
+            static void test_hid_keyboard_report_can_clear()
+            {
+              esp32keybridge::HidKeyboardReport report;
+              report.modifiers = 1;
+              report.keys[0] = 0x04;
+              report.keyCount = 1;
+              report.overflow = true;
+
+              assert(!report.empty());
+              report.clear();
+
+              assert(report.modifiers == 0);
+              assert(report.keys[0] == 0);
+              assert(report.keyCount == 0);
+              assert(!report.overflow);
+              assert(report.empty());
             }
 
             static void test_recording_hid_keyboard_output_adapter()
@@ -284,8 +307,7 @@ def test_core_cpp_behaviors(tmp_path):
 
               output.clear();
               assert(output.writeCount() == 0);
-              assert(output.report().modifiers == 0);
-              assert(output.report().keyCount == 0);
+              assert(output.report().empty());
             }
 
             static void test_event_input_adapter_applies_events()
@@ -743,6 +765,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("input_state_applies_input_events", test_input_state_applies_input_events);
               run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
               run("hid_keyboard_report_builder_reports_overflow", test_hid_keyboard_report_builder_reports_overflow);
+              run("hid_keyboard_report_can_clear", test_hid_keyboard_report_can_clear);
               run("recording_hid_keyboard_output_adapter", test_recording_hid_keyboard_output_adapter);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);

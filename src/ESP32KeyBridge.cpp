@@ -433,6 +433,22 @@ InputCode InputState::codeAt(size_t index) const
   return index < codeCount_ ? codes_[index] : keyboardCode(Key::None);
 }
 
+void HidKeyboardReport::clear()
+{
+  modifiers = 0;
+  for (size_t i = 0; i < MaxKeys; ++i)
+  {
+    keys[i] = 0;
+  }
+  keyCount = 0;
+  overflow = false;
+}
+
+bool HidKeyboardReport::empty() const
+{
+  return modifiers == 0 && keyCount == 0 && !overflow;
+}
+
 HidKeyboardReport buildHidKeyboardReport(const InputState &state)
 {
   HidKeyboardReport report;
@@ -525,7 +541,7 @@ size_t RecordingHidKeyboardOutputAdapter::writeCount() const
 
 void RecordingHidKeyboardOutputAdapter::clear()
 {
-  report_ = HidKeyboardReport{};
+  report_.clear();
   writeCount_ = 0;
 }
 
