@@ -69,6 +69,8 @@ public:
   bool press(InputCode code);
   bool release(Key key);
   bool release(InputCode code);
+  bool contains(Key key) const;
+  bool contains(InputCode code) const;
   bool isPressed(Key key) const;
   bool isPressed(InputCode code) const;
   bool apply(InputEvent event);

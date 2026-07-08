@@ -126,7 +126,7 @@ bool InputState::press(InputCode code)
   {
     return false;
   }
-  if (isPressed(code))
+  if (contains(code))
   {
     return true;
   }
@@ -157,12 +157,12 @@ bool InputState::release(InputCode code)
   return false;
 }
 
-bool InputState::isPressed(Key key) const
+bool InputState::contains(Key key) const
 {
-  return isPressed(keyboardCode(key));
+  return contains(keyboardCode(key));
 }
 
-bool InputState::isPressed(InputCode code) const
+bool InputState::contains(InputCode code) const
 {
   for (size_t i = 0; i < codeCount_; ++i)
   {
@@ -172,6 +172,16 @@ bool InputState::isPressed(InputCode code) const
     }
   }
   return false;
+}
+
+bool InputState::isPressed(Key key) const
+{
+  return contains(key);
+}
+
+bool InputState::isPressed(InputCode code) const
+{
+  return contains(code);
 }
 
 bool InputState::apply(InputEvent event)

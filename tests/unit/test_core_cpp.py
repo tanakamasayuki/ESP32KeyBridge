@@ -105,16 +105,20 @@ def test_core_cpp_behaviors(tmp_path):
               const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
 
               assert(state.press(a));
+              assert(state.contains(a));
+              assert(state.contains(esp32keybridge::Key::A));
               assert(state.isPressed(a));
               assert(state.isPressed(esp32keybridge::Key::A));
               assert(state.codeAt(0) == a);
               assert(state.keyAt(0) == esp32keybridge::Key::A);
               assert(state.press(consumer));
+              assert(state.contains(consumer));
               assert(state.isPressed(consumer));
               assert(state.codeAt(1) == consumer);
               assert(state.keyAt(1) == esp32keybridge::Key::None);
               assert(state.codeCount() == 2);
               assert(state.release(a));
+              assert(!state.contains(a));
               assert(!state.isPressed(a));
               assert(state.codeCount() == 1);
             }
@@ -127,6 +131,8 @@ def test_core_cpp_behaviors(tmp_path):
 
               assert(state.press(consumer));
               assert(state.press(pointerButton));
+              assert(state.contains(consumer));
+              assert(state.contains(pointerButton));
               assert(state.isPressed(consumer));
               assert(state.isPressed(pointerButton));
               assert(state.keyAt(0) == esp32keybridge::Key::None);
@@ -134,6 +140,7 @@ def test_core_cpp_behaviors(tmp_path):
               assert(state.codeAt(1) == pointerButton);
               assert(state.codeCount() == 2);
               assert(state.release(consumer));
+              assert(!state.contains(consumer));
               assert(!state.isPressed(consumer));
               assert(state.codeCount() == 1);
             }
