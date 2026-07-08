@@ -461,6 +461,60 @@ def test_core_cpp_behaviors(tmp_path):
               assert(output.report().empty());
             }
 
+            static void test_recording_hid_consumer_output_adapter()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput input;
+              esp32keybridge::RecordingHidConsumerOutputAdapter output;
+
+              assert(bridge.addInput(input));
+              assert(bridge.addOutput(output));
+
+              esp32keybridge::ESP32KeyBridgeConfig config;
+              assert(config.global.remap(
+                  esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::Mute),
+                  esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement)));
+              bridge.applyConfig(config);
+
+              input.state_.press(esp32keybridge::Key::A);
+              input.state_.press(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::Mute));
+
+              bridge.update();
+
+              assert(output.writeCount() == 1);
+              assert(output.report().usage == 0x00e9);
+              assert(!output.report().overflow);
+
+              output.clear();
+              assert(output.writeCount() == 0);
+              assert(output.report().empty());
+            }
+
+            static void test_recording_hid_pointer_output_adapter()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput input;
+              esp32keybridge::RecordingHidPointerOutputAdapter output;
+
+              assert(bridge.addInput(input));
+              assert(bridge.addOutput(output));
+
+              input.state_.press(esp32keybridge::Key::A);
+              input.state_.press(esp32keybridge::pointerButtonCode(1));
+              input.state_.press(esp32keybridge::pointerButtonCode(2));
+
+              bridge.update();
+
+              assert(output.writeCount() == 1);
+              assert(output.report().buttons == 0x03);
+              assert(output.report().x == 0);
+              assert(!output.report().overflow);
+
+              output.clear();
+              assert(output.writeCount() == 0);
+              assert(output.report().empty());
+            }
+
             static void test_event_input_adapter_applies_events()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -924,6 +978,8 @@ def test_core_cpp_behaviors(tmp_path):
               run("hid_pointer_report_builder", test_hid_pointer_report_builder);
               run("hid_pointer_report_reports_overflow", test_hid_pointer_report_reports_overflow);
               run("recording_hid_keyboard_output_adapter", test_recording_hid_keyboard_output_adapter);
+              run("recording_hid_consumer_output_adapter", test_recording_hid_consumer_output_adapter);
+              run("recording_hid_pointer_output_adapter", test_recording_hid_pointer_output_adapter);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);
               run("core_merge_options", test_core_merge_options);

@@ -337,6 +337,32 @@ private:
   size_t writeCount_ = 0;
 };
 
+class RecordingHidConsumerOutputAdapter : public OutputAdapter
+{
+public:
+  void write(const InputState &state) override;
+  const HidConsumerReport &report() const;
+  size_t writeCount() const;
+  void clear();
+
+private:
+  HidConsumerReport report_;
+  size_t writeCount_ = 0;
+};
+
+class RecordingHidPointerOutputAdapter : public OutputAdapter
+{
+public:
+  void write(const InputState &state) override;
+  const HidPointerReport &report() const;
+  size_t writeCount() const;
+  void clear();
+
+private:
+  HidPointerReport report_;
+  size_t writeCount_ = 0;
+};
+
 struct CodeRemap
 {
   InputCode from;

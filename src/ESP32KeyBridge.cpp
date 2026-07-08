@@ -802,6 +802,50 @@ void RecordingHidKeyboardOutputAdapter::clear()
   writeCount_ = 0;
 }
 
+void RecordingHidConsumerOutputAdapter::write(const InputState &state)
+{
+  report_ = buildHidConsumerReport(state);
+  ++writeCount_;
+}
+
+const HidConsumerReport &RecordingHidConsumerOutputAdapter::report() const
+{
+  return report_;
+}
+
+size_t RecordingHidConsumerOutputAdapter::writeCount() const
+{
+  return writeCount_;
+}
+
+void RecordingHidConsumerOutputAdapter::clear()
+{
+  report_.clear();
+  writeCount_ = 0;
+}
+
+void RecordingHidPointerOutputAdapter::write(const InputState &state)
+{
+  report_ = buildHidPointerReport(state);
+  ++writeCount_;
+}
+
+const HidPointerReport &RecordingHidPointerOutputAdapter::report() const
+{
+  return report_;
+}
+
+size_t RecordingHidPointerOutputAdapter::writeCount() const
+{
+  return writeCount_;
+}
+
+void RecordingHidPointerOutputAdapter::clear()
+{
+  report_.clear();
+  writeCount_ = 0;
+}
+
 bool TransformConfig::remap(Key from, Key to)
 {
   return remap(keyboardCode(from), keyboardCode(to));
