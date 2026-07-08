@@ -372,6 +372,66 @@ def test_core_cpp_behaviors(tmp_path):
               assert(report.empty());
             }
 
+            static void test_hid_pointer_report_builder()
+            {
+              esp32keybridge::HidPointerReport emptyReport;
+              assert(emptyReport.empty());
+
+              esp32keybridge::InputState state;
+              assert(state.press(esp32keybridge::Key::A));
+              assert(state.press(esp32keybridge::pointerButtonCode(1)));
+              assert(state.press(esp32keybridge::pointerButtonCode(3)));
+
+              esp32keybridge::HidPointerReport report = esp32keybridge::buildHidPointerReport(state);
+              assert(report.buttons == 0x05);
+              assert(report.x == 0);
+              assert(report.y == 0);
+              assert(!report.overflow);
+              assert(!report.empty());
+
+              assert(report.apply(esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::X, 12)));
+              assert(report.apply(esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::Y, -7)));
+              assert(report.apply(esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::Wheel, 1)));
+              assert(report.apply(esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::Pan, -2)));
+              assert(!report.apply(esp32keybridge::inputValueEvent(esp32keybridge::consumerCode(0x00e9), 1)));
+              assert(report.x == 12);
+              assert(report.y == -7);
+              assert(report.wheel == 1);
+              assert(report.pan == -2);
+
+              uint8_t bytes[esp32keybridge::HidPointerReport::ReportSize] = {};
+              assert(report.writeReport(bytes, sizeof(bytes)));
+              assert(bytes[0] == 0x05);
+              assert(bytes[1] == 12);
+              assert(bytes[2] == static_cast<uint8_t>(-7));
+              assert(bytes[3] == 1);
+              assert(bytes[4] == static_cast<uint8_t>(-2));
+              assert(!report.writeReport(bytes, esp32keybridge::HidPointerReport::ReportSize - 1));
+              assert(!report.writeReport(nullptr, esp32keybridge::HidPointerReport::ReportSize));
+            }
+
+            static void test_hid_pointer_report_reports_overflow()
+            {
+              esp32keybridge::InputState state;
+              assert(state.press(esp32keybridge::pointerButtonCode(1)));
+              assert(state.press(esp32keybridge::pointerButtonCode(9)));
+
+              esp32keybridge::HidPointerReport report = esp32keybridge::buildHidPointerReport(state);
+              assert(report.buttons == 0x01);
+              assert(report.overflow);
+
+              assert(report.apply(esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::X, 120)));
+              assert(report.apply(esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::X, 20)));
+              assert(report.x == 127);
+              assert(report.overflow);
+
+              report.clear();
+              assert(report.buttons == 0);
+              assert(report.x == 0);
+              assert(!report.overflow);
+              assert(report.empty());
+            }
+
             static void test_recording_hid_keyboard_output_adapter()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -861,6 +921,8 @@ def test_core_cpp_behaviors(tmp_path):
               run("hid_keyboard_report_can_clear", test_hid_keyboard_report_can_clear);
               run("hid_consumer_report_builder", test_hid_consumer_report_builder);
               run("hid_consumer_report_builder_reports_overflow", test_hid_consumer_report_builder_reports_overflow);
+              run("hid_pointer_report_builder", test_hid_pointer_report_builder);
+              run("hid_pointer_report_reports_overflow", test_hid_pointer_report_reports_overflow);
               run("recording_hid_keyboard_output_adapter", test_recording_hid_keyboard_output_adapter);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);
               run("bridge_can_clear_inputs_and_outputs", test_bridge_can_clear_inputs_and_outputs);

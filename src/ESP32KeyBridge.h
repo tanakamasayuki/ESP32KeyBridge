@@ -237,6 +237,24 @@ struct HidConsumerReport
   bool writeReport(uint8_t *buffer, size_t size) const;
 };
 
+struct HidPointerReport
+{
+  static constexpr size_t MaxButtons = 8;
+  static constexpr size_t ReportSize = 5;
+
+  uint8_t buttons = 0;
+  int8_t x = 0;
+  int8_t y = 0;
+  int8_t wheel = 0;
+  int8_t pan = 0;
+  bool overflow = false;
+
+  void clear();
+  bool empty() const;
+  bool apply(InputValueEvent event);
+  bool writeReport(uint8_t *buffer, size_t size) const;
+};
+
 class InputState
 {
 public:
@@ -264,6 +282,7 @@ private:
 
 HidKeyboardReport buildHidKeyboardReport(const InputState &state);
 HidConsumerReport buildHidConsumerReport(const InputState &state);
+HidPointerReport buildHidPointerReport(const InputState &state);
 
 class InputAdapter
 {

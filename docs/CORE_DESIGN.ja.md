@@ -148,6 +148,8 @@ USB boot keyboard 形式の 6KRO report に詰める純粋処理として、core
 
 Consumer Control の最小 report として、core は `esp32keybridge::buildHidConsumerReport()` も提供します。これは最初の Consumer usage を 16-bit report として扱い、複数の Consumer usage が同時にある場合は `overflow` を立てます。`esp32keybridge::ConsumerUsage` には volume、media transport、browser navigation など代表的な usage を置き、未登録の usage は `esp32keybridge::consumerCode(uint16_t)` で直接表現します。複数 Consumer usage を同時送信する descriptor や report 形式は output adapter 側で拡張します。
 
+Pointer の最小 report として、core は `esp32keybridge::HidPointerReport` と `esp32keybridge::buildHidPointerReport()` を提供します。`esp32keybridge::InputState` から最大 8 個の pointer button を button bit に変換し、`esp32keybridge::InputValueEvent` で `X`、`Y`、`Wheel`、`Pan` の delta を加算します。axis は 8-bit report 範囲に saturate し、範囲外の button や delta overflow では `overflow` を立てます。descriptor、absolute pointer、multi-touch、より大きい axis report は output adapter 側で拡張します。
+
 `ESP32KeyBridge` は最後の `update()` で作られた merged state と output state を参照できる API を持ちます。これは debug、single-board smoke test、reference example の状態表示に使います。実際の出力は引き続き output adapter の責務です。
 
 ## Configuration Boundary

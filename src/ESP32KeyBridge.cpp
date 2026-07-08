@@ -3,6 +3,29 @@
 namespace esp32keybridge
 {
 
+namespace
+{
+int8_t clampReportDelta(int16_t value, bool &overflow)
+{
+  if (value > 127)
+  {
+    overflow = true;
+    return 127;
+  }
+  if (value < -127)
+  {
+    overflow = true;
+    return -127;
+  }
+  return static_cast<int8_t>(value);
+}
+
+int8_t addReportDelta(int8_t current, int16_t value, bool &overflow)
+{
+  return clampReportDelta(static_cast<int16_t>(current) + value, overflow);
+}
+} // namespace
+
 bool InputCode::operator==(const InputCode &other) const
 {
   return domain == other.domain && code == other.code;
@@ -582,6 +605,63 @@ bool HidConsumerReport::writeReport(uint8_t *buffer, size_t size) const
   return true;
 }
 
+void HidPointerReport::clear()
+{
+  buttons = 0;
+  x = 0;
+  y = 0;
+  wheel = 0;
+  pan = 0;
+  overflow = false;
+}
+
+bool HidPointerReport::empty() const
+{
+  return buttons == 0 && x == 0 && y == 0 && wheel == 0 && pan == 0 && !overflow;
+}
+
+bool HidPointerReport::apply(InputValueEvent event)
+{
+  if (event.code.domain != InputDomain::PointerAxis || !isValid(event.code))
+  {
+    return false;
+  }
+
+  switch (static_cast<PointerAxis>(event.code.code))
+  {
+  case PointerAxis::X:
+    x = addReportDelta(x, event.value, overflow);
+    return true;
+  case PointerAxis::Y:
+    y = addReportDelta(y, event.value, overflow);
+    return true;
+  case PointerAxis::Wheel:
+    wheel = addReportDelta(wheel, event.value, overflow);
+    return true;
+  case PointerAxis::Pan:
+    pan = addReportDelta(pan, event.value, overflow);
+    return true;
+  case PointerAxis::None:
+    break;
+  }
+  return false;
+}
+
+bool HidPointerReport::writeReport(uint8_t *buffer, size_t size) const
+{
+  if (buffer == nullptr || size < ReportSize)
+  {
+    return false;
+  }
+
+  buffer[0] = buttons;
+  buffer[1] = static_cast<uint8_t>(x);
+  buffer[2] = static_cast<uint8_t>(y);
+  buffer[3] = static_cast<uint8_t>(wheel);
+  buffer[4] = static_cast<uint8_t>(pan);
+  return true;
+}
+
 HidKeyboardReport buildHidKeyboardReport(const InputState &state)
 {
   HidKeyboardReport report;
@@ -635,6 +715,28 @@ HidConsumerReport buildHidConsumerReport(const InputState &state)
     }
 
     report.usage = code.code;
+  }
+  return report;
+}
+
+HidPointerReport buildHidPointerReport(const InputState &state)
+{
+  HidPointerReport report;
+  for (size_t i = 0; i < state.codeCount(); ++i)
+  {
+    const InputCode code = state.codeAt(i);
+    if (code.domain != InputDomain::PointerButton || !isValid(code))
+    {
+      continue;
+    }
+
+    if (code.code > HidPointerReport::MaxButtons)
+    {
+      report.overflow = true;
+      continue;
+    }
+
+    report.buttons |= static_cast<uint8_t>(1u << (code.code - 1));
   }
   return report;
 }
