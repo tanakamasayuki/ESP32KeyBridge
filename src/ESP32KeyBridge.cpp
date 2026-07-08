@@ -184,6 +184,8 @@ const char *keyName(Key key)
     return "RightBracket";
   case Key::Backslash:
     return "Backslash";
+  case Key::NonUsHash:
+    return "NonUsHash";
   case Key::Semicolon:
     return "Semicolon";
   case Key::Quote:
@@ -248,6 +250,44 @@ const char *keyName(Key key)
     return "Down";
   case Key::Up:
     return "Up";
+  case Key::NonUsBackslash:
+    return "NonUsBackslash";
+  case Key::International1:
+    return "International1";
+  case Key::International2:
+    return "International2";
+  case Key::International3:
+    return "International3";
+  case Key::International4:
+    return "International4";
+  case Key::International5:
+    return "International5";
+  case Key::International6:
+    return "International6";
+  case Key::International7:
+    return "International7";
+  case Key::International8:
+    return "International8";
+  case Key::International9:
+    return "International9";
+  case Key::Lang1:
+    return "Lang1";
+  case Key::Lang2:
+    return "Lang2";
+  case Key::Lang3:
+    return "Lang3";
+  case Key::Lang4:
+    return "Lang4";
+  case Key::Lang5:
+    return "Lang5";
+  case Key::Lang6:
+    return "Lang6";
+  case Key::Lang7:
+    return "Lang7";
+  case Key::Lang8:
+    return "Lang8";
+  case Key::Lang9:
+    return "Lang9";
   case Key::LeftCtrl:
     return "LeftCtrl";
   case Key::LeftShift:

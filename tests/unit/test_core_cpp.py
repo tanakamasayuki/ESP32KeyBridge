@@ -73,6 +73,10 @@ def test_core_cpp_behaviors(tmp_path):
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Num1), "Num1") == 0);
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Space), "Space") == 0);
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Slash), "Slash") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::NonUsHash), "NonUsHash") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::NonUsBackslash), "NonUsBackslash") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::International1), "International1") == 0);
+              assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Lang1), "Lang1") == 0);
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::CapsLock), "CapsLock") == 0);
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::RightAlt), "RightAlt") == 0);
               assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Fn1), "Fn1") == 0);
@@ -97,6 +101,9 @@ def test_core_cpp_behaviors(tmp_path):
               assert(a.domain == esp32keybridge::InputDomain::Keyboard);
               assert(a.code == 0x04);
               assert(esp32keybridge::keyboardCode(esp32keybridge::Key::Enter).code == 0x28);
+              assert(esp32keybridge::keyboardCode(esp32keybridge::Key::NonUsBackslash).code == 0x64);
+              assert(esp32keybridge::keyboardCode(esp32keybridge::Key::International1).code == 0x87);
+              assert(esp32keybridge::keyboardCode(esp32keybridge::Key::Lang1).code == 0x90);
               assert(esp32keybridge::keyboardCode(esp32keybridge::Key::RightGui).code == 0xe7);
               assert(consumer.domain == esp32keybridge::InputDomain::Consumer);
               assert(pointerButton.domain == esp32keybridge::InputDomain::PointerButton);
