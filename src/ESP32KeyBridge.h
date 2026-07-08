@@ -54,10 +54,10 @@ InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs = 0);
 bool isModifierKey(Key key);
 const char *keyName(Key key);
 
-class KeyboardState
+class InputState
 {
 public:
-  static constexpr size_t MaxKeys = 32;
+  static constexpr size_t MaxCodes = 32;
 
   void clear();
   bool press(Key key);
@@ -67,13 +67,13 @@ public:
   bool isPressed(Key key) const;
   bool isPressed(InputCode code) const;
   bool apply(InputEvent event);
-  size_t keyCount() const;
+  size_t codeCount() const;
   Key keyAt(size_t index) const;
   InputCode codeAt(size_t index) const;
 
 private:
-  InputCode codes_[MaxKeys] = {};
-  size_t keyCount_ = 0;
+  InputCode codes_[MaxCodes] = {};
+  size_t codeCount_ = 0;
 };
 
 class InputAdapter
@@ -81,38 +81,38 @@ class InputAdapter
 public:
   virtual ~InputAdapter() = default;
   virtual void update() = 0;
-  virtual const KeyboardState &state() const = 0;
+  virtual const InputState &state() const = 0;
 };
 
 class EventInputAdapter : public InputAdapter
 {
 public:
   void update() override;
-  const KeyboardState &state() const override;
+  const InputState &state() const override;
   bool apply(InputEvent event);
   void clear();
 
 private:
-  KeyboardState state_;
+  InputState state_;
 };
 
 class OutputAdapter
 {
 public:
   virtual ~OutputAdapter() = default;
-  virtual void write(const KeyboardState &state) = 0;
+  virtual void write(const InputState &state) = 0;
 };
 
 class RecordingOutputAdapter : public OutputAdapter
 {
 public:
-  void write(const KeyboardState &state) override;
-  const KeyboardState &state() const;
+  void write(const InputState &state) override;
+  const InputState &state() const;
   size_t writeCount() const;
   void clear();
 
 private:
-  KeyboardState state_;
+  InputState state_;
   size_t writeCount_ = 0;
 };
 
@@ -234,14 +234,14 @@ public:
   void applyConfig(const ESP32KeyBridgeConfig &config);
   void begin();
   void update();
-  const KeyboardState &mergedState() const;
-  const KeyboardState &outputState() const;
+  const InputState &mergedState() const;
+  const InputState &outputState() const;
 
 private:
-  void mergeInput(const KeyboardState &input, KeyboardState &merged) const;
-  void applyTransform(const KeyboardState &input, const TransformConfig &transform, KeyboardState &output) const;
-  void applyLayer(const KeyboardState &input, KeyboardState &output) const;
-  void applyLayout(const KeyboardState &input, KeyboardState &output) const;
+  void mergeInput(const InputState &input, InputState &merged) const;
+  void applyTransform(const InputState &input, const TransformConfig &transform, InputState &output) const;
+  void applyLayer(const InputState &input, InputState &output) const;
+  void applyLayout(const InputState &input, InputState &output) const;
 
   InputAdapter *inputs_[MaxInputs] = {};
   size_t inputConfigIndexes_[MaxInputs] = {};
@@ -249,8 +249,8 @@ private:
   OutputAdapter *outputs_[MaxOutputs] = {};
   size_t outputCount_ = 0;
   ESP32KeyBridgeConfig config_;
-  KeyboardState mergedState_;
-  KeyboardState outputState_;
+  InputState mergedState_;
+  InputState outputState_;
 };
 
 } // namespace esp32keybridge

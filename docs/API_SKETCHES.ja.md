@@ -21,8 +21,7 @@ keyboard 以外の HID 系入力へ拡張できるように、core には `esp32
 esp32keybridge::InputCode code = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
 ```
 
-現時点の `esp32keybridge::KeyboardState` は keyboard domain 専用です。consumer control、pointer、vendor などは将来の state / adapter 拡張で同じ domain/code の考え方に乗せます。
-`esp32keybridge::KeyboardState` は `esp32keybridge::InputCode` を保持できますが、現時点では keyboard domain の code だけを受け付けます。
+`esp32keybridge::InputState` は `esp32keybridge::InputCode` の集合を保持します。keyboard、consumer control、pointer、vendor などを同じ state として扱い、keyboard 専用の変換は keyboard domain の code にだけ適用します。
 
 press / release の差分は `esp32keybridge::InputEvent` として表せます。
 

@@ -4,6 +4,8 @@
 
 この example は実 USB adapter を使いません。左側の virtual keyboard が `LeftShift`、右側の virtual keyboard が `A` を押した状態を作り、`esp32keybridge::ESP32KeyBridge` が統合した state を serial に名前で表示します。
 
+`bridge.addInput(leftKeyboard, 0)` と `bridge.addInput(rightKeyboard, 1)` で、各 input adapter と config slot を明示的に紐付けます。
+
 期待する考え方:
 
 ```text

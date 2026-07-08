@@ -16,7 +16,7 @@ public:
     state_.press(second_);
   }
 
-  const esp32keybridge::KeyboardState &state() const override
+  const esp32keybridge::InputState &state() const override
   {
     return state_;
   }
@@ -24,16 +24,16 @@ public:
 private:
   esp32keybridge::Key first_;
   esp32keybridge::Key second_;
-  esp32keybridge::KeyboardState state_;
+  esp32keybridge::InputState state_;
 };
 
 class SerialKeyboardOutput : public esp32keybridge::OutputAdapter
 {
 public:
-  void write(const esp32keybridge::KeyboardState &state) override
+  void write(const esp32keybridge::InputState &state) override
   {
     Serial.print("merged:");
-    for (size_t i = 0; i < state.keyCount(); ++i)
+    for (size_t i = 0; i < state.codeCount(); ++i)
     {
       Serial.print(' ');
       Serial.print(esp32keybridge::keyName(state.keyAt(i)));
@@ -51,8 +51,8 @@ void setup()
 {
   Serial.begin(115200);
 
-  bridge.addInput(leftKeyboard);
-  bridge.addInput(rightKeyboard);
+  bridge.addInput(leftKeyboard, 0);
+  bridge.addInput(rightKeyboard, 1);
   bridge.addOutput(output);
 
   esp32keybridge::ESP32KeyBridgeConfig config;
@@ -68,4 +68,3 @@ void loop()
   bridge.update();
   delay(1000);
 }
-

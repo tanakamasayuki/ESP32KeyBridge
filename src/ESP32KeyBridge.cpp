@@ -85,19 +85,19 @@ const char *keyName(Key key)
   return "Unknown";
 }
 
-void KeyboardState::clear()
+void InputState::clear()
 {
-  keyCount_ = 0;
+  codeCount_ = 0;
 }
 
-bool KeyboardState::press(Key key)
+bool InputState::press(Key key)
 {
   return press(keyboardCode(key));
 }
 
-bool KeyboardState::press(InputCode code)
+bool InputState::press(InputCode code)
 {
-  if (code.domain != InputDomain::Keyboard || code.code == static_cast<uint16_t>(Key::None))
+  if (code.code == 0)
   {
     return false;
   }
@@ -105,41 +105,41 @@ bool KeyboardState::press(InputCode code)
   {
     return true;
   }
-  if (keyCount_ >= MaxKeys)
+  if (codeCount_ >= MaxCodes)
   {
     return false;
   }
-  codes_[keyCount_++] = code;
+  codes_[codeCount_++] = code;
   return true;
 }
 
-bool KeyboardState::release(Key key)
+bool InputState::release(Key key)
 {
   return release(keyboardCode(key));
 }
 
-bool KeyboardState::release(InputCode code)
+bool InputState::release(InputCode code)
 {
-  for (size_t i = 0; i < keyCount_; ++i)
+  for (size_t i = 0; i < codeCount_; ++i)
   {
     if (codes_[i] == code)
     {
-      codes_[i] = codes_[keyCount_ - 1];
-      --keyCount_;
+      codes_[i] = codes_[codeCount_ - 1];
+      --codeCount_;
       return true;
     }
   }
   return false;
 }
 
-bool KeyboardState::isPressed(Key key) const
+bool InputState::isPressed(Key key) const
 {
   return isPressed(keyboardCode(key));
 }
 
-bool KeyboardState::isPressed(InputCode code) const
+bool InputState::isPressed(InputCode code) const
 {
-  for (size_t i = 0; i < keyCount_; ++i)
+  for (size_t i = 0; i < codeCount_; ++i)
   {
     if (codes_[i] == code)
     {
@@ -149,29 +149,29 @@ bool KeyboardState::isPressed(InputCode code) const
   return false;
 }
 
-bool KeyboardState::apply(InputEvent event)
+bool InputState::apply(InputEvent event)
 {
   return event.pressed ? press(event.code) : release(event.code);
 }
 
-size_t KeyboardState::keyCount() const
+size_t InputState::codeCount() const
 {
-  return keyCount_;
+  return codeCount_;
 }
 
-Key KeyboardState::keyAt(size_t index) const
+Key InputState::keyAt(size_t index) const
 {
-  return index < keyCount_ ? keyFromCode(codes_[index]) : Key::None;
+  return index < codeCount_ ? keyFromCode(codes_[index]) : Key::None;
 }
 
-InputCode KeyboardState::codeAt(size_t index) const
+InputCode InputState::codeAt(size_t index) const
 {
-  return index < keyCount_ ? codes_[index] : keyboardCode(Key::None);
+  return index < codeCount_ ? codes_[index] : keyboardCode(Key::None);
 }
 
 void EventInputAdapter::update() {}
 
-const KeyboardState &EventInputAdapter::state() const
+const InputState &EventInputAdapter::state() const
 {
   return state_;
 }
@@ -186,13 +186,13 @@ void EventInputAdapter::clear()
   state_.clear();
 }
 
-void RecordingOutputAdapter::write(const KeyboardState &state)
+void RecordingOutputAdapter::write(const InputState &state)
 {
   state_ = state;
   ++writeCount_;
 }
 
-const KeyboardState &RecordingOutputAdapter::state() const
+const InputState &RecordingOutputAdapter::state() const
 {
   return state_;
 }
@@ -519,15 +519,15 @@ void ESP32KeyBridge::update()
   for (size_t i = 0; i < inputCount_; ++i)
   {
     inputs_[i]->update();
-    KeyboardState deviceState;
+    InputState deviceState;
     applyTransform(inputs_[i]->state(), config_.input(inputConfigIndexes_[i]), deviceState);
     mergeInput(deviceState, mergedState_);
   }
 
   outputState_.clear();
-  KeyboardState layered;
+  InputState layered;
   applyLayer(mergedState_, layered);
-  KeyboardState layoutConverted;
+  InputState layoutConverted;
   applyLayout(layered, layoutConverted);
   applyTransform(layoutConverted, config_.global, outputState_);
 
@@ -537,20 +537,29 @@ void ESP32KeyBridge::update()
   }
 }
 
-const KeyboardState &ESP32KeyBridge::mergedState() const
+const InputState &ESP32KeyBridge::mergedState() const
 {
   return mergedState_;
 }
 
-const KeyboardState &ESP32KeyBridge::outputState() const
+const InputState &ESP32KeyBridge::outputState() const
 {
   return outputState_;
 }
 
-void ESP32KeyBridge::mergeInput(const KeyboardState &input, KeyboardState &merged) const
+void ESP32KeyBridge::mergeInput(const InputState &input, InputState &merged) const
 {
-  for (size_t i = 0; i < input.keyCount(); ++i)
+  for (size_t i = 0; i < input.codeCount(); ++i)
   {
+    const InputCode code = input.codeAt(i);
+    if (code.domain != InputDomain::Keyboard)
+    {
+      if (config_.merge.shareKeys)
+      {
+        merged.press(code);
+      }
+      continue;
+    }
     const Key key = input.keyAt(i);
     if (isModifierKey(key))
     {
@@ -566,10 +575,16 @@ void ESP32KeyBridge::mergeInput(const KeyboardState &input, KeyboardState &merge
   }
 }
 
-void ESP32KeyBridge::applyTransform(const KeyboardState &input, const TransformConfig &transform, KeyboardState &output) const
+void ESP32KeyBridge::applyTransform(const InputState &input, const TransformConfig &transform, InputState &output) const
 {
-  for (size_t i = 0; i < input.keyCount(); ++i)
+  for (size_t i = 0; i < input.codeCount(); ++i)
   {
+    const InputCode code = input.codeAt(i);
+    if (code.domain != InputDomain::Keyboard)
+    {
+      output.press(code);
+      continue;
+    }
     const Key key = input.keyAt(i);
     if (transform.isDisabled(key))
     {
@@ -588,11 +603,17 @@ void ESP32KeyBridge::applyTransform(const KeyboardState &input, const TransformC
   }
 }
 
-void ESP32KeyBridge::applyLayer(const KeyboardState &input, KeyboardState &output) const
+void ESP32KeyBridge::applyLayer(const InputState &input, InputState &output) const
 {
   const bool layerActive = config_.layer.enabled() && input.isPressed(config_.layer.trigger());
-  for (size_t i = 0; i < input.keyCount(); ++i)
+  for (size_t i = 0; i < input.codeCount(); ++i)
   {
+    const InputCode code = input.codeAt(i);
+    if (code.domain != InputDomain::Keyboard)
+    {
+      output.press(code);
+      continue;
+    }
     const Key key = input.keyAt(i);
     if (layerActive && key == config_.layer.trigger())
     {
@@ -602,11 +623,19 @@ void ESP32KeyBridge::applyLayer(const KeyboardState &input, KeyboardState &outpu
   }
 }
 
-void ESP32KeyBridge::applyLayout(const KeyboardState &input, KeyboardState &output) const
+void ESP32KeyBridge::applyLayout(const InputState &input, InputState &output) const
 {
-  for (size_t i = 0; i < input.keyCount(); ++i)
+  for (size_t i = 0; i < input.codeCount(); ++i)
   {
-    output.press(config_.layout.convert(input.keyAt(i)));
+    const InputCode code = input.codeAt(i);
+    if (code.domain == InputDomain::Keyboard)
+    {
+      output.press(config_.layout.convert(input.keyAt(i)));
+    }
+    else
+    {
+      output.press(code);
+    }
   }
 }
 

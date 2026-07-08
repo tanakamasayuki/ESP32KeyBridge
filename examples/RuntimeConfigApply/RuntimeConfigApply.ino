@@ -10,22 +10,22 @@ public:
     state_.press(esp32keybridge::Key::A);
   }
 
-  const esp32keybridge::KeyboardState &state() const override
+  const esp32keybridge::InputState &state() const override
   {
     return state_;
   }
 
 private:
-  esp32keybridge::KeyboardState state_;
+  esp32keybridge::InputState state_;
 };
 
 class SerialKeyboardOutput : public esp32keybridge::OutputAdapter
 {
 public:
-  void write(const esp32keybridge::KeyboardState &state) override
+  void write(const esp32keybridge::InputState &state) override
   {
     Serial.print("runtime:");
-    for (size_t i = 0; i < state.keyCount(); ++i)
+    for (size_t i = 0; i < state.codeCount(); ++i)
     {
       Serial.print(' ');
       Serial.print(esp32keybridge::keyName(state.keyAt(i)));

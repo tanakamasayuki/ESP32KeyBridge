@@ -9,6 +9,8 @@
 - per-input 設定: input 1 だけ `Enter -> Tab`。
 - global 設定: 統合後に `A -> B`。
 
+`bridge.addInput(keyboard, 0)` と `bridge.addInput(scanner, 1)` で、input adapter と config slot を明示的に紐付けます。
+
 期待する考え方:
 
 ```text

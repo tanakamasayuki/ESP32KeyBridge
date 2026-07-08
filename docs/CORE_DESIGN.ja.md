@@ -79,9 +79,9 @@ DeviceState
 
 将来、mouse、trackpad、wheel などを扱えるように event domain を拡張できる余地を残します。ただし MVP は keyboard / consumer control を優先します。
 
-core には `esp32keybridge::InputCode` を置き、keyboard、consumer control、pointer button、pointer axis、vendor などの domain を表せるようにします。現時点の `esp32keybridge::KeyboardState` は内部的に `InputCode` を保持しますが、受け付ける domain は keyboard のみに制限します。adapter や将来の state 型が同じ domain/code の考え方を使えるようにするための土台です。
+core には `esp32keybridge::InputCode` を置き、keyboard、consumer control、pointer button、pointer axis、vendor などの domain を表せるようにします。`esp32keybridge::InputState` は `InputCode` の集合を保持し、keyboard 以外の code も同じ state として扱います。
 
-press / release の差分には `esp32keybridge::InputEvent` を使います。現時点では `KeyboardState::apply(event)` で keyboard domain の event を state に反映できます。debounce、hold/tap、event macro sequence などはこの event 表現を使って後から追加する想定です。
+press / release の差分には `esp32keybridge::InputEvent` を使います。`esp32keybridge::InputState::apply(event)` で event を state に反映できます。debounce、hold/tap、event macro sequence などはこの event 表現を使って後から追加する想定です。
 `esp32keybridge::EventInputAdapter` は、この event 表現を使って state を作る最小 input adapter です。実 adapter は raw input を `InputEvent` に変換し、同じ state 更新の考え方を使えます。
 `esp32keybridge::RecordingOutputAdapter` は最後に出力された state と write count を保持する最小 output adapter です。実出力を持たない test / smoke / debug で使います。
 
