@@ -47,8 +47,13 @@ struct InputEvent
 };
 
 InputCode keyboardCode(Key key);
+InputCode consumerCode(uint16_t code);
+InputCode pointerButtonCode(uint16_t code);
+InputCode pointerAxisCode(uint16_t code);
+InputCode vendorCode(uint16_t code);
 Key keyFromCode(InputCode code);
 const char *inputDomainName(InputDomain domain);
+InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs = 0);
 InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs = 0);
 
 bool isModifierKey(Key key);

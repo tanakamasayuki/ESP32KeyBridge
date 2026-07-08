@@ -18,6 +18,26 @@ InputCode keyboardCode(Key key)
   return {InputDomain::Keyboard, static_cast<uint16_t>(key)};
 }
 
+InputCode consumerCode(uint16_t code)
+{
+  return {InputDomain::Consumer, code};
+}
+
+InputCode pointerButtonCode(uint16_t code)
+{
+  return {InputDomain::PointerButton, code};
+}
+
+InputCode pointerAxisCode(uint16_t code)
+{
+  return {InputDomain::PointerAxis, code};
+}
+
+InputCode vendorCode(uint16_t code)
+{
+  return {InputDomain::Vendor, code};
+}
+
 Key keyFromCode(InputCode code)
 {
   if (code.domain != InputDomain::Keyboard)
@@ -27,9 +47,14 @@ Key keyFromCode(InputCode code)
   return static_cast<Key>(code.code);
 }
 
+InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs)
+{
+  return {code, pressed, timestampMs};
+}
+
 InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs)
 {
-  return {keyboardCode(key), pressed, timestampMs};
+  return inputEvent(keyboardCode(key), pressed, timestampMs);
 }
 
 const char *inputDomainName(InputDomain domain)

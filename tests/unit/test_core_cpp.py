@@ -78,12 +78,19 @@ def test_core_cpp_behaviors(tmp_path):
             {
               const esp32keybridge::InputCode a = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
               const esp32keybridge::InputCode anotherA = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
-              const esp32keybridge::InputCode consumer{esp32keybridge::InputDomain::Consumer, 0x00e9};
+              const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
+              const esp32keybridge::InputCode pointerButton = esp32keybridge::pointerButtonCode(1);
+              const esp32keybridge::InputCode pointerAxis = esp32keybridge::pointerAxisCode(2);
+              const esp32keybridge::InputCode vendor = esp32keybridge::vendorCode(0x1001);
 
               assert(a == anotherA);
               assert(a != consumer);
               assert(a.domain == esp32keybridge::InputDomain::Keyboard);
               assert(a.code == static_cast<uint16_t>(esp32keybridge::Key::A));
+              assert(consumer.domain == esp32keybridge::InputDomain::Consumer);
+              assert(pointerButton.domain == esp32keybridge::InputDomain::PointerButton);
+              assert(pointerAxis.domain == esp32keybridge::InputDomain::PointerAxis);
+              assert(vendor.domain == esp32keybridge::InputDomain::Vendor);
               assert(esp32keybridge::keyFromCode(a) == esp32keybridge::Key::A);
               assert(esp32keybridge::keyFromCode(consumer) == esp32keybridge::Key::None);
               assert(std::strcmp(esp32keybridge::inputDomainName(esp32keybridge::InputDomain::Keyboard), "Keyboard") == 0);
@@ -95,7 +102,7 @@ def test_core_cpp_behaviors(tmp_path):
             {
               esp32keybridge::InputState state;
               const esp32keybridge::InputCode a = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
-              const esp32keybridge::InputCode consumer{esp32keybridge::InputDomain::Consumer, 0x00e9};
+              const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
 
               assert(state.press(a));
               assert(state.isPressed(a));
@@ -115,8 +122,8 @@ def test_core_cpp_behaviors(tmp_path):
             static void test_input_state_accepts_non_keyboard_input_code()
             {
               esp32keybridge::InputState state;
-              const esp32keybridge::InputCode consumer{esp32keybridge::InputDomain::Consumer, 0x00e9};
-              const esp32keybridge::InputCode pointerButton{esp32keybridge::InputDomain::PointerButton, 1};
+              const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
+              const esp32keybridge::InputCode pointerButton = esp32keybridge::pointerButtonCode(1);
 
               assert(state.press(consumer));
               assert(state.press(pointerButton));
@@ -136,7 +143,7 @@ def test_core_cpp_behaviors(tmp_path):
               esp32keybridge::InputState state;
               const esp32keybridge::InputEvent press = esp32keybridge::keyEvent(esp32keybridge::Key::A, true, 123);
               const esp32keybridge::InputEvent release = esp32keybridge::keyEvent(esp32keybridge::Key::A, false, 456);
-              const esp32keybridge::InputEvent consumer{{esp32keybridge::InputDomain::Consumer, 0x00e9}, true, 789};
+              const esp32keybridge::InputEvent consumer = esp32keybridge::inputEvent(esp32keybridge::consumerCode(0x00e9), true, 789);
 
               assert(press.pressed);
               assert(press.timestampMs == 123);
@@ -230,9 +237,9 @@ def test_core_cpp_behaviors(tmp_path):
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput input;
               esp32keybridge::RecordingOutputAdapter output;
-              const esp32keybridge::InputCode consumer{esp32keybridge::InputDomain::Consumer, 0x00e9};
-              const esp32keybridge::InputCode pointerButton{esp32keybridge::InputDomain::PointerButton, 1};
-              const esp32keybridge::InputCode vendor{esp32keybridge::InputDomain::Vendor, 0x1001};
+              const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
+              const esp32keybridge::InputCode pointerButton = esp32keybridge::pointerButtonCode(1);
+              const esp32keybridge::InputCode vendor = esp32keybridge::vendorCode(0x1001);
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));
@@ -479,8 +486,8 @@ def test_core_cpp_behaviors(tmp_path):
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput input;
               esp32keybridge::RecordingOutputAdapter output;
-              const esp32keybridge::InputCode consumer{esp32keybridge::InputDomain::Consumer, 0x00e9};
-              const esp32keybridge::InputCode pointerButton{esp32keybridge::InputDomain::PointerButton, 1};
+              const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
+              const esp32keybridge::InputCode pointerButton = esp32keybridge::pointerButtonCode(1);
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));
@@ -510,9 +517,9 @@ def test_core_cpp_behaviors(tmp_path):
               esp32keybridge::ESP32KeyBridge bridge;
               VirtualInput input;
               esp32keybridge::RecordingOutputAdapter output;
-              const esp32keybridge::InputCode volumeUp{esp32keybridge::InputDomain::Consumer, 0x00e9};
-              const esp32keybridge::InputCode volumeDown{esp32keybridge::InputDomain::Consumer, 0x00ea};
-              const esp32keybridge::InputCode pointerButton{esp32keybridge::InputDomain::PointerButton, 1};
+              const esp32keybridge::InputCode volumeUp = esp32keybridge::consumerCode(0x00e9);
+              const esp32keybridge::InputCode volumeDown = esp32keybridge::consumerCode(0x00ea);
+              const esp32keybridge::InputCode pointerButton = esp32keybridge::pointerButtonCode(1);
 
               assert(bridge.addInput(input));
               assert(bridge.addOutput(output));

@@ -26,8 +26,8 @@ esp32keybridge::InputCode code = esp32keybridge::keyboardCode(esp32keybridge::Ke
 `esp32keybridge::TransformConfig` の remap / disable は `esp32keybridge::InputCode` ベースです。`esp32keybridge::Key` を受け取る API は keyboard domain 用の convenience として扱います。
 
 ```cpp
-esp32keybridge::InputCode volumeUp{esp32keybridge::InputDomain::Consumer, 0x00e9};
-esp32keybridge::InputCode volumeDown{esp32keybridge::InputDomain::Consumer, 0x00ea};
+esp32keybridge::InputCode volumeUp = esp32keybridge::consumerCode(0x00e9);
+esp32keybridge::InputCode volumeDown = esp32keybridge::consumerCode(0x00ea);
 
 esp32keybridge::ESP32KeyBridgeConfig config;
 config.global.remap(volumeUp, volumeDown);
