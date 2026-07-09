@@ -45,8 +45,25 @@ void setup()
       bridge.outputState().isPressed(esp32keybridge::Key::LeftCtrl) &&
       !bridge.outputState().isPressed(esp32keybridge::Key::A);
 
+  esp32keybridge::InputState rolloverState;
+  for (uint16_t usage = 4; usage < 4 + 8; ++usage)
+  {
+    rolloverState.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::Key>(usage)));
+  }
+  const esp32keybridge::HidKeyboardReport bootReport = esp32keybridge::buildHidKeyboardReport(rolloverState);
+  const esp32keybridge::HidKeyboardRolloverReport rolloverReport =
+      esp32keybridge::buildHidKeyboardRolloverReport(rolloverState);
+  const bool rolloverOk =
+      rolloverState.codeCount() == 8 &&
+      bootReport.keyCount == esp32keybridge::HidKeyboardReport::MaxKeys &&
+      bootReport.overflow &&
+      rolloverReport.keyCount == 8 &&
+      rolloverReport.keys[0] == 0x04 &&
+      rolloverReport.keys[7] == 0x0b &&
+      !rolloverReport.overflow;
+
   Serial.println("TEST_END");
-  Serial.println(firstOk && secondOk ? "OK" : "NG");
+  Serial.println(firstOk && secondOk && rolloverOk ? "OK" : "NG");
 }
 
 void loop()
