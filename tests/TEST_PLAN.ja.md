@@ -38,17 +38,22 @@ ESP32-P4 は常時接続の自動テスト環境には含めません。P4 は U
 
 | 機能 | unit | examples_compile | single | peer | manual |
 |------|------|------------------|--------|------|--------|
-| 共通キーイベント | 予定 | | | | |
-| 入力ごとの state | 予定 | | | | |
-| 複数入力 merge | 予定 | | | | |
-| input / processor / output interface | 予定 | | | | |
-| キーコード変換 | 予定 | | | | |
-| キー無効化 / 入れ替え | 予定 | | | | |
-| layer 基本動作 | 予定 | | | | |
-| macro 基本動作 | 予定 | | | | |
-| 設定 object の適用 | 予定 | | 予定 | | |
-| Arduino runtime core smoke | | | 予定 | | |
-| hardcoded config example | | 予定 | 予定 | | |
+| 共通キーイベント | 実装済み | | | | |
+| 入力ごとの state | 実装済み | | | | |
+| 6KRO を超える 32 code までの state | 実装済み | | 実装済み | | |
+| 複数入力 merge | 実装済み | | | | |
+| input / processor / output interface | 実装済み | | | | |
+| キーコード変換 | 実装済み | | | | |
+| キー無効化 / 入れ替え | 実装済み | | 実装済み | | |
+| layer 基本動作 | 実装済み | 実装済み | | | |
+| macro 基本動作 | 実装済み | 実装済み | | | |
+| layout conversion | 実装済み | 実装済み | | | |
+| HID keyboard boot report | 実装済み | 実装済み | 実装済み | | |
+| HID keyboard 32 code rollover report | 実装済み | 実装済み | 実装済み | | |
+| HID consumer / pointer report | 実装済み | 実装済み | | | |
+| 設定 object の適用 | 実装済み | 実装済み | 実装済み | | |
+| Arduino runtime core smoke | | | 実装済み | | |
+| hardcoded config example | | 実装済み | | | |
 | 設定の保存 / 読み込み reference example | | 予定 | 予定 | | storage 差分確認 |
 | CDC serial 設定 reference example | | 予定 | 予定 | | WebSerial 確認 |
 | USB Host keyboard input adapter | 予定 | 予定 | | 予定 | 実 keyboard 確認 |
