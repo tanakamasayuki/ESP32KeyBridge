@@ -36,9 +36,12 @@ TEST_SERIAL_PORT_S3_PEER_HOST=/dev/ttyUSB0
 TEST_SERIAL_PORT_PEER_DEVICE_S3_PEER_DEVICE=/dev/ttyUSB1
 ```
 
-## 初期候補
+## 追加済み
 
 - `usb_host_keyboard`: Device board が HID keyboard report を送信し、Host board の USB Host adapter が `esp32keybridge::InputState` として受け取ることを確認する。
+
+## 初期候補
+
 - `usb_device_keyboard`: Bridge board が USB Device keyboard report を出力し、Host board が USB Host で観測する。
 - `usb_hid_cdc_config`: HID 出力と CDC 設定 reference example の最低限の共存を確認する。
 

@@ -67,9 +67,12 @@ ESP32-P4 は常時接続の自動テスト環境には含めません。P4 は U
 
 peer テストは、USB adapter が実 USB 経由で期待どおり event / state を受け渡しできることを確認する smoke test に限定します。`ESP32KeyBridge` core の正しさは peer ではなく unit test で固定します。
 
-初期候補:
+追加済み:
 
 - `usb_host_keyboard`: Device 役 S3 が HID keyboard report を送信し、Host 役 S3 の USB Host adapter が event / state として受け取る。
+
+初期候補:
+
 - `usb_device_keyboard`: Bridge 役 S3 が USB Device keyboard report を出力し、Host 役 S3 が USB Host で観測する。
 - `usb_hid_cdc_config`: HID 出力と CDC 設定 reference example の最低限の共存を確認する。複雑な WebSerial UI 操作は manual に残す。
 

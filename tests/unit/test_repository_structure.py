@@ -30,6 +30,11 @@ def test_required_project_files_exist():
         "tests/single/README.ja.md",
         "tests/peer/README.ja.md",
         "tests/peer/README.md",
+        "tests/peer/usb_host_keyboard/usb_host_keyboard.ino",
+        "tests/peer/usb_host_keyboard/sketch.yaml",
+        "tests/peer/usb_host_keyboard/test_usb_host_keyboard.py",
+        "tests/peer/usb_host_keyboard/peer_device/peer_device.ino",
+        "tests/peer/usb_host_keyboard/peer_device/sketch.yaml",
         "tests/manual/README.ja.md",
         "tests/manual/README.md",
     ]
