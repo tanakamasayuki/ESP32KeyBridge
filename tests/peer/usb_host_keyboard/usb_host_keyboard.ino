@@ -2,13 +2,19 @@
 #include <EspUsbHost.h>
 
 EspUsbHost usb;
-esp32keybridge::InputState keyboardState;
+esp32keybridge::ESP32KeyBridge bridge;
+esp32keybridge::EventInputAdapter input;
+esp32keybridge::RecordingOutputAdapter output;
 bool sawA = false;
 
 void setup()
 {
   Serial.begin(115200);
   delay(500);
+
+  bridge.addInput(input);
+  bridge.addOutput(output);
+  bridge.begin();
 
   usb.onDeviceConnected([](const EspUsbHostDeviceInfo &device)
                         {
@@ -23,14 +29,19 @@ void setup()
                      return;
                    }
 
-                   keyboardState.apply(esp32keybridge::keyEvent(key, event.pressed, millis()));
+                   input.apply(esp32keybridge::keyEvent(key, event.pressed, millis()));
+                   bridge.update();
 
-                   if (key == esp32keybridge::Key::A && event.pressed && keyboardState.isPressed(esp32keybridge::Key::A))
+                   if (key == esp32keybridge::Key::A && event.pressed &&
+                       bridge.outputState().isPressed(esp32keybridge::Key::A) &&
+                       output.state().isPressed(esp32keybridge::Key::A))
                    {
                      sawA = true;
                      Serial.println("KEYBRIDGE_KEY_A_PRESSED");
                    }
-                   else if (key == esp32keybridge::Key::A && event.released && sawA && !keyboardState.isPressed(esp32keybridge::Key::A))
+                   else if (key == esp32keybridge::Key::A && event.released && sawA &&
+                            !bridge.outputState().isPressed(esp32keybridge::Key::A) &&
+                            !output.state().isPressed(esp32keybridge::Key::A))
                    {
                      Serial.println("KEYBRIDGE_KEY_A_RELEASED");
                    }

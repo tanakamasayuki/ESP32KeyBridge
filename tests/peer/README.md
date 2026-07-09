@@ -1,6 +1,6 @@
 # Peer Tests
 
-`usb_host_keyboard` is the first peer smoke test. The device board exposes an HID keyboard with `EspUsbDevice`, sends `A`, and the host board receives it with `EspUsbHost` before converting it into `esp32keybridge::InputState`.
+`usb_host_keyboard` is the first peer smoke test. The device board exposes an HID keyboard with `EspUsbDevice`, sends `A`, and the host board receives it with `EspUsbHost` before feeding it into the `esp32keybridge::ESP32KeyBridge` input pipeline.
 
 Two-board ESP32-S3 hardware tests.
 
