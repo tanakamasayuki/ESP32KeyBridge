@@ -9,6 +9,7 @@ Key	KEYWORD1
 ConsumerUsage	KEYWORD1
 PointerAxis	KEYWORD1
 HidKeyboardReport	KEYWORD1
+HidKeyboardRolloverReport	KEYWORD1
 HidConsumerReport	KEYWORD1
 HidPointerReport	KEYWORD1
 RecordingOutputAdapter	KEYWORD1
@@ -26,6 +27,7 @@ keyEvent	KEYWORD2
 inputValueEvent	KEYWORD2
 pointerAxisValueEvent	KEYWORD2
 buildHidKeyboardReport	KEYWORD2
+buildHidKeyboardRolloverReport	KEYWORD2
 buildHidConsumerReport	KEYWORD2
 buildHidPointerReport	KEYWORD2
 keyName	KEYWORD2

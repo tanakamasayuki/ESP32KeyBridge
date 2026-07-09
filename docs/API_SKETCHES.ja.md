@@ -230,7 +230,7 @@ bridge.applyConfig(config);
 ## Non-Keyboard Reports
 
 keyboard 以外の domain も `esp32keybridge::InputCode` として pipeline を通せます。HID report へ詰める純粋処理は core に置きますが、USB descriptor や実送信は output adapter 側に置きます。
-`esp32keybridge::HidKeyboardReport` は boot keyboard 用の 6KRO report builder です。`esp32keybridge::InputState` は 6 個を超える key state も保持できますが、full NKRO ではなく `esp32keybridge::InputState::MaxCodes` 個までです。現状の上限は 32 code です。32 code までの rollover report を扱う output adapter は、同じ state から adapter 固有の report を作れます。
+`esp32keybridge::HidKeyboardReport` は boot keyboard 用の 6KRO report builder です。`esp32keybridge::InputState` は 6 個を超える key state も保持できますが、full NKRO ではなく `esp32keybridge::InputState::MaxCodes` 個までです。現状の上限は 32 code です。32 code までの rollover report には `esp32keybridge::HidKeyboardRolloverReport` と `esp32keybridge::buildHidKeyboardRolloverReport()` を使います。
 
 ```cpp
 esp32keybridge::InputState state;
@@ -239,6 +239,7 @@ state.press(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIn
 state.press(esp32keybridge::pointerButtonCode(1));
 
 esp32keybridge::HidKeyboardReport keyboard = esp32keybridge::buildHidKeyboardReport(state);
+esp32keybridge::HidKeyboardRolloverReport rollover = esp32keybridge::buildHidKeyboardRolloverReport(state);
 esp32keybridge::HidConsumerReport consumer = esp32keybridge::buildHidConsumerReport(state);
 esp32keybridge::HidPointerReport pointer = esp32keybridge::buildHidPointerReport(state);
 

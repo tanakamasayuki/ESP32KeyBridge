@@ -225,6 +225,21 @@ struct HidKeyboardReport
   bool writeBootReport(uint8_t *buffer, size_t size) const;
 };
 
+struct HidKeyboardRolloverReport
+{
+  static constexpr size_t MaxKeys = 32;
+  static constexpr size_t ReportSize = 33;
+
+  uint8_t modifiers = 0;
+  uint8_t keys[MaxKeys] = {};
+  size_t keyCount = 0;
+  bool overflow = false;
+
+  void clear();
+  bool empty() const;
+  bool writeReport(uint8_t *buffer, size_t size) const;
+};
+
 struct HidConsumerReport
 {
   static constexpr size_t ReportSize = 2;
@@ -281,6 +296,7 @@ private:
 };
 
 HidKeyboardReport buildHidKeyboardReport(const InputState &state);
+HidKeyboardRolloverReport buildHidKeyboardRolloverReport(const InputState &state);
 HidConsumerReport buildHidConsumerReport(const InputState &state);
 HidPointerReport buildHidPointerReport(const InputState &state);
 

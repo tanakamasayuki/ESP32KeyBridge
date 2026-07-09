@@ -582,6 +582,37 @@ bool HidKeyboardReport::writeBootReport(uint8_t *buffer, size_t size) const
   return true;
 }
 
+void HidKeyboardRolloverReport::clear()
+{
+  modifiers = 0;
+  for (size_t i = 0; i < MaxKeys; ++i)
+  {
+    keys[i] = 0;
+  }
+  keyCount = 0;
+  overflow = false;
+}
+
+bool HidKeyboardRolloverReport::empty() const
+{
+  return modifiers == 0 && keyCount == 0 && !overflow;
+}
+
+bool HidKeyboardRolloverReport::writeReport(uint8_t *buffer, size_t size) const
+{
+  if (buffer == nullptr || size < ReportSize)
+  {
+    return false;
+  }
+
+  buffer[0] = modifiers;
+  for (size_t i = 0; i < MaxKeys; ++i)
+  {
+    buffer[1 + i] = i < keyCount ? keys[i] : 0;
+  }
+  return true;
+}
+
 void HidConsumerReport::clear()
 {
   usage = 0;
@@ -687,6 +718,41 @@ HidKeyboardReport buildHidKeyboardReport(const InputState &state)
     }
 
     if (report.keyCount >= HidKeyboardReport::MaxKeys)
+    {
+      report.overflow = true;
+      continue;
+    }
+
+    report.keys[report.keyCount++] = static_cast<uint8_t>(usage);
+  }
+  return report;
+}
+
+HidKeyboardRolloverReport buildHidKeyboardRolloverReport(const InputState &state)
+{
+  HidKeyboardRolloverReport report;
+  for (size_t i = 0; i < state.codeCount(); ++i)
+  {
+    const InputCode code = state.codeAt(i);
+    if (code.domain != InputDomain::Keyboard)
+    {
+      continue;
+    }
+
+    const Key key = keyFromCode(code);
+    const uint16_t usage = hidUsageFromKey(key);
+    if (usage == 0)
+    {
+      continue;
+    }
+
+    if (usage >= 0xe0 && usage <= 0xe7)
+    {
+      report.modifiers |= static_cast<uint8_t>(1u << (usage - 0xe0));
+      continue;
+    }
+
+    if (report.keyCount >= HidKeyboardRolloverReport::MaxKeys)
     {
       report.overflow = true;
       continue;

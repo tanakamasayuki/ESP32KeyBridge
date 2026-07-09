@@ -334,6 +334,39 @@ def test_core_cpp_behaviors(tmp_path):
               assert(!report.writeBootReport(nullptr, esp32keybridge::HidKeyboardReport::BootReportSize));
             }
 
+            static void test_hid_keyboard_rollover_report_builder()
+            {
+              esp32keybridge::HidKeyboardRolloverReport emptyReport;
+              assert(emptyReport.empty());
+
+              esp32keybridge::InputState state;
+              assert(state.press(esp32keybridge::Key::LeftCtrl));
+              for (uint16_t usage = 4; usage < 4 + 12; ++usage)
+              {
+                assert(state.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::Key>(usage))));
+              }
+
+              esp32keybridge::HidKeyboardRolloverReport report = esp32keybridge::buildHidKeyboardRolloverReport(state);
+              assert(report.modifiers == 1u);
+              assert(report.keyCount == 12);
+              assert(report.keys[0] == 0x04);
+              assert(report.keys[11] == 0x0f);
+              assert(!report.overflow);
+              assert(!report.empty());
+
+              uint8_t bytes[esp32keybridge::HidKeyboardRolloverReport::ReportSize] = {};
+              assert(report.writeReport(bytes, sizeof(bytes)));
+              assert(bytes[0] == 1u);
+              assert(bytes[1] == 0x04);
+              assert(bytes[12] == 0x0f);
+              assert(bytes[13] == 0);
+              assert(!report.writeReport(bytes, esp32keybridge::HidKeyboardRolloverReport::ReportSize - 1));
+              assert(!report.writeReport(nullptr, esp32keybridge::HidKeyboardRolloverReport::ReportSize));
+
+              report.clear();
+              assert(report.empty());
+            }
+
             static void test_hid_keyboard_report_can_clear()
             {
               esp32keybridge::HidKeyboardReport report;
@@ -994,6 +1027,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("input_state_applies_input_events", test_input_state_applies_input_events);
               run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
               run("hid_keyboard_report_builder_reports_overflow", test_hid_keyboard_report_builder_reports_overflow);
+              run("hid_keyboard_rollover_report_builder", test_hid_keyboard_rollover_report_builder);
               run("hid_keyboard_report_can_clear", test_hid_keyboard_report_can_clear);
               run("hid_consumer_report_builder", test_hid_consumer_report_builder);
               run("hid_consumer_report_builder_reports_overflow", test_hid_consumer_report_builder_reports_overflow);
