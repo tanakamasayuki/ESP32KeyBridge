@@ -7,19 +7,23 @@ public:
   void write(const esp32keybridge::InputState &state) override
   {
     const esp32keybridge::HidKeyboardReport keyboard = esp32keybridge::buildHidKeyboardReport(state);
+    const esp32keybridge::HidKeyboardRolloverReport rollover =
+        esp32keybridge::buildHidKeyboardRolloverReport(state);
     const esp32keybridge::HidConsumerReport consumer = esp32keybridge::buildHidConsumerReport(state);
     const esp32keybridge::HidPointerReport pointer = esp32keybridge::buildHidPointerReport(state);
 
     Serial.print("keyboard modifiers=");
     Serial.print(keyboard.modifiers);
-    Serial.print(" keys=");
+    Serial.print(" bootKeys=");
     Serial.print(keyboard.keyCount);
+    Serial.print(" rolloverKeys=");
+    Serial.print(rollover.keyCount);
     Serial.print(" consumer=0x");
     Serial.print(consumer.usage, HEX);
     Serial.print(" pointerButtons=0x");
     Serial.print(pointer.buttons, HEX);
     Serial.print(" overflow=");
-    Serial.println(keyboard.overflow || consumer.overflow || pointer.overflow);
+    Serial.println(keyboard.overflow || rollover.overflow || consumer.overflow || pointer.overflow);
   }
 };
 
@@ -43,6 +47,13 @@ void loop()
 
   input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::LeftCtrl, pressed, now));
   input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::B, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::C, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::D, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::E, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::F, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::G, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::H, pressed, now));
   input.apply(esp32keybridge::inputEvent(
       esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement), pressed, now));
   input.apply(esp32keybridge::inputEvent(esp32keybridge::pointerButtonCode(1), pressed, now));
