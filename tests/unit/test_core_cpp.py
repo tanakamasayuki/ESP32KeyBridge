@@ -295,6 +295,8 @@ def test_core_cpp_behaviors(tmp_path):
               assert(state.press(esp32keybridge::Key::E));
               assert(state.press(esp32keybridge::Key::F));
               assert(state.press(esp32keybridge::Key::G));
+              assert(state.codeCount() == 7);
+              assert(state.isPressed(esp32keybridge::Key::G));
 
               const esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(state);
 

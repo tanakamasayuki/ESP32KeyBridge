@@ -30,6 +30,7 @@ core は特定の transport、保存先、設定 UI に依存しません。USB 
 
 - USB HID keyboard の Host input adapter example。
 - USB HID keyboard / consumer / pointer の Device output adapter example。
+- 32 code までの rollover keyboard report を扱う Host / Device adapter example。
 - GPIO matrix input adapter example。
 - WebSerial 設定画面 reference example。
 - pointer axis の event queue / output adapter 連携方式。
@@ -57,6 +58,7 @@ core は特定の transport、保存先、設定 UI に依存しません。USB 
 - 入力元の scan / receive 処理と、キー変換処理を混ぜない。
 - 入力ごとの処理、入力統合、統合後の全体処理を分ける。
 - 出力 adapter は複数同時利用できる前提で設計する。
+- core の `esp32keybridge::InputState` は 6KRO に限定しない。ただし full NKRO ではなく `esp32keybridge::InputState::MaxCodes` 個までで、現状は 32 code を上限にする。6KRO boot report は output adapter 向けの変換結果であり、32 code までの rollover report は adapter 固有 report として追加できるようにする。
 - キーマップ、レイヤー、マクロは C++ コードで決め打ちする使い方と、外部設定を適用する使い方の両方を許容する。
 - core は設定転送手段と永続化先を固定しない。NVS、LittleFS、SPIFFS、SD card、USB CDC、BLE、UART、TCP などは examples / adapter 側の選択肢として扱う。
 - SoC ごとの USB / Bluetooth / peripheral 差は adapter 層に閉じ込める。

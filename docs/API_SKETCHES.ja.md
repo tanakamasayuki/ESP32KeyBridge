@@ -230,6 +230,7 @@ bridge.applyConfig(config);
 ## Non-Keyboard Reports
 
 keyboard 以外の domain も `esp32keybridge::InputCode` として pipeline を通せます。HID report へ詰める純粋処理は core に置きますが、USB descriptor や実送信は output adapter 側に置きます。
+`esp32keybridge::HidKeyboardReport` は boot keyboard 用の 6KRO report builder です。`esp32keybridge::InputState` は 6 個を超える key state も保持できますが、full NKRO ではなく `esp32keybridge::InputState::MaxCodes` 個までです。現状の上限は 32 code です。32 code までの rollover report を扱う output adapter は、同じ state から adapter 固有の report を作れます。
 
 ```cpp
 esp32keybridge::InputState state;
