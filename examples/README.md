@@ -15,5 +15,6 @@ Early examples use virtual inputs and serial output to demonstrate the core API 
 - `NonKeyboardReports`: build Consumer Control, Pointer, and 32-code rollover keyboard reports without USB dependencies.
 - `RuntimeConfigApply`: apply a runtime configuration object produced outside the core.
 - `RuntimeAdapterReconfigure`: replace input/output adapter registrations at runtime.
+- `UsbHostKeyboardInput`: wrap `EspUsbHost` keyboard events as an `esp32keybridge::InputAdapter`.
 
-Planned examples include USB keyboard bridge, USB remap, WebSerial configuration, and GPIO matrix input.
+Planned examples include USB keyboard remap/bridge, WebSerial configuration, and GPIO matrix input.

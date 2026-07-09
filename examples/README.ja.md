@@ -17,10 +17,10 @@
 - `NonKeyboardReports`: Consumer Control、Pointer、32 code rollover keyboard report を HID report builder へ渡す例。
 - `RuntimeConfigApply`: 外部設定 service が作った設定 object を実行中に適用する例。
 - `RuntimeAdapterReconfigure`: 実行中に input / output adapter 登録を差し替える例。
+- `UsbHostKeyboardInput`: `EspUsbHost` keyboard event を `esp32keybridge::InputAdapter` として扱う例。
 
 ## 追加予定
 
-- `UsbKeyboardBridge`: USB Host keyboard 入力を USB Device keyboard 出力へ橋渡しする例。
 - `UsbKeyboardRemap`: USB keyboard 入力に remap / layout conversion を適用する例。
 - `WebSerialConfig`: ブラウザから入力デバイス設定、キーマップ、出力設定を変更する reference example。
 - `GpioMatrix`: GPIO matrix 入力 adapter の例。
