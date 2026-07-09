@@ -16,39 +16,39 @@ void setup()
   bridge.addOutput(output);
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  config.global.remap(esp32keybridge::Key::CapsLock, esp32keybridge::Key::LeftCtrl);
-  config.global.disable(esp32keybridge::Key::Insert);
+  config.global.remap(esp32keybridge::KeySymbol::CapsLock, esp32keybridge::KeySymbol::LeftCtrl);
+  config.global.disable(esp32keybridge::KeySymbol::Insert);
   bridge.applyConfig(config);
   bridge.begin();
 
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::CapsLock, true, millis()));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true, millis()));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::Insert, true, millis()));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::CapsLock, true, millis()));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, true, millis()));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::Insert, true, millis()));
   bridge.update();
 
   const bool firstOk =
       output.writeCount() == 1 &&
-      bridge.mergedState().isPressed(esp32keybridge::Key::CapsLock) &&
-      bridge.mergedState().isPressed(esp32keybridge::Key::Insert) &&
-      bridge.outputState().isPressed(esp32keybridge::Key::LeftCtrl) &&
-      bridge.outputState().isPressed(esp32keybridge::Key::A) &&
-      !bridge.outputState().isPressed(esp32keybridge::Key::CapsLock) &&
-      !bridge.outputState().isPressed(esp32keybridge::Key::Insert) &&
-      output.state().isPressed(esp32keybridge::Key::LeftCtrl) &&
-      output.state().isPressed(esp32keybridge::Key::A);
+      bridge.mergedState().isPressed(esp32keybridge::KeySymbol::CapsLock) &&
+      bridge.mergedState().isPressed(esp32keybridge::KeySymbol::Insert) &&
+      bridge.outputState().isPressed(esp32keybridge::KeySymbol::LeftCtrl) &&
+      bridge.outputState().isPressed(esp32keybridge::KeySymbol::A) &&
+      !bridge.outputState().isPressed(esp32keybridge::KeySymbol::CapsLock) &&
+      !bridge.outputState().isPressed(esp32keybridge::KeySymbol::Insert) &&
+      output.state().isPressed(esp32keybridge::KeySymbol::LeftCtrl) &&
+      output.state().isPressed(esp32keybridge::KeySymbol::A);
 
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, false, millis()));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, false, millis()));
   bridge.update();
 
   const bool secondOk =
       output.writeCount() == 2 &&
-      bridge.outputState().isPressed(esp32keybridge::Key::LeftCtrl) &&
-      !bridge.outputState().isPressed(esp32keybridge::Key::A);
+      bridge.outputState().isPressed(esp32keybridge::KeySymbol::LeftCtrl) &&
+      !bridge.outputState().isPressed(esp32keybridge::KeySymbol::A);
 
   esp32keybridge::InputState rolloverState;
   for (uint16_t usage = 4; usage < 4 + 8; ++usage)
   {
-    rolloverState.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::Key>(usage)));
+    rolloverState.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::KeySymbol>(usage)));
   }
   const esp32keybridge::HidKeyboardReport bootReport = esp32keybridge::buildHidKeyboardReport(rolloverState);
   const esp32keybridge::HidKeyboardRolloverReport rolloverReport =

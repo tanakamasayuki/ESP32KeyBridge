@@ -11,7 +11,7 @@ class UsbKeyboardOutput : public esp32keybridge::OutputAdapter
 public:
   void write(const esp32keybridge::InputState &state) override
   {
-    if (sent_ || !state.isPressed(esp32keybridge::Key::A))
+    if (sent_ || !state.isPressed(esp32keybridge::KeySymbol::A))
     {
       return;
     }
@@ -40,9 +40,9 @@ static bool sendAThroughBridge()
   const uint32_t startMs = millis();
   while (millis() - startMs < 1000)
   {
-    input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true, millis()));
+    input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, true, millis()));
     bridge.update();
-    input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, false, millis()));
+    input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, false, millis()));
     bridge.update();
     if (output.sent())
     {

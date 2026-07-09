@@ -14,6 +14,7 @@ def test_required_project_files_exist():
         "CHANGELOG.md",
         "src/ESP32KeyBridge.h",
         "src/ESP32KeyBridge.cpp",
+        "src/adapters/EspUsbHostKeyboardInputAdapter.h",
         "examples/README.ja.md",
         "examples/README.md",
         "docs/REQUIREMENTS.ja.md",

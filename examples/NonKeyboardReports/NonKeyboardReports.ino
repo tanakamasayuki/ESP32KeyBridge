@@ -45,15 +45,15 @@ void loop()
   const uint32_t now = millis();
   const bool pressed = (now / 2000) % 2 == 0;
 
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::LeftCtrl, pressed, now));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, pressed, now));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::B, pressed, now));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::C, pressed, now));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::D, pressed, now));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::E, pressed, now));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::F, pressed, now));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::G, pressed, now));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::H, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::LeftCtrl, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::B, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::C, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::D, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::E, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::F, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::G, pressed, now));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::H, pressed, now));
   input.apply(esp32keybridge::inputEvent(
       esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement), pressed, now));
   input.apply(esp32keybridge::inputEvent(esp32keybridge::pointerButtonCode(1), pressed, now));

@@ -7,7 +7,7 @@ public:
   void update() override
   {
     state_.clear();
-    state_.press(esp32keybridge::Key::Fn1);
+    state_.press(esp32keybridge::KeySymbol::Fn1);
   }
 
   const esp32keybridge::InputState &state() const override
@@ -28,7 +28,7 @@ public:
     for (size_t i = 0; i < state.codeCount(); ++i)
     {
       Serial.print(' ');
-      Serial.print(esp32keybridge::keyName(state.keyAt(i)));
+      Serial.print(esp32keybridge::keySymbolName(state.keyAt(i)));
     }
     Serial.println();
   }
@@ -46,12 +46,12 @@ void setup()
   bridge.addOutput(output);
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  const esp32keybridge::Key macroKeys[] = {
-    esp32keybridge::Key::LeftCtrl,
-    esp32keybridge::Key::A,
-    esp32keybridge::Key::B,
+  const esp32keybridge::KeySymbol macroKeys[] = {
+    esp32keybridge::KeySymbol::LeftCtrl,
+    esp32keybridge::KeySymbol::A,
+    esp32keybridge::KeySymbol::B,
   };
-  config.global.macro(esp32keybridge::Key::Fn1, macroKeys, 3);
+  config.global.macro(esp32keybridge::KeySymbol::Fn1, macroKeys, 3);
 
   bridge.applyConfig(config);
   bridge.begin();

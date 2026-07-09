@@ -1,11 +1,15 @@
 ESP32KeyBridge	KEYWORD1
+EspUsbHostKeyboardInputAdapter	KEYWORD1
 EventInputAdapter	KEYWORD1
 InputCode	KEYWORD1
 InputDomain	KEYWORD1
 InputEvent	KEYWORD1
 InputState	KEYWORD1
 InputValueEvent	KEYWORD1
-Key	KEYWORD1
+KeySymbol	KEYWORD1
+HidUsage	KEYWORD1
+KeyboardLayout	KEYWORD1
+KeyboardLayoutId	KEYWORD1
 ConsumerUsage	KEYWORD1
 PointerAxis	KEYWORD1
 HidKeyboardReport	KEYWORD1
@@ -23,6 +27,8 @@ consumerCode	KEYWORD2
 pointerButtonCode	KEYWORD2
 pointerAxisCode	KEYWORD2
 vendorCode	KEYWORD2
+hidUsage	KEYWORD2
+hidUsageValue	KEYWORD2
 inputEvent	KEYWORD2
 keyEvent	KEYWORD2
 inputValueEvent	KEYWORD2
@@ -31,6 +37,6 @@ buildHidKeyboardReport	KEYWORD2
 buildHidKeyboardRolloverReport	KEYWORD2
 buildHidConsumerReport	KEYWORD2
 buildHidPointerReport	KEYWORD2
-keyName	KEYWORD2
+keySymbolName	KEYWORD2
 consumerUsageName	KEYWORD2
 pointerAxisName	KEYWORD2

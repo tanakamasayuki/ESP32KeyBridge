@@ -6,116 +6,249 @@
 namespace esp32keybridge
 {
 
-enum class Key : uint16_t
+enum class KeySymbol : uint16_t
 {
   None = 0,
-  A = 0x04,
-  B = 0x05,
-  C = 0x06,
-  D = 0x07,
-  E = 0x08,
-  F = 0x09,
-  G = 0x0a,
-  H = 0x0b,
-  I = 0x0c,
-  J = 0x0d,
-  K = 0x0e,
-  L = 0x0f,
-  M = 0x10,
-  N = 0x11,
-  O = 0x12,
-  P = 0x13,
-  Q = 0x14,
-  R = 0x15,
-  S = 0x16,
-  T = 0x17,
-  U = 0x18,
-  V = 0x19,
-  W = 0x1a,
-  X = 0x1b,
-  Y = 0x1c,
-  Z = 0x1d,
-  Num1 = 0x1e,
-  Num2 = 0x1f,
-  Num3 = 0x20,
-  Num4 = 0x21,
-  Num5 = 0x22,
-  Num6 = 0x23,
-  Num7 = 0x24,
-  Num8 = 0x25,
-  Num9 = 0x26,
-  Num0 = 0x27,
-  Enter = 0x28,
-  Escape = 0x29,
-  Backspace = 0x2a,
-  Tab = 0x2b,
-  Space = 0x2c,
-  Minus = 0x2d,
-  Equal = 0x2e,
-  LeftBracket = 0x2f,
-  RightBracket = 0x30,
-  Backslash = 0x31,
-  NonUsHash = 0x32,
-  Semicolon = 0x33,
-  Quote = 0x34,
-  Grave = 0x35,
-  Comma = 0x36,
-  Dot = 0x37,
-  Slash = 0x38,
-  CapsLock = 0x39,
-  F1 = 0x3a,
-  F2 = 0x3b,
-  F3 = 0x3c,
-  F4 = 0x3d,
-  F5 = 0x3e,
-  F6 = 0x3f,
-  F7 = 0x40,
-  F8 = 0x41,
-  F9 = 0x42,
-  F10 = 0x43,
-  F11 = 0x44,
-  F12 = 0x45,
-  PrintScreen = 0x46,
-  ScrollLock = 0x47,
-  Pause = 0x48,
-  Insert = 0x49,
-  Home = 0x4a,
-  PageUp = 0x4b,
-  Delete = 0x4c,
-  End = 0x4d,
-  PageDown = 0x4e,
-  Right = 0x4f,
-  Left = 0x50,
-  Down = 0x51,
-  Up = 0x52,
-  NonUsBackslash = 0x64,
-  International1 = 0x87,
-  International2 = 0x88,
-  International3 = 0x89,
-  International4 = 0x8a,
-  International5 = 0x8b,
-  International6 = 0x8c,
-  International7 = 0x8d,
-  International8 = 0x8e,
-  International9 = 0x8f,
-  Lang1 = 0x90,
-  Lang2 = 0x91,
-  Lang3 = 0x92,
-  Lang4 = 0x93,
-  Lang5 = 0x94,
-  Lang6 = 0x95,
-  Lang7 = 0x96,
-  Lang8 = 0x97,
-  Lang9 = 0x98,
-  LeftCtrl = 0xe0,
-  LeftShift = 0xe1,
-  LeftAlt = 0xe2,
-  LeftGui = 0xe3,
-  RightCtrl = 0xe4,
-  RightShift = 0xe5,
-  RightAlt = 0xe6,
-  RightGui = 0xe7,
+  A,
+  B,
+  C,
+  D,
+  E,
+  F,
+  G,
+  H,
+  I,
+  J,
+  K,
+  L,
+  M,
+  N,
+  O,
+  P,
+  Q,
+  R,
+  S,
+  T,
+  U,
+  V,
+  W,
+  X,
+  Y,
+  Z,
+  Num1,
+  Num2,
+  Num3,
+  Num4,
+  Num5,
+  Num6,
+  Num7,
+  Num8,
+  Num9,
+  Num0,
+  Enter,
+  Escape,
+  Backspace,
+  Tab,
+  Space,
+  Minus,
+  Equal,
+  LeftBracket,
+  RightBracket,
+  Backslash,
+  NonUsHash,
+  Semicolon,
+  Quote,
+  Grave,
+  Comma,
+  Dot,
+  Slash,
+  CapsLock,
+  F1,
+  F2,
+  F3,
+  F4,
+  F5,
+  F6,
+  F7,
+  F8,
+  F9,
+  F10,
+  F11,
+  F12,
+  PrintScreen,
+  ScrollLock,
+  Pause,
+  Insert,
+  Home,
+  PageUp,
+  Delete,
+  End,
+  PageDown,
+  Right,
+  Left,
+  Down,
+  Up,
+  NonUsBackslash,
+  International1,
+  International2,
+  International3,
+  International4,
+  International5,
+  International6,
+  International7,
+  International8,
+  International9,
+  Lang1,
+  Lang2,
+  Lang3,
+  Lang4,
+  Lang5,
+  Lang6,
+  Lang7,
+  Lang8,
+  Lang9,
+  LeftCtrl,
+  LeftShift,
+  LeftAlt,
+  LeftGui,
+  RightCtrl,
+  RightShift,
+  RightAlt,
+  RightGui,
   Fn1 = 0x0100,
+};
+
+enum class HidUsage : uint16_t
+{
+  None = 0,
+  Usage04 = 0x04,
+  Usage05 = 0x05,
+  Usage06 = 0x06,
+  Usage07 = 0x07,
+  Usage08 = 0x08,
+  Usage09 = 0x09,
+  Usage0A = 0x0a,
+  Usage0B = 0x0b,
+  Usage0C = 0x0c,
+  Usage0D = 0x0d,
+  Usage0E = 0x0e,
+  Usage0F = 0x0f,
+  Usage10 = 0x10,
+  Usage11 = 0x11,
+  Usage12 = 0x12,
+  Usage13 = 0x13,
+  Usage14 = 0x14,
+  Usage15 = 0x15,
+  Usage16 = 0x16,
+  Usage17 = 0x17,
+  Usage18 = 0x18,
+  Usage19 = 0x19,
+  Usage1A = 0x1a,
+  Usage1B = 0x1b,
+  Usage1C = 0x1c,
+  Usage1D = 0x1d,
+  Usage1E = 0x1e,
+  Usage1F = 0x1f,
+  Usage20 = 0x20,
+  Usage21 = 0x21,
+  Usage22 = 0x22,
+  Usage23 = 0x23,
+  Usage24 = 0x24,
+  Usage25 = 0x25,
+  Usage26 = 0x26,
+  Usage27 = 0x27,
+  Usage28 = 0x28,
+  Usage29 = 0x29,
+  Usage2A = 0x2a,
+  Usage2B = 0x2b,
+  Usage2C = 0x2c,
+  Usage2D = 0x2d,
+  Usage2E = 0x2e,
+  Usage2F = 0x2f,
+  Usage30 = 0x30,
+  Usage31 = 0x31,
+  Usage32 = 0x32,
+  Usage33 = 0x33,
+  Usage34 = 0x34,
+  Usage35 = 0x35,
+  Usage36 = 0x36,
+  Usage37 = 0x37,
+  Usage38 = 0x38,
+  Usage39 = 0x39,
+  Usage3A = 0x3a,
+  Usage3B = 0x3b,
+  Usage3C = 0x3c,
+  Usage3D = 0x3d,
+  Usage3E = 0x3e,
+  Usage3F = 0x3f,
+  Usage40 = 0x40,
+  Usage41 = 0x41,
+  Usage42 = 0x42,
+  Usage43 = 0x43,
+  Usage44 = 0x44,
+  Usage45 = 0x45,
+  Usage46 = 0x46,
+  Usage47 = 0x47,
+  Usage48 = 0x48,
+  Usage49 = 0x49,
+  Usage4A = 0x4a,
+  Usage4B = 0x4b,
+  Usage4C = 0x4c,
+  Usage4D = 0x4d,
+  Usage4E = 0x4e,
+  Usage4F = 0x4f,
+  Usage50 = 0x50,
+  Usage51 = 0x51,
+  Usage52 = 0x52,
+  Usage64 = 0x64,
+  Usage87 = 0x87,
+  Usage88 = 0x88,
+  Usage89 = 0x89,
+  Usage8A = 0x8a,
+  Usage8B = 0x8b,
+  Usage8C = 0x8c,
+  Usage8D = 0x8d,
+  Usage8E = 0x8e,
+  Usage8F = 0x8f,
+  Usage90 = 0x90,
+  Usage91 = 0x91,
+  Usage92 = 0x92,
+  Usage93 = 0x93,
+  Usage94 = 0x94,
+  Usage95 = 0x95,
+  Usage96 = 0x96,
+  Usage97 = 0x97,
+  Usage98 = 0x98,
+  UsageE0 = 0xe0,
+  UsageE1 = 0xe1,
+  UsageE2 = 0xe2,
+  UsageE3 = 0xe3,
+  UsageE4 = 0xe4,
+  UsageE5 = 0xe5,
+  UsageE6 = 0xe6,
+  UsageE7 = 0xe7,
+};
+
+enum class KeyboardLayoutId : uint8_t
+{
+  Us = 1,
+  Fr = 2,
+};
+
+class KeyboardLayout
+{
+public:
+  static KeyboardLayout us();
+  static KeyboardLayout fr();
+
+  KeySymbol decode(HidUsage usage) const;
+  HidUsage encode(KeySymbol key) const;
+  KeyboardLayoutId id() const;
+
+private:
+  explicit KeyboardLayout(KeyboardLayoutId id);
+
+  KeyboardLayoutId id_;
 };
 
 enum class InputDomain : uint8_t
@@ -187,26 +320,28 @@ struct InputValueEvent
   uint32_t timestampMs = 0;
 };
 
-InputCode keyboardCode(Key key);
+InputCode keyboardCode(KeySymbol key);
 InputCode consumerCode(uint16_t code);
 InputCode consumerCode(ConsumerUsage usage);
 InputCode pointerButtonCode(uint16_t code);
 InputCode pointerAxisCode(uint16_t code);
 InputCode pointerAxisCode(PointerAxis axis);
 InputCode vendorCode(uint16_t code);
-uint16_t hidUsageFromKey(Key key);
-Key keyFromHidUsage(uint16_t usage);
-bool isHidKeyboardKey(Key key);
-Key keyFromCode(InputCode code);
+uint16_t hidUsageValue(HidUsage usage);
+HidUsage hidUsage(uint16_t usage);
+uint16_t hidUsageFromKeySymbol(KeySymbol key);
+KeySymbol keySymbolFromHidUsage(uint16_t usage);
+bool isHidKeyboardKeySymbol(KeySymbol key);
+KeySymbol keySymbolFromCode(InputCode code);
 const char *inputDomainName(InputDomain domain);
 bool isValid(InputCode code);
 InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs = 0);
-InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs = 0);
+InputEvent keyEvent(KeySymbol key, bool pressed, uint32_t timestampMs = 0);
 InputValueEvent inputValueEvent(InputCode code, int16_t value, uint32_t timestampMs = 0);
 InputValueEvent pointerAxisValueEvent(PointerAxis axis, int16_t value, uint32_t timestampMs = 0);
 
-bool isModifierKey(Key key);
-const char *keyName(Key key);
+bool isModifierKeySymbol(KeySymbol key);
+const char *keySymbolName(KeySymbol key);
 const char *consumerUsageName(ConsumerUsage usage);
 const char *pointerAxisName(PointerAxis axis);
 
@@ -276,18 +411,18 @@ public:
   static constexpr size_t MaxCodes = 32;
 
   void clear();
-  bool press(Key key);
+  bool press(KeySymbol key);
   bool press(InputCode code);
   bool mergeFrom(const InputState &other);
-  bool release(Key key);
+  bool release(KeySymbol key);
   bool release(InputCode code);
-  bool contains(Key key) const;
+  bool contains(KeySymbol key) const;
   bool contains(InputCode code) const;
-  bool isPressed(Key key) const;
+  bool isPressed(KeySymbol key) const;
   bool isPressed(InputCode code) const;
   bool apply(InputEvent event);
   size_t codeCount() const;
-  Key keyAt(size_t index) const;
+  KeySymbol keyAt(size_t index) const;
   InputCode codeAt(size_t index) const;
 
 private:
@@ -402,8 +537,8 @@ struct KeyMacro
 {
   static constexpr size_t MaxKeys = 8;
 
-  Key trigger = Key::None;
-  Key keys[MaxKeys] = {};
+  KeySymbol trigger = KeySymbol::None;
+  KeySymbol keys[MaxKeys] = {};
   size_t keyCount = 0;
 };
 
@@ -414,17 +549,17 @@ public:
   static constexpr size_t MaxDisabledKeys = 32;
   static constexpr size_t MaxMacros = 16;
 
-  bool remap(Key from, Key to);
+  bool remap(KeySymbol from, KeySymbol to);
   bool remap(InputCode from, InputCode to);
-  bool disable(Key key);
+  bool disable(KeySymbol key);
   bool disable(InputCode code);
-  bool macro(Key trigger, const Key *keys, size_t keyCount);
+  bool macro(KeySymbol trigger, const KeySymbol *keys, size_t keyCount);
   void clear();
-  Key map(Key key) const;
+  KeySymbol map(KeySymbol key) const;
   InputCode map(InputCode code) const;
-  bool isDisabled(Key key) const;
+  bool isDisabled(KeySymbol key) const;
   bool isDisabled(InputCode code) const;
-  const KeyMacro *findMacro(Key trigger) const;
+  const KeyMacro *findMacro(KeySymbol trigger) const;
   bool empty() const;
 
 private:
@@ -449,16 +584,16 @@ struct MergeConfig
 class LayerConfig
 {
 public:
-  void setMomentary(Key trigger);
-  bool remap(Key from, Key to);
+  void setMomentary(KeySymbol trigger);
+  bool remap(KeySymbol from, KeySymbol to);
   void clear();
   bool enabled() const;
-  Key trigger() const;
-  Key map(Key key) const;
+  KeySymbol trigger() const;
+  KeySymbol map(KeySymbol key) const;
 
 private:
   bool enabled_ = false;
-  Key trigger_ = Key::None;
+  KeySymbol trigger_ = KeySymbol::None;
   TransformConfig transform_;
 };
 
@@ -467,9 +602,9 @@ class LayoutConfig
 public:
   static constexpr size_t MaxMappings = 64;
 
-  bool map(Key from, Key to);
+  bool map(KeySymbol from, KeySymbol to);
   void clear();
-  Key convert(Key key) const;
+  KeySymbol convert(KeySymbol key) const;
 
 private:
   CodeRemap mappings_[MaxMappings] = {};

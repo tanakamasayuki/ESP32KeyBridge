@@ -23,8 +23,8 @@ void setup()
 
   usb.onKeyboard([](const EspUsbHostKeyboardEvent &event)
                  {
-                   const esp32keybridge::Key key = esp32keybridge::keyFromHidUsage(event.keycode);
-                   if (key == esp32keybridge::Key::None)
+                   const esp32keybridge::KeySymbol key = esp32keybridge::keySymbolFromHidUsage(event.keycode);
+                   if (key == esp32keybridge::KeySymbol::None)
                    {
                      return;
                    }
@@ -32,16 +32,16 @@ void setup()
                    input.apply(esp32keybridge::keyEvent(key, event.pressed, millis()));
                    bridge.update();
 
-                   if (key == esp32keybridge::Key::A && event.pressed &&
-                       bridge.outputState().isPressed(esp32keybridge::Key::A) &&
-                       output.state().isPressed(esp32keybridge::Key::A))
+                   if (key == esp32keybridge::KeySymbol::A && event.pressed &&
+                       bridge.outputState().isPressed(esp32keybridge::KeySymbol::A) &&
+                       output.state().isPressed(esp32keybridge::KeySymbol::A))
                    {
                      sawA = true;
                      Serial.println("KEYBRIDGE_KEY_A_PRESSED");
                    }
-                   else if (key == esp32keybridge::Key::A && event.released && sawA &&
-                            !bridge.outputState().isPressed(esp32keybridge::Key::A) &&
-                            !output.state().isPressed(esp32keybridge::Key::A))
+                   else if (key == esp32keybridge::KeySymbol::A && event.released && sawA &&
+                            !bridge.outputState().isPressed(esp32keybridge::KeySymbol::A) &&
+                            !output.state().isPressed(esp32keybridge::KeySymbol::A))
                    {
                      Serial.println("KEYBRIDGE_KEY_A_RELEASED");
                    }

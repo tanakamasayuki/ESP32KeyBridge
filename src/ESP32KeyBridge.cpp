@@ -24,6 +24,238 @@ int8_t addReportDelta(int8_t current, int16_t value, bool &overflow)
 {
   return clampReportDelta(static_cast<int16_t>(current) + value, overflow);
 }
+
+KeySymbol decodeUs(HidUsage usage)
+{
+  switch (usage)
+  {
+  case HidUsage::Usage04: return KeySymbol::A;
+  case HidUsage::Usage05: return KeySymbol::B;
+  case HidUsage::Usage06: return KeySymbol::C;
+  case HidUsage::Usage07: return KeySymbol::D;
+  case HidUsage::Usage08: return KeySymbol::E;
+  case HidUsage::Usage09: return KeySymbol::F;
+  case HidUsage::Usage0A: return KeySymbol::G;
+  case HidUsage::Usage0B: return KeySymbol::H;
+  case HidUsage::Usage0C: return KeySymbol::I;
+  case HidUsage::Usage0D: return KeySymbol::J;
+  case HidUsage::Usage0E: return KeySymbol::K;
+  case HidUsage::Usage0F: return KeySymbol::L;
+  case HidUsage::Usage10: return KeySymbol::M;
+  case HidUsage::Usage11: return KeySymbol::N;
+  case HidUsage::Usage12: return KeySymbol::O;
+  case HidUsage::Usage13: return KeySymbol::P;
+  case HidUsage::Usage14: return KeySymbol::Q;
+  case HidUsage::Usage15: return KeySymbol::R;
+  case HidUsage::Usage16: return KeySymbol::S;
+  case HidUsage::Usage17: return KeySymbol::T;
+  case HidUsage::Usage18: return KeySymbol::U;
+  case HidUsage::Usage19: return KeySymbol::V;
+  case HidUsage::Usage1A: return KeySymbol::W;
+  case HidUsage::Usage1B: return KeySymbol::X;
+  case HidUsage::Usage1C: return KeySymbol::Y;
+  case HidUsage::Usage1D: return KeySymbol::Z;
+  case HidUsage::Usage1E: return KeySymbol::Num1;
+  case HidUsage::Usage1F: return KeySymbol::Num2;
+  case HidUsage::Usage20: return KeySymbol::Num3;
+  case HidUsage::Usage21: return KeySymbol::Num4;
+  case HidUsage::Usage22: return KeySymbol::Num5;
+  case HidUsage::Usage23: return KeySymbol::Num6;
+  case HidUsage::Usage24: return KeySymbol::Num7;
+  case HidUsage::Usage25: return KeySymbol::Num8;
+  case HidUsage::Usage26: return KeySymbol::Num9;
+  case HidUsage::Usage27: return KeySymbol::Num0;
+  case HidUsage::Usage28: return KeySymbol::Enter;
+  case HidUsage::Usage29: return KeySymbol::Escape;
+  case HidUsage::Usage2A: return KeySymbol::Backspace;
+  case HidUsage::Usage2B: return KeySymbol::Tab;
+  case HidUsage::Usage2C: return KeySymbol::Space;
+  case HidUsage::Usage2D: return KeySymbol::Minus;
+  case HidUsage::Usage2E: return KeySymbol::Equal;
+  case HidUsage::Usage2F: return KeySymbol::LeftBracket;
+  case HidUsage::Usage30: return KeySymbol::RightBracket;
+  case HidUsage::Usage31: return KeySymbol::Backslash;
+  case HidUsage::Usage32: return KeySymbol::NonUsHash;
+  case HidUsage::Usage33: return KeySymbol::Semicolon;
+  case HidUsage::Usage34: return KeySymbol::Quote;
+  case HidUsage::Usage35: return KeySymbol::Grave;
+  case HidUsage::Usage36: return KeySymbol::Comma;
+  case HidUsage::Usage37: return KeySymbol::Dot;
+  case HidUsage::Usage38: return KeySymbol::Slash;
+  case HidUsage::Usage39: return KeySymbol::CapsLock;
+  case HidUsage::Usage3A: return KeySymbol::F1;
+  case HidUsage::Usage3B: return KeySymbol::F2;
+  case HidUsage::Usage3C: return KeySymbol::F3;
+  case HidUsage::Usage3D: return KeySymbol::F4;
+  case HidUsage::Usage3E: return KeySymbol::F5;
+  case HidUsage::Usage3F: return KeySymbol::F6;
+  case HidUsage::Usage40: return KeySymbol::F7;
+  case HidUsage::Usage41: return KeySymbol::F8;
+  case HidUsage::Usage42: return KeySymbol::F9;
+  case HidUsage::Usage43: return KeySymbol::F10;
+  case HidUsage::Usage44: return KeySymbol::F11;
+  case HidUsage::Usage45: return KeySymbol::F12;
+  case HidUsage::Usage46: return KeySymbol::PrintScreen;
+  case HidUsage::Usage47: return KeySymbol::ScrollLock;
+  case HidUsage::Usage48: return KeySymbol::Pause;
+  case HidUsage::Usage49: return KeySymbol::Insert;
+  case HidUsage::Usage4A: return KeySymbol::Home;
+  case HidUsage::Usage4B: return KeySymbol::PageUp;
+  case HidUsage::Usage4C: return KeySymbol::Delete;
+  case HidUsage::Usage4D: return KeySymbol::End;
+  case HidUsage::Usage4E: return KeySymbol::PageDown;
+  case HidUsage::Usage4F: return KeySymbol::Right;
+  case HidUsage::Usage50: return KeySymbol::Left;
+  case HidUsage::Usage51: return KeySymbol::Down;
+  case HidUsage::Usage52: return KeySymbol::Up;
+  case HidUsage::Usage64: return KeySymbol::NonUsBackslash;
+  case HidUsage::Usage87: return KeySymbol::International1;
+  case HidUsage::Usage88: return KeySymbol::International2;
+  case HidUsage::Usage89: return KeySymbol::International3;
+  case HidUsage::Usage8A: return KeySymbol::International4;
+  case HidUsage::Usage8B: return KeySymbol::International5;
+  case HidUsage::Usage8C: return KeySymbol::International6;
+  case HidUsage::Usage8D: return KeySymbol::International7;
+  case HidUsage::Usage8E: return KeySymbol::International8;
+  case HidUsage::Usage8F: return KeySymbol::International9;
+  case HidUsage::Usage90: return KeySymbol::Lang1;
+  case HidUsage::Usage91: return KeySymbol::Lang2;
+  case HidUsage::Usage92: return KeySymbol::Lang3;
+  case HidUsage::Usage93: return KeySymbol::Lang4;
+  case HidUsage::Usage94: return KeySymbol::Lang5;
+  case HidUsage::Usage95: return KeySymbol::Lang6;
+  case HidUsage::Usage96: return KeySymbol::Lang7;
+  case HidUsage::Usage97: return KeySymbol::Lang8;
+  case HidUsage::Usage98: return KeySymbol::Lang9;
+  case HidUsage::UsageE0: return KeySymbol::LeftCtrl;
+  case HidUsage::UsageE1: return KeySymbol::LeftShift;
+  case HidUsage::UsageE2: return KeySymbol::LeftAlt;
+  case HidUsage::UsageE3: return KeySymbol::LeftGui;
+  case HidUsage::UsageE4: return KeySymbol::RightCtrl;
+  case HidUsage::UsageE5: return KeySymbol::RightShift;
+  case HidUsage::UsageE6: return KeySymbol::RightAlt;
+  case HidUsage::UsageE7: return KeySymbol::RightGui;
+  case HidUsage::None: break;
+  }
+  return KeySymbol::None;
+}
+
+HidUsage encodeUs(KeySymbol key)
+{
+  switch (key)
+  {
+  case KeySymbol::A: return HidUsage::Usage04;
+  case KeySymbol::B: return HidUsage::Usage05;
+  case KeySymbol::C: return HidUsage::Usage06;
+  case KeySymbol::D: return HidUsage::Usage07;
+  case KeySymbol::E: return HidUsage::Usage08;
+  case KeySymbol::F: return HidUsage::Usage09;
+  case KeySymbol::G: return HidUsage::Usage0A;
+  case KeySymbol::H: return HidUsage::Usage0B;
+  case KeySymbol::I: return HidUsage::Usage0C;
+  case KeySymbol::J: return HidUsage::Usage0D;
+  case KeySymbol::K: return HidUsage::Usage0E;
+  case KeySymbol::L: return HidUsage::Usage0F;
+  case KeySymbol::M: return HidUsage::Usage10;
+  case KeySymbol::N: return HidUsage::Usage11;
+  case KeySymbol::O: return HidUsage::Usage12;
+  case KeySymbol::P: return HidUsage::Usage13;
+  case KeySymbol::Q: return HidUsage::Usage14;
+  case KeySymbol::R: return HidUsage::Usage15;
+  case KeySymbol::S: return HidUsage::Usage16;
+  case KeySymbol::T: return HidUsage::Usage17;
+  case KeySymbol::U: return HidUsage::Usage18;
+  case KeySymbol::V: return HidUsage::Usage19;
+  case KeySymbol::W: return HidUsage::Usage1A;
+  case KeySymbol::X: return HidUsage::Usage1B;
+  case KeySymbol::Y: return HidUsage::Usage1C;
+  case KeySymbol::Z: return HidUsage::Usage1D;
+  case KeySymbol::Num1: return HidUsage::Usage1E;
+  case KeySymbol::Num2: return HidUsage::Usage1F;
+  case KeySymbol::Num3: return HidUsage::Usage20;
+  case KeySymbol::Num4: return HidUsage::Usage21;
+  case KeySymbol::Num5: return HidUsage::Usage22;
+  case KeySymbol::Num6: return HidUsage::Usage23;
+  case KeySymbol::Num7: return HidUsage::Usage24;
+  case KeySymbol::Num8: return HidUsage::Usage25;
+  case KeySymbol::Num9: return HidUsage::Usage26;
+  case KeySymbol::Num0: return HidUsage::Usage27;
+  case KeySymbol::Enter: return HidUsage::Usage28;
+  case KeySymbol::Escape: return HidUsage::Usage29;
+  case KeySymbol::Backspace: return HidUsage::Usage2A;
+  case KeySymbol::Tab: return HidUsage::Usage2B;
+  case KeySymbol::Space: return HidUsage::Usage2C;
+  case KeySymbol::Minus: return HidUsage::Usage2D;
+  case KeySymbol::Equal: return HidUsage::Usage2E;
+  case KeySymbol::LeftBracket: return HidUsage::Usage2F;
+  case KeySymbol::RightBracket: return HidUsage::Usage30;
+  case KeySymbol::Backslash: return HidUsage::Usage31;
+  case KeySymbol::NonUsHash: return HidUsage::Usage32;
+  case KeySymbol::Semicolon: return HidUsage::Usage33;
+  case KeySymbol::Quote: return HidUsage::Usage34;
+  case KeySymbol::Grave: return HidUsage::Usage35;
+  case KeySymbol::Comma: return HidUsage::Usage36;
+  case KeySymbol::Dot: return HidUsage::Usage37;
+  case KeySymbol::Slash: return HidUsage::Usage38;
+  case KeySymbol::CapsLock: return HidUsage::Usage39;
+  case KeySymbol::F1: return HidUsage::Usage3A;
+  case KeySymbol::F2: return HidUsage::Usage3B;
+  case KeySymbol::F3: return HidUsage::Usage3C;
+  case KeySymbol::F4: return HidUsage::Usage3D;
+  case KeySymbol::F5: return HidUsage::Usage3E;
+  case KeySymbol::F6: return HidUsage::Usage3F;
+  case KeySymbol::F7: return HidUsage::Usage40;
+  case KeySymbol::F8: return HidUsage::Usage41;
+  case KeySymbol::F9: return HidUsage::Usage42;
+  case KeySymbol::F10: return HidUsage::Usage43;
+  case KeySymbol::F11: return HidUsage::Usage44;
+  case KeySymbol::F12: return HidUsage::Usage45;
+  case KeySymbol::PrintScreen: return HidUsage::Usage46;
+  case KeySymbol::ScrollLock: return HidUsage::Usage47;
+  case KeySymbol::Pause: return HidUsage::Usage48;
+  case KeySymbol::Insert: return HidUsage::Usage49;
+  case KeySymbol::Home: return HidUsage::Usage4A;
+  case KeySymbol::PageUp: return HidUsage::Usage4B;
+  case KeySymbol::Delete: return HidUsage::Usage4C;
+  case KeySymbol::End: return HidUsage::Usage4D;
+  case KeySymbol::PageDown: return HidUsage::Usage4E;
+  case KeySymbol::Right: return HidUsage::Usage4F;
+  case KeySymbol::Left: return HidUsage::Usage50;
+  case KeySymbol::Down: return HidUsage::Usage51;
+  case KeySymbol::Up: return HidUsage::Usage52;
+  case KeySymbol::NonUsBackslash: return HidUsage::Usage64;
+  case KeySymbol::International1: return HidUsage::Usage87;
+  case KeySymbol::International2: return HidUsage::Usage88;
+  case KeySymbol::International3: return HidUsage::Usage89;
+  case KeySymbol::International4: return HidUsage::Usage8A;
+  case KeySymbol::International5: return HidUsage::Usage8B;
+  case KeySymbol::International6: return HidUsage::Usage8C;
+  case KeySymbol::International7: return HidUsage::Usage8D;
+  case KeySymbol::International8: return HidUsage::Usage8E;
+  case KeySymbol::International9: return HidUsage::Usage8F;
+  case KeySymbol::Lang1: return HidUsage::Usage90;
+  case KeySymbol::Lang2: return HidUsage::Usage91;
+  case KeySymbol::Lang3: return HidUsage::Usage92;
+  case KeySymbol::Lang4: return HidUsage::Usage93;
+  case KeySymbol::Lang5: return HidUsage::Usage94;
+  case KeySymbol::Lang6: return HidUsage::Usage95;
+  case KeySymbol::Lang7: return HidUsage::Usage96;
+  case KeySymbol::Lang8: return HidUsage::Usage97;
+  case KeySymbol::Lang9: return HidUsage::Usage98;
+  case KeySymbol::LeftCtrl: return HidUsage::UsageE0;
+  case KeySymbol::LeftShift: return HidUsage::UsageE1;
+  case KeySymbol::LeftAlt: return HidUsage::UsageE2;
+  case KeySymbol::LeftGui: return HidUsage::UsageE3;
+  case KeySymbol::RightCtrl: return HidUsage::UsageE4;
+  case KeySymbol::RightShift: return HidUsage::UsageE5;
+  case KeySymbol::RightAlt: return HidUsage::UsageE6;
+  case KeySymbol::RightGui: return HidUsage::UsageE7;
+  case KeySymbol::None:
+  case KeySymbol::Fn1:
+    break;
+  }
+  return HidUsage::None;
+}
 } // namespace
 
 bool InputCode::operator==(const InputCode &other) const
@@ -36,9 +268,88 @@ bool InputCode::operator!=(const InputCode &other) const
   return !(*this == other);
 }
 
-InputCode keyboardCode(Key key)
+InputCode keyboardCode(KeySymbol key)
 {
   return {InputDomain::Keyboard, static_cast<uint16_t>(key)};
+}
+
+KeyboardLayout::KeyboardLayout(KeyboardLayoutId id) : id_(id) {}
+
+KeyboardLayout KeyboardLayout::us()
+{
+  return KeyboardLayout(KeyboardLayoutId::Us);
+}
+
+KeyboardLayout KeyboardLayout::fr()
+{
+  return KeyboardLayout(KeyboardLayoutId::Fr);
+}
+
+KeyboardLayoutId KeyboardLayout::id() const
+{
+  return id_;
+}
+
+KeySymbol KeyboardLayout::decode(HidUsage usage) const
+{
+  if (usage == HidUsage::None)
+  {
+    return KeySymbol::None;
+  }
+
+  if (id_ == KeyboardLayoutId::Fr)
+  {
+    switch (usage)
+    {
+    case HidUsage::Usage04:
+      return KeySymbol::Q;
+    case HidUsage::Usage14:
+      return KeySymbol::A;
+    case HidUsage::Usage1A:
+      return KeySymbol::Z;
+    case HidUsage::Usage1D:
+      return KeySymbol::W;
+    case HidUsage::Usage33:
+      return KeySymbol::M;
+    case HidUsage::Usage10:
+      return KeySymbol::Semicolon;
+    default:
+      break;
+    }
+  }
+
+  return decodeUs(usage);
+}
+
+HidUsage KeyboardLayout::encode(KeySymbol key) const
+{
+  if (key == KeySymbol::None || key == KeySymbol::Fn1)
+  {
+    return HidUsage::None;
+  }
+
+  if (id_ == KeyboardLayoutId::Fr)
+  {
+    switch (key)
+    {
+    case KeySymbol::Q:
+      return HidUsage::Usage04;
+    case KeySymbol::A:
+      return HidUsage::Usage14;
+    case KeySymbol::Z:
+      return HidUsage::Usage1A;
+    case KeySymbol::W:
+      return HidUsage::Usage1D;
+    case KeySymbol::M:
+      return HidUsage::Usage33;
+    case KeySymbol::Semicolon:
+      return HidUsage::Usage10;
+    default:
+      break;
+    }
+  }
+
+  return encodeUs(key);
 }
 
 InputCode consumerCode(uint16_t code)
@@ -71,29 +382,38 @@ InputCode vendorCode(uint16_t code)
   return {InputDomain::Vendor, code};
 }
 
-uint16_t hidUsageFromKey(Key key)
+uint16_t hidUsageValue(HidUsage usage)
 {
-  return isHidKeyboardKey(key) ? static_cast<uint16_t>(key) : 0;
+  return static_cast<uint16_t>(usage);
 }
 
-Key keyFromHidUsage(uint16_t usage)
+HidUsage hidUsage(uint16_t usage)
 {
-  return usage == 0 || usage > 0xff ? Key::None : static_cast<Key>(usage);
+  return usage == 0 || usage > 0xff ? HidUsage::None : static_cast<HidUsage>(usage);
 }
 
-bool isHidKeyboardKey(Key key)
+uint16_t hidUsageFromKeySymbol(KeySymbol key)
 {
-  const uint16_t usage = static_cast<uint16_t>(key);
-  return usage != 0 && usage <= 0xff;
+  return hidUsageValue(KeyboardLayout::us().encode(key));
 }
 
-Key keyFromCode(InputCode code)
+KeySymbol keySymbolFromHidUsage(uint16_t usage)
+{
+  return KeyboardLayout::us().decode(hidUsage(usage));
+}
+
+bool isHidKeyboardKeySymbol(KeySymbol key)
+{
+  return KeyboardLayout::us().encode(key) != HidUsage::None;
+}
+
+KeySymbol keySymbolFromCode(InputCode code)
 {
   if (code.domain != InputDomain::Keyboard)
   {
-    return Key::None;
+    return KeySymbol::None;
   }
-  return static_cast<Key>(code.code);
+  return static_cast<KeySymbol>(code.code);
 }
 
 InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs)
@@ -101,7 +421,7 @@ InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs)
   return {code, pressed, timestampMs};
 }
 
-InputEvent keyEvent(Key key, bool pressed, uint32_t timestampMs)
+InputEvent keyEvent(KeySymbol key, bool pressed, uint32_t timestampMs)
 {
   return inputEvent(keyboardCode(key), pressed, timestampMs);
 }
@@ -139,231 +459,231 @@ bool isValid(InputCode code)
   return code.code != 0;
 }
 
-bool isModifierKey(Key key)
+bool isModifierKeySymbol(KeySymbol key)
 {
-  return key == Key::LeftCtrl || key == Key::LeftShift || key == Key::LeftAlt || key == Key::LeftGui ||
-         key == Key::RightCtrl || key == Key::RightShift || key == Key::RightAlt || key == Key::RightGui;
+  return key == KeySymbol::LeftCtrl || key == KeySymbol::LeftShift || key == KeySymbol::LeftAlt || key == KeySymbol::LeftGui ||
+         key == KeySymbol::RightCtrl || key == KeySymbol::RightShift || key == KeySymbol::RightAlt || key == KeySymbol::RightGui;
 }
 
-const char *keyName(Key key)
+const char *keySymbolName(KeySymbol key)
 {
   switch (key)
   {
-  case Key::None:
+  case KeySymbol::None:
     return "None";
-  case Key::A:
+  case KeySymbol::A:
     return "A";
-  case Key::B:
+  case KeySymbol::B:
     return "B";
-  case Key::C:
+  case KeySymbol::C:
     return "C";
-  case Key::D:
+  case KeySymbol::D:
     return "D";
-  case Key::E:
+  case KeySymbol::E:
     return "E";
-  case Key::F:
+  case KeySymbol::F:
     return "F";
-  case Key::G:
+  case KeySymbol::G:
     return "G";
-  case Key::H:
+  case KeySymbol::H:
     return "H";
-  case Key::I:
+  case KeySymbol::I:
     return "I";
-  case Key::J:
+  case KeySymbol::J:
     return "J";
-  case Key::K:
+  case KeySymbol::K:
     return "K";
-  case Key::L:
+  case KeySymbol::L:
     return "L";
-  case Key::M:
+  case KeySymbol::M:
     return "M";
-  case Key::N:
+  case KeySymbol::N:
     return "N";
-  case Key::O:
+  case KeySymbol::O:
     return "O";
-  case Key::P:
+  case KeySymbol::P:
     return "P";
-  case Key::Q:
+  case KeySymbol::Q:
     return "Q";
-  case Key::R:
+  case KeySymbol::R:
     return "R";
-  case Key::S:
+  case KeySymbol::S:
     return "S";
-  case Key::T:
+  case KeySymbol::T:
     return "T";
-  case Key::U:
+  case KeySymbol::U:
     return "U";
-  case Key::V:
+  case KeySymbol::V:
     return "V";
-  case Key::W:
+  case KeySymbol::W:
     return "W";
-  case Key::X:
+  case KeySymbol::X:
     return "X";
-  case Key::Y:
+  case KeySymbol::Y:
     return "Y";
-  case Key::Z:
+  case KeySymbol::Z:
     return "Z";
-  case Key::Num1:
+  case KeySymbol::Num1:
     return "Num1";
-  case Key::Num2:
+  case KeySymbol::Num2:
     return "Num2";
-  case Key::Num3:
+  case KeySymbol::Num3:
     return "Num3";
-  case Key::Num4:
+  case KeySymbol::Num4:
     return "Num4";
-  case Key::Num5:
+  case KeySymbol::Num5:
     return "Num5";
-  case Key::Num6:
+  case KeySymbol::Num6:
     return "Num6";
-  case Key::Num7:
+  case KeySymbol::Num7:
     return "Num7";
-  case Key::Num8:
+  case KeySymbol::Num8:
     return "Num8";
-  case Key::Num9:
+  case KeySymbol::Num9:
     return "Num9";
-  case Key::Num0:
+  case KeySymbol::Num0:
     return "Num0";
-  case Key::Enter:
+  case KeySymbol::Enter:
     return "Enter";
-  case Key::Escape:
+  case KeySymbol::Escape:
     return "Escape";
-  case Key::Backspace:
+  case KeySymbol::Backspace:
     return "Backspace";
-  case Key::Tab:
+  case KeySymbol::Tab:
     return "Tab";
-  case Key::Space:
+  case KeySymbol::Space:
     return "Space";
-  case Key::Minus:
+  case KeySymbol::Minus:
     return "Minus";
-  case Key::Equal:
+  case KeySymbol::Equal:
     return "Equal";
-  case Key::LeftBracket:
+  case KeySymbol::LeftBracket:
     return "LeftBracket";
-  case Key::RightBracket:
+  case KeySymbol::RightBracket:
     return "RightBracket";
-  case Key::Backslash:
+  case KeySymbol::Backslash:
     return "Backslash";
-  case Key::NonUsHash:
+  case KeySymbol::NonUsHash:
     return "NonUsHash";
-  case Key::Semicolon:
+  case KeySymbol::Semicolon:
     return "Semicolon";
-  case Key::Quote:
+  case KeySymbol::Quote:
     return "Quote";
-  case Key::Grave:
+  case KeySymbol::Grave:
     return "Grave";
-  case Key::Comma:
+  case KeySymbol::Comma:
     return "Comma";
-  case Key::Dot:
+  case KeySymbol::Dot:
     return "Dot";
-  case Key::Slash:
+  case KeySymbol::Slash:
     return "Slash";
-  case Key::Insert:
+  case KeySymbol::Insert:
     return "Insert";
-  case Key::CapsLock:
+  case KeySymbol::CapsLock:
     return "CapsLock";
-  case Key::F1:
+  case KeySymbol::F1:
     return "F1";
-  case Key::F2:
+  case KeySymbol::F2:
     return "F2";
-  case Key::F3:
+  case KeySymbol::F3:
     return "F3";
-  case Key::F4:
+  case KeySymbol::F4:
     return "F4";
-  case Key::F5:
+  case KeySymbol::F5:
     return "F5";
-  case Key::F6:
+  case KeySymbol::F6:
     return "F6";
-  case Key::F7:
+  case KeySymbol::F7:
     return "F7";
-  case Key::F8:
+  case KeySymbol::F8:
     return "F8";
-  case Key::F9:
+  case KeySymbol::F9:
     return "F9";
-  case Key::F10:
+  case KeySymbol::F10:
     return "F10";
-  case Key::F11:
+  case KeySymbol::F11:
     return "F11";
-  case Key::F12:
+  case KeySymbol::F12:
     return "F12";
-  case Key::PrintScreen:
+  case KeySymbol::PrintScreen:
     return "PrintScreen";
-  case Key::ScrollLock:
+  case KeySymbol::ScrollLock:
     return "ScrollLock";
-  case Key::Pause:
+  case KeySymbol::Pause:
     return "Pause";
-  case Key::Home:
+  case KeySymbol::Home:
     return "Home";
-  case Key::PageUp:
+  case KeySymbol::PageUp:
     return "PageUp";
-  case Key::Delete:
+  case KeySymbol::Delete:
     return "Delete";
-  case Key::End:
+  case KeySymbol::End:
     return "End";
-  case Key::PageDown:
+  case KeySymbol::PageDown:
     return "PageDown";
-  case Key::Right:
+  case KeySymbol::Right:
     return "Right";
-  case Key::Left:
+  case KeySymbol::Left:
     return "Left";
-  case Key::Down:
+  case KeySymbol::Down:
     return "Down";
-  case Key::Up:
+  case KeySymbol::Up:
     return "Up";
-  case Key::NonUsBackslash:
+  case KeySymbol::NonUsBackslash:
     return "NonUsBackslash";
-  case Key::International1:
+  case KeySymbol::International1:
     return "International1";
-  case Key::International2:
+  case KeySymbol::International2:
     return "International2";
-  case Key::International3:
+  case KeySymbol::International3:
     return "International3";
-  case Key::International4:
+  case KeySymbol::International4:
     return "International4";
-  case Key::International5:
+  case KeySymbol::International5:
     return "International5";
-  case Key::International6:
+  case KeySymbol::International6:
     return "International6";
-  case Key::International7:
+  case KeySymbol::International7:
     return "International7";
-  case Key::International8:
+  case KeySymbol::International8:
     return "International8";
-  case Key::International9:
+  case KeySymbol::International9:
     return "International9";
-  case Key::Lang1:
+  case KeySymbol::Lang1:
     return "Lang1";
-  case Key::Lang2:
+  case KeySymbol::Lang2:
     return "Lang2";
-  case Key::Lang3:
+  case KeySymbol::Lang3:
     return "Lang3";
-  case Key::Lang4:
+  case KeySymbol::Lang4:
     return "Lang4";
-  case Key::Lang5:
+  case KeySymbol::Lang5:
     return "Lang5";
-  case Key::Lang6:
+  case KeySymbol::Lang6:
     return "Lang6";
-  case Key::Lang7:
+  case KeySymbol::Lang7:
     return "Lang7";
-  case Key::Lang8:
+  case KeySymbol::Lang8:
     return "Lang8";
-  case Key::Lang9:
+  case KeySymbol::Lang9:
     return "Lang9";
-  case Key::LeftCtrl:
+  case KeySymbol::LeftCtrl:
     return "LeftCtrl";
-  case Key::LeftShift:
+  case KeySymbol::LeftShift:
     return "LeftShift";
-  case Key::LeftAlt:
+  case KeySymbol::LeftAlt:
     return "LeftAlt";
-  case Key::LeftGui:
+  case KeySymbol::LeftGui:
     return "LeftGui";
-  case Key::RightCtrl:
+  case KeySymbol::RightCtrl:
     return "RightCtrl";
-  case Key::RightShift:
+  case KeySymbol::RightShift:
     return "RightShift";
-  case Key::RightAlt:
+  case KeySymbol::RightAlt:
     return "RightAlt";
-  case Key::RightGui:
+  case KeySymbol::RightGui:
     return "RightGui";
-  case Key::Fn1:
+  case KeySymbol::Fn1:
     return "Fn1";
   }
   return "Unknown";
@@ -448,7 +768,7 @@ void InputState::clear()
   codeCount_ = 0;
 }
 
-bool InputState::press(Key key)
+bool InputState::press(KeySymbol key)
 {
   return press(keyboardCode(key));
 }
@@ -484,7 +804,7 @@ bool InputState::mergeFrom(const InputState &other)
   return mergedAll;
 }
 
-bool InputState::release(Key key)
+bool InputState::release(KeySymbol key)
 {
   return release(keyboardCode(key));
 }
@@ -503,7 +823,7 @@ bool InputState::release(InputCode code)
   return false;
 }
 
-bool InputState::contains(Key key) const
+bool InputState::contains(KeySymbol key) const
 {
   return contains(keyboardCode(key));
 }
@@ -520,7 +840,7 @@ bool InputState::contains(InputCode code) const
   return false;
 }
 
-bool InputState::isPressed(Key key) const
+bool InputState::isPressed(KeySymbol key) const
 {
   return contains(key);
 }
@@ -540,14 +860,14 @@ size_t InputState::codeCount() const
   return codeCount_;
 }
 
-Key InputState::keyAt(size_t index) const
+KeySymbol InputState::keyAt(size_t index) const
 {
-  return index < codeCount_ ? keyFromCode(codes_[index]) : Key::None;
+  return index < codeCount_ ? keySymbolFromCode(codes_[index]) : KeySymbol::None;
 }
 
 InputCode InputState::codeAt(size_t index) const
 {
-  return index < codeCount_ ? codes_[index] : keyboardCode(Key::None);
+  return index < codeCount_ ? codes_[index] : keyboardCode(KeySymbol::None);
 }
 
 void HidKeyboardReport::clear()
@@ -704,8 +1024,8 @@ HidKeyboardReport buildHidKeyboardReport(const InputState &state)
       continue;
     }
 
-    const Key key = keyFromCode(code);
-    const uint16_t usage = hidUsageFromKey(key);
+    const KeySymbol key = keySymbolFromCode(code);
+    const uint16_t usage = hidUsageFromKeySymbol(key);
     if (usage == 0)
     {
       continue;
@@ -739,8 +1059,8 @@ HidKeyboardRolloverReport buildHidKeyboardRolloverReport(const InputState &state
       continue;
     }
 
-    const Key key = keyFromCode(code);
-    const uint16_t usage = hidUsageFromKey(key);
+    const KeySymbol key = keySymbolFromCode(code);
+    const uint16_t usage = hidUsageFromKeySymbol(key);
     if (usage == 0)
     {
       continue;
@@ -934,7 +1254,7 @@ void RecordingHidPointerOutputAdapter::clear()
   writeCount_ = 0;
 }
 
-bool TransformConfig::remap(Key from, Key to)
+bool TransformConfig::remap(KeySymbol from, KeySymbol to)
 {
   return remap(keyboardCode(from), keyboardCode(to));
 }
@@ -961,7 +1281,7 @@ bool TransformConfig::remap(InputCode from, InputCode to)
   return true;
 }
 
-bool TransformConfig::disable(Key key)
+bool TransformConfig::disable(KeySymbol key)
 {
   return disable(keyboardCode(key));
 }
@@ -980,15 +1300,15 @@ bool TransformConfig::disable(InputCode code)
   return true;
 }
 
-bool TransformConfig::macro(Key trigger, const Key *keys, size_t keyCount)
+bool TransformConfig::macro(KeySymbol trigger, const KeySymbol *keys, size_t keyCount)
 {
-  if (trigger == Key::None || keys == nullptr || keyCount == 0 || keyCount > KeyMacro::MaxKeys)
+  if (trigger == KeySymbol::None || keys == nullptr || keyCount == 0 || keyCount > KeyMacro::MaxKeys)
   {
     return false;
   }
   for (size_t i = 0; i < keyCount; ++i)
   {
-    if (keys[i] == Key::None)
+    if (keys[i] == KeySymbol::None)
     {
       return false;
     }
@@ -1029,9 +1349,9 @@ void TransformConfig::clear()
   macroCount_ = 0;
 }
 
-Key TransformConfig::map(Key key) const
+KeySymbol TransformConfig::map(KeySymbol key) const
 {
-  return keyFromCode(map(keyboardCode(key)));
+  return keySymbolFromCode(map(keyboardCode(key)));
 }
 
 InputCode TransformConfig::map(InputCode code) const
@@ -1046,7 +1366,7 @@ InputCode TransformConfig::map(InputCode code) const
   return code;
 }
 
-bool TransformConfig::isDisabled(Key key) const
+bool TransformConfig::isDisabled(KeySymbol key) const
 {
   return isDisabled(keyboardCode(key));
 }
@@ -1063,7 +1383,7 @@ bool TransformConfig::isDisabled(InputCode code) const
   return false;
 }
 
-const KeyMacro *TransformConfig::findMacro(Key trigger) const
+const KeyMacro *TransformConfig::findMacro(KeySymbol trigger) const
 {
   for (size_t i = 0; i < macroCount_; ++i)
   {
@@ -1080,13 +1400,13 @@ bool TransformConfig::empty() const
   return remapCount_ == 0 && disabledCodeCount_ == 0 && macroCount_ == 0;
 }
 
-void LayerConfig::setMomentary(Key trigger)
+void LayerConfig::setMomentary(KeySymbol trigger)
 {
   trigger_ = trigger;
-  enabled_ = trigger != Key::None;
+  enabled_ = trigger != KeySymbol::None;
 }
 
-bool LayerConfig::remap(Key from, Key to)
+bool LayerConfig::remap(KeySymbol from, KeySymbol to)
 {
   return transform_.remap(from, to);
 }
@@ -1094,7 +1414,7 @@ bool LayerConfig::remap(Key from, Key to)
 void LayerConfig::clear()
 {
   enabled_ = false;
-  trigger_ = Key::None;
+  trigger_ = KeySymbol::None;
   transform_.clear();
 }
 
@@ -1103,19 +1423,19 @@ bool LayerConfig::enabled() const
   return enabled_;
 }
 
-Key LayerConfig::trigger() const
+KeySymbol LayerConfig::trigger() const
 {
   return trigger_;
 }
 
-Key LayerConfig::map(Key key) const
+KeySymbol LayerConfig::map(KeySymbol key) const
 {
   return transform_.map(key);
 }
 
-bool LayoutConfig::map(Key from, Key to)
+bool LayoutConfig::map(KeySymbol from, KeySymbol to)
 {
-  if (from == Key::None || to == Key::None)
+  if (from == KeySymbol::None || to == KeySymbol::None)
   {
     return false;
   }
@@ -1140,13 +1460,13 @@ void LayoutConfig::clear()
   mappingCount_ = 0;
 }
 
-Key LayoutConfig::convert(Key key) const
+KeySymbol LayoutConfig::convert(KeySymbol key) const
 {
   for (size_t i = 0; i < mappingCount_; ++i)
   {
     if (mappings_[i].from == keyboardCode(key))
     {
-      return keyFromCode(mappings_[i].to);
+      return keySymbolFromCode(mappings_[i].to);
     }
   }
   return key;
@@ -1297,8 +1617,8 @@ bool ESP32KeyBridge::shouldMerge(InputCode code) const
 {
   if (code.domain == InputDomain::Keyboard)
   {
-    const Key key = keyFromCode(code);
-    return isModifierKey(key) ? config_.merge.shareModifiers : config_.merge.shareKeyboardKeys;
+    const KeySymbol key = keySymbolFromCode(code);
+    return isModifierKeySymbol(key) ? config_.merge.shareModifiers : config_.merge.shareKeyboardKeys;
   }
 
   switch (code.domain)
@@ -1340,7 +1660,7 @@ void ESP32KeyBridge::applyTransform(const InputState &input, const TransformConf
     }
     if (code.domain == InputDomain::Keyboard)
     {
-      const Key key = keyFromCode(code);
+      const KeySymbol key = keySymbolFromCode(code);
       const KeyMacro *macro = transform.findMacro(key);
       if (macro != nullptr)
       {
@@ -1366,7 +1686,7 @@ void ESP32KeyBridge::applyLayer(const InputState &input, InputState &output) con
       output.press(code);
       continue;
     }
-    const Key key = input.keyAt(i);
+    const KeySymbol key = input.keyAt(i);
     if (layerActive && key == config_.layer.trigger())
     {
       continue;

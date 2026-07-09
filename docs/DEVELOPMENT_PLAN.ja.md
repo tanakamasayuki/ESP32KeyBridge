@@ -28,7 +28,7 @@ core は特定の transport、保存先、設定 UI に依存しません。USB 
 
 次に検討するもの:
 
-- USB HID keyboard の Host input adapter example。
+- USB HID keyboard の Host input helper adapter と example。
 - USB HID keyboard / consumer / pointer の Device output adapter example。
 - 32 code までの rollover keyboard report を扱う Host / Device adapter example。
 - GPIO matrix input adapter example。

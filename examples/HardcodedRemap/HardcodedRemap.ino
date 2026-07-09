@@ -7,9 +7,9 @@ public:
   void update() override
   {
     state_.clear();
-    state_.press(esp32keybridge::Key::CapsLock);
-    state_.press(esp32keybridge::Key::A);
-    state_.press(esp32keybridge::Key::Insert);
+    state_.press(esp32keybridge::KeySymbol::CapsLock);
+    state_.press(esp32keybridge::KeySymbol::A);
+    state_.press(esp32keybridge::KeySymbol::Insert);
   }
 
   const esp32keybridge::InputState &state() const override
@@ -30,7 +30,7 @@ public:
     for (size_t i = 0; i < state.codeCount(); ++i)
     {
       Serial.print(' ');
-      Serial.print(esp32keybridge::keyName(state.keyAt(i)));
+      Serial.print(esp32keybridge::keySymbolName(state.keyAt(i)));
     }
     Serial.println();
   }
@@ -48,8 +48,8 @@ void setup()
   bridge.addOutput(output);
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  config.global.remap(esp32keybridge::Key::CapsLock, esp32keybridge::Key::LeftCtrl);
-  config.global.disable(esp32keybridge::Key::Insert);
+  config.global.remap(esp32keybridge::KeySymbol::CapsLock, esp32keybridge::KeySymbol::LeftCtrl);
+  config.global.disable(esp32keybridge::KeySymbol::Insert);
 
   bridge.applyConfig(config);
   bridge.begin();

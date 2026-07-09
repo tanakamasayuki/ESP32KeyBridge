@@ -27,60 +27,60 @@ static void test_core_merge_and_transform()
   assert(bridge.addOutput(output));
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  assert(config.global.remap(esp32keybridge::Key::CapsLock, esp32keybridge::Key::LeftCtrl));
-  assert(config.global.disable(esp32keybridge::Key::Insert));
+  assert(config.global.remap(esp32keybridge::KeySymbol::CapsLock, esp32keybridge::KeySymbol::LeftCtrl));
+  assert(config.global.disable(esp32keybridge::KeySymbol::Insert));
 
   esp32keybridge::ESP32KeyBridgeConfigError error;
   assert(bridge.validateConfig(config, error));
   assert(error.message == nullptr);
   bridge.applyConfig(config);
 
-  left.state_.press(esp32keybridge::Key::LeftShift);
-  left.state_.press(esp32keybridge::Key::CapsLock);
-  right.state_.press(esp32keybridge::Key::A);
-  right.state_.press(esp32keybridge::Key::Insert);
+  left.state_.press(esp32keybridge::KeySymbol::LeftShift);
+  left.state_.press(esp32keybridge::KeySymbol::CapsLock);
+  right.state_.press(esp32keybridge::KeySymbol::A);
+  right.state_.press(esp32keybridge::KeySymbol::Insert);
 
   bridge.update();
 
   assert(output.writeCount() == 1);
-  assert(output.state().isPressed(esp32keybridge::Key::LeftShift));
-  assert(output.state().isPressed(esp32keybridge::Key::LeftCtrl));
-  assert(output.state().isPressed(esp32keybridge::Key::A));
-  assert(!output.state().isPressed(esp32keybridge::Key::CapsLock));
-  assert(!output.state().isPressed(esp32keybridge::Key::Insert));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::LeftShift));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::LeftCtrl));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::A));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::CapsLock));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::Insert));
   assert(output.state().codeCount() == 3);
-  assert(bridge.mergedState().isPressed(esp32keybridge::Key::CapsLock));
-  assert(bridge.mergedState().isPressed(esp32keybridge::Key::Insert));
-  assert(!bridge.outputState().isPressed(esp32keybridge::Key::CapsLock));
-  assert(!bridge.outputState().isPressed(esp32keybridge::Key::Insert));
-  assert(bridge.outputState().isPressed(esp32keybridge::Key::LeftCtrl));
+  assert(bridge.mergedState().isPressed(esp32keybridge::KeySymbol::CapsLock));
+  assert(bridge.mergedState().isPressed(esp32keybridge::KeySymbol::Insert));
+  assert(!bridge.outputState().isPressed(esp32keybridge::KeySymbol::CapsLock));
+  assert(!bridge.outputState().isPressed(esp32keybridge::KeySymbol::Insert));
+  assert(bridge.outputState().isPressed(esp32keybridge::KeySymbol::LeftCtrl));
 }
 
 static void test_key_name_helper()
 {
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::A), "A") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Z), "Z") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Num1), "Num1") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Space), "Space") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Slash), "Slash") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::NonUsHash), "NonUsHash") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::NonUsBackslash), "NonUsBackslash") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::International1), "International1") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Lang1), "Lang1") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::CapsLock), "CapsLock") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::RightAlt), "RightAlt") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(esp32keybridge::Key::Fn1), "Fn1") == 0);
-  assert(std::strcmp(esp32keybridge::keyName(static_cast<esp32keybridge::Key>(999)), "Unknown") == 0);
-  assert(esp32keybridge::isModifierKey(esp32keybridge::Key::LeftCtrl));
-  assert(esp32keybridge::isModifierKey(esp32keybridge::Key::RightShift));
-  assert(esp32keybridge::isModifierKey(esp32keybridge::Key::RightGui));
-  assert(!esp32keybridge::isModifierKey(esp32keybridge::Key::A));
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::A), "A") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::Z), "Z") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::Num1), "Num1") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::Space), "Space") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::Slash), "Slash") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::NonUsHash), "NonUsHash") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::NonUsBackslash), "NonUsBackslash") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::International1), "International1") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::Lang1), "Lang1") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::CapsLock), "CapsLock") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::RightAlt), "RightAlt") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(esp32keybridge::KeySymbol::Fn1), "Fn1") == 0);
+  assert(std::strcmp(esp32keybridge::keySymbolName(static_cast<esp32keybridge::KeySymbol>(999)), "Unknown") == 0);
+  assert(esp32keybridge::isModifierKeySymbol(esp32keybridge::KeySymbol::LeftCtrl));
+  assert(esp32keybridge::isModifierKeySymbol(esp32keybridge::KeySymbol::RightShift));
+  assert(esp32keybridge::isModifierKeySymbol(esp32keybridge::KeySymbol::RightGui));
+  assert(!esp32keybridge::isModifierKeySymbol(esp32keybridge::KeySymbol::A));
 }
 
 static void test_input_code_helpers()
 {
-  const esp32keybridge::InputCode a = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
-  const esp32keybridge::InputCode anotherA = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
+  const esp32keybridge::InputCode a = esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::A);
+  const esp32keybridge::InputCode anotherA = esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::A);
   const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
   const esp32keybridge::InputCode pointerButton = esp32keybridge::pointerButtonCode(1);
   const esp32keybridge::InputCode pointerAxis = esp32keybridge::pointerAxisCode(2);
@@ -90,24 +90,42 @@ static void test_input_code_helpers()
   assert(a == anotherA);
   assert(a != consumer);
   assert(a.domain == esp32keybridge::InputDomain::Keyboard);
-  assert(a.code == 0x04);
-  assert(esp32keybridge::keyboardCode(esp32keybridge::Key::Enter).code == 0x28);
-  assert(esp32keybridge::keyboardCode(esp32keybridge::Key::NonUsBackslash).code == 0x64);
-  assert(esp32keybridge::keyboardCode(esp32keybridge::Key::International1).code == 0x87);
-  assert(esp32keybridge::keyboardCode(esp32keybridge::Key::Lang1).code == 0x90);
-  assert(esp32keybridge::keyboardCode(esp32keybridge::Key::RightGui).code == 0xe7);
-  assert(esp32keybridge::keyboardCode(esp32keybridge::Key::Fn1).code == 0x0100);
-  assert(esp32keybridge::hidUsageFromKey(esp32keybridge::Key::A) == 0x04);
-  assert(esp32keybridge::hidUsageFromKey(esp32keybridge::Key::RightGui) == 0xe7);
-  assert(esp32keybridge::hidUsageFromKey(esp32keybridge::Key::Fn1) == 0);
-  assert(esp32keybridge::isHidKeyboardKey(esp32keybridge::Key::A));
-  assert(esp32keybridge::isHidKeyboardKey(esp32keybridge::Key::Lang1));
-  assert(!esp32keybridge::isHidKeyboardKey(esp32keybridge::Key::None));
-  assert(!esp32keybridge::isHidKeyboardKey(esp32keybridge::Key::Fn1));
-  assert(esp32keybridge::keyFromHidUsage(0x04) == esp32keybridge::Key::A);
-  assert(esp32keybridge::keyFromHidUsage(0x90) == esp32keybridge::Key::Lang1);
-  assert(esp32keybridge::keyFromHidUsage(0) == esp32keybridge::Key::None);
-  assert(esp32keybridge::keyFromHidUsage(0x0100) == esp32keybridge::Key::None);
+  assert(a.code == static_cast<uint16_t>(esp32keybridge::KeySymbol::A));
+  assert(a.code != esp32keybridge::hidUsageValue(esp32keybridge::HidUsage::Usage04));
+  assert(esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::Enter).code ==
+         static_cast<uint16_t>(esp32keybridge::KeySymbol::Enter));
+  assert(esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::NonUsBackslash).code ==
+         static_cast<uint16_t>(esp32keybridge::KeySymbol::NonUsBackslash));
+  assert(esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::International1).code ==
+         static_cast<uint16_t>(esp32keybridge::KeySymbol::International1));
+  assert(esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::Lang1).code ==
+         static_cast<uint16_t>(esp32keybridge::KeySymbol::Lang1));
+  assert(esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::RightGui).code ==
+         static_cast<uint16_t>(esp32keybridge::KeySymbol::RightGui));
+  assert(esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::Fn1).code == 0x0100);
+  assert(esp32keybridge::hidUsageFromKeySymbol(esp32keybridge::KeySymbol::A) == 0x04);
+  assert(esp32keybridge::hidUsageFromKeySymbol(esp32keybridge::KeySymbol::RightGui) == 0xe7);
+  assert(esp32keybridge::hidUsageFromKeySymbol(esp32keybridge::KeySymbol::Fn1) == 0);
+  assert(esp32keybridge::isHidKeyboardKeySymbol(esp32keybridge::KeySymbol::A));
+  assert(esp32keybridge::isHidKeyboardKeySymbol(esp32keybridge::KeySymbol::Lang1));
+  assert(!esp32keybridge::isHidKeyboardKeySymbol(esp32keybridge::KeySymbol::None));
+  assert(!esp32keybridge::isHidKeyboardKeySymbol(esp32keybridge::KeySymbol::Fn1));
+  assert(esp32keybridge::keySymbolFromHidUsage(0x04) == esp32keybridge::KeySymbol::A);
+  assert(esp32keybridge::keySymbolFromHidUsage(0x90) == esp32keybridge::KeySymbol::Lang1);
+  assert(esp32keybridge::keySymbolFromHidUsage(0) == esp32keybridge::KeySymbol::None);
+  assert(esp32keybridge::keySymbolFromHidUsage(0x0100) == esp32keybridge::KeySymbol::None);
+  assert(esp32keybridge::hidUsageValue(esp32keybridge::HidUsage::Usage04) == 0x04);
+  assert(esp32keybridge::hidUsage(0x04) == esp32keybridge::HidUsage::Usage04);
+  assert(esp32keybridge::hidUsage(0x0100) == esp32keybridge::HidUsage::None);
+  assert(esp32keybridge::KeyboardLayout::us().decode(esp32keybridge::HidUsage::Usage04) ==
+         esp32keybridge::KeySymbol::A);
+  assert(esp32keybridge::KeyboardLayout::us().encode(esp32keybridge::KeySymbol::Q) ==
+         esp32keybridge::HidUsage::Usage14);
+  assert(esp32keybridge::KeyboardLayout::fr().decode(esp32keybridge::HidUsage::Usage04) ==
+         esp32keybridge::KeySymbol::Q);
+  assert(esp32keybridge::KeyboardLayout::us().encode(
+             esp32keybridge::KeyboardLayout::fr().decode(esp32keybridge::HidUsage::Usage04)) ==
+         esp32keybridge::HidUsage::Usage14);
   assert(consumer.domain == esp32keybridge::InputDomain::Consumer);
   assert(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement).domain == esp32keybridge::InputDomain::Consumer);
   assert(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement).code == 0x00e9);
@@ -118,10 +136,10 @@ static void test_input_code_helpers()
   assert(vendor.domain == esp32keybridge::InputDomain::Vendor);
   assert(esp32keybridge::isValid(a));
   assert(esp32keybridge::isValid(consumer));
-  assert(!esp32keybridge::isValid(esp32keybridge::keyboardCode(esp32keybridge::Key::None)));
+  assert(!esp32keybridge::isValid(esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::None)));
   assert(!esp32keybridge::isValid(esp32keybridge::consumerCode(0)));
-  assert(esp32keybridge::keyFromCode(a) == esp32keybridge::Key::A);
-  assert(esp32keybridge::keyFromCode(consumer) == esp32keybridge::Key::None);
+  assert(esp32keybridge::keySymbolFromCode(a) == esp32keybridge::KeySymbol::A);
+  assert(esp32keybridge::keySymbolFromCode(consumer) == esp32keybridge::KeySymbol::None);
   assert(std::strcmp(esp32keybridge::inputDomainName(esp32keybridge::InputDomain::Keyboard), "Keyboard") == 0);
   assert(std::strcmp(esp32keybridge::inputDomainName(esp32keybridge::InputDomain::Consumer), "Consumer") == 0);
   assert(std::strcmp(esp32keybridge::inputDomainName(static_cast<esp32keybridge::InputDomain>(77)), "Unknown") == 0);
@@ -160,21 +178,21 @@ static void test_pointer_axis_helpers()
 static void test_input_state_accepts_input_codes()
 {
   esp32keybridge::InputState state;
-  const esp32keybridge::InputCode a = esp32keybridge::keyboardCode(esp32keybridge::Key::A);
+  const esp32keybridge::InputCode a = esp32keybridge::keyboardCode(esp32keybridge::KeySymbol::A);
   const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
 
   assert(state.press(a));
   assert(state.contains(a));
-  assert(state.contains(esp32keybridge::Key::A));
+  assert(state.contains(esp32keybridge::KeySymbol::A));
   assert(state.isPressed(a));
-  assert(state.isPressed(esp32keybridge::Key::A));
+  assert(state.isPressed(esp32keybridge::KeySymbol::A));
   assert(state.codeAt(0) == a);
-  assert(state.keyAt(0) == esp32keybridge::Key::A);
+  assert(state.keyAt(0) == esp32keybridge::KeySymbol::A);
   assert(state.press(consumer));
   assert(state.contains(consumer));
   assert(state.isPressed(consumer));
   assert(state.codeAt(1) == consumer);
-  assert(state.keyAt(1) == esp32keybridge::Key::None);
+  assert(state.keyAt(1) == esp32keybridge::KeySymbol::None);
   assert(state.codeCount() == 2);
   assert(state.release(a));
   assert(!state.contains(a));
@@ -195,7 +213,7 @@ static void test_input_state_accepts_non_keyboard_input_code()
   assert(state.contains(pointerButton));
   assert(state.isPressed(consumer));
   assert(state.isPressed(pointerButton));
-  assert(state.keyAt(0) == esp32keybridge::Key::None);
+  assert(state.keyAt(0) == esp32keybridge::KeySymbol::None);
   assert(state.codeAt(0) == consumer);
   assert(state.codeAt(1) == pointerButton);
   assert(state.codeCount() == 2);
@@ -211,13 +229,13 @@ static void test_input_state_holds_more_than_boot_keyboard_rollover()
 
   for (uint16_t usage = 1; usage <= esp32keybridge::InputState::MaxCodes; ++usage)
   {
-    assert(state.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::Key>(usage))));
+    assert(state.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::KeySymbol>(usage))));
   }
 
   assert(state.codeCount() == esp32keybridge::InputState::MaxCodes);
-  assert(state.isPressed(static_cast<esp32keybridge::Key>(7)));
-  assert(state.isPressed(static_cast<esp32keybridge::Key>(esp32keybridge::InputState::MaxCodes)));
-  assert(!state.press(static_cast<esp32keybridge::Key>(esp32keybridge::InputState::MaxCodes + 1)));
+  assert(state.isPressed(static_cast<esp32keybridge::KeySymbol>(7)));
+  assert(state.isPressed(static_cast<esp32keybridge::KeySymbol>(esp32keybridge::InputState::MaxCodes)));
+  assert(!state.press(static_cast<esp32keybridge::KeySymbol>(esp32keybridge::InputState::MaxCodes + 1)));
 
   const esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(state);
   assert(report.keyCount == esp32keybridge::HidKeyboardReport::MaxKeys);
@@ -230,14 +248,14 @@ static void test_input_state_can_merge_other_state()
   esp32keybridge::InputState right;
   const esp32keybridge::InputCode consumer = esp32keybridge::consumerCode(0x00e9);
 
-  assert(left.press(esp32keybridge::Key::A));
+  assert(left.press(esp32keybridge::KeySymbol::A));
   assert(left.press(consumer));
   assert(right.press(consumer));
-  assert(right.press(esp32keybridge::Key::B));
+  assert(right.press(esp32keybridge::KeySymbol::B));
 
   assert(left.mergeFrom(right));
-  assert(left.contains(esp32keybridge::Key::A));
-  assert(left.contains(esp32keybridge::Key::B));
+  assert(left.contains(esp32keybridge::KeySymbol::A));
+  assert(left.contains(esp32keybridge::KeySymbol::B));
   assert(left.contains(consumer));
   assert(left.codeCount() == 3);
 }
@@ -245,20 +263,20 @@ static void test_input_state_can_merge_other_state()
 static void test_input_state_applies_input_events()
 {
   esp32keybridge::InputState state;
-  const esp32keybridge::InputEvent press = esp32keybridge::keyEvent(esp32keybridge::Key::A, true, 123);
-  const esp32keybridge::InputEvent release = esp32keybridge::keyEvent(esp32keybridge::Key::A, false, 456);
+  const esp32keybridge::InputEvent press = esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, true, 123);
+  const esp32keybridge::InputEvent release = esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, false, 456);
   const esp32keybridge::InputEvent consumer = esp32keybridge::inputEvent(esp32keybridge::consumerCode(0x00e9), true, 789);
 
   assert(press.pressed);
   assert(press.timestampMs == 123);
-  assert(esp32keybridge::keyFromCode(press.code) == esp32keybridge::Key::A);
+  assert(esp32keybridge::keySymbolFromCode(press.code) == esp32keybridge::KeySymbol::A);
   assert(state.apply(press));
-  assert(state.isPressed(esp32keybridge::Key::A));
+  assert(state.isPressed(esp32keybridge::KeySymbol::A));
   assert(state.apply(consumer));
   assert(state.isPressed(consumer.code));
   assert(state.codeCount() == 2);
   assert(state.apply(release));
-  assert(!state.isPressed(esp32keybridge::Key::A));
+  assert(!state.isPressed(esp32keybridge::KeySymbol::A));
   assert(state.codeCount() == 1);
   assert(!state.apply(release));
 }
@@ -269,11 +287,11 @@ static void test_hid_keyboard_report_builder()
   assert(emptyReport.empty());
 
   esp32keybridge::InputState state;
-  assert(state.press(esp32keybridge::Key::LeftCtrl));
-  assert(state.press(esp32keybridge::Key::RightShift));
-  assert(state.press(esp32keybridge::Key::A));
-  assert(state.press(esp32keybridge::Key::International1));
-  assert(state.press(esp32keybridge::Key::Fn1));
+  assert(state.press(esp32keybridge::KeySymbol::LeftCtrl));
+  assert(state.press(esp32keybridge::KeySymbol::RightShift));
+  assert(state.press(esp32keybridge::KeySymbol::A));
+  assert(state.press(esp32keybridge::KeySymbol::International1));
+  assert(state.press(esp32keybridge::KeySymbol::Fn1));
   assert(state.press(esp32keybridge::consumerCode(0x00e9)));
 
   const esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(state);
@@ -297,15 +315,15 @@ static void test_hid_keyboard_report_builder()
 static void test_hid_keyboard_report_builder_reports_overflow()
 {
   esp32keybridge::InputState state;
-  assert(state.press(esp32keybridge::Key::A));
-  assert(state.press(esp32keybridge::Key::B));
-  assert(state.press(esp32keybridge::Key::C));
-  assert(state.press(esp32keybridge::Key::D));
-  assert(state.press(esp32keybridge::Key::E));
-  assert(state.press(esp32keybridge::Key::F));
-  assert(state.press(esp32keybridge::Key::G));
+  assert(state.press(esp32keybridge::KeySymbol::A));
+  assert(state.press(esp32keybridge::KeySymbol::B));
+  assert(state.press(esp32keybridge::KeySymbol::C));
+  assert(state.press(esp32keybridge::KeySymbol::D));
+  assert(state.press(esp32keybridge::KeySymbol::E));
+  assert(state.press(esp32keybridge::KeySymbol::F));
+  assert(state.press(esp32keybridge::KeySymbol::G));
   assert(state.codeCount() == 7);
-  assert(state.isPressed(esp32keybridge::Key::G));
+  assert(state.isPressed(esp32keybridge::KeySymbol::G));
 
   const esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(state);
 
@@ -330,10 +348,24 @@ static void test_hid_keyboard_rollover_report_builder()
   assert(emptyReport.empty());
 
   esp32keybridge::InputState state;
-  assert(state.press(esp32keybridge::Key::LeftCtrl));
-  for (uint16_t usage = 4; usage < 4 + 12; ++usage)
+  assert(state.press(esp32keybridge::KeySymbol::LeftCtrl));
+  const esp32keybridge::KeySymbol keys[] = {
+    esp32keybridge::KeySymbol::A,
+    esp32keybridge::KeySymbol::B,
+    esp32keybridge::KeySymbol::C,
+    esp32keybridge::KeySymbol::D,
+    esp32keybridge::KeySymbol::E,
+    esp32keybridge::KeySymbol::F,
+    esp32keybridge::KeySymbol::G,
+    esp32keybridge::KeySymbol::H,
+    esp32keybridge::KeySymbol::I,
+    esp32keybridge::KeySymbol::J,
+    esp32keybridge::KeySymbol::K,
+    esp32keybridge::KeySymbol::L,
+  };
+  for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); ++i)
   {
-    assert(state.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::Key>(usage))));
+    assert(state.press(keys[i]));
   }
 
   esp32keybridge::HidKeyboardRolloverReport report = esp32keybridge::buildHidKeyboardRolloverReport(state);
@@ -381,7 +413,7 @@ static void test_hid_consumer_report_builder()
   assert(emptyReport.empty());
 
   esp32keybridge::InputState state;
-  assert(state.press(esp32keybridge::Key::A));
+  assert(state.press(esp32keybridge::KeySymbol::A));
   assert(state.press(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement)));
 
   const esp32keybridge::HidConsumerReport report = esp32keybridge::buildHidConsumerReport(state);
@@ -422,7 +454,7 @@ static void test_hid_pointer_report_builder()
   assert(emptyReport.empty());
 
   esp32keybridge::InputState state;
-  assert(state.press(esp32keybridge::Key::A));
+  assert(state.press(esp32keybridge::KeySymbol::A));
   assert(state.press(esp32keybridge::pointerButtonCode(1)));
   assert(state.press(esp32keybridge::pointerButtonCode(3)));
 
@@ -486,11 +518,11 @@ static void test_recording_hid_keyboard_output_adapter()
   assert(bridge.addOutput(output));
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  assert(config.global.remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+  assert(config.global.remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B));
   bridge.applyConfig(config);
 
-  input.state_.press(esp32keybridge::Key::LeftCtrl);
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::LeftCtrl);
+  input.state_.press(esp32keybridge::KeySymbol::A);
 
   bridge.update();
 
@@ -514,9 +546,21 @@ static void test_recording_hid_keyboard_rollover_output_adapter()
   assert(bridge.addInput(input));
   assert(bridge.addOutput(output));
 
-  for (uint16_t usage = 4; usage < 4 + 10; ++usage)
+  const esp32keybridge::KeySymbol keys[] = {
+    esp32keybridge::KeySymbol::A,
+    esp32keybridge::KeySymbol::B,
+    esp32keybridge::KeySymbol::C,
+    esp32keybridge::KeySymbol::D,
+    esp32keybridge::KeySymbol::E,
+    esp32keybridge::KeySymbol::F,
+    esp32keybridge::KeySymbol::G,
+    esp32keybridge::KeySymbol::H,
+    esp32keybridge::KeySymbol::I,
+    esp32keybridge::KeySymbol::J,
+  };
+  for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); ++i)
   {
-    input.state_.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::Key>(usage)));
+    input.state_.press(keys[i]);
   }
 
   bridge.update();
@@ -547,7 +591,7 @@ static void test_recording_hid_consumer_output_adapter()
       esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::VolumeIncrement)));
   bridge.applyConfig(config);
 
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::A);
   input.state_.press(esp32keybridge::consumerCode(esp32keybridge::ConsumerUsage::Mute));
 
   bridge.update();
@@ -570,7 +614,7 @@ static void test_recording_hid_pointer_output_adapter()
   assert(bridge.addInput(input));
   assert(bridge.addOutput(output));
 
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::A);
   input.state_.press(esp32keybridge::pointerButtonCode(1));
   input.state_.press(esp32keybridge::pointerButtonCode(2));
 
@@ -595,13 +639,13 @@ static void test_event_input_adapter_applies_events()
   assert(bridge.addInput(input));
   assert(bridge.addOutput(output));
 
-  assert(input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true, 100)));
+  assert(input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, true, 100)));
   bridge.update();
-  assert(output.state().isPressed(esp32keybridge::Key::A));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::A));
 
-  assert(input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, false, 200)));
+  assert(input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, false, 200)));
   bridge.update();
-  assert(!output.state().isPressed(esp32keybridge::Key::A));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::A));
   assert(output.state().codeCount() == 0);
 }
 
@@ -614,10 +658,10 @@ static void test_bridge_can_clear_inputs_and_outputs()
   assert(bridge.addInput(input));
   assert(bridge.addOutput(output));
 
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::A, true));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::A, true));
   bridge.update();
   assert(output.writeCount() == 1);
-  assert(output.state().isPressed(esp32keybridge::Key::A));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::A));
 
   bridge.clearInputs();
   bridge.update();
@@ -627,12 +671,12 @@ static void test_bridge_can_clear_inputs_and_outputs()
   assert(bridge.outputState().codeCount() == 0);
 
   assert(bridge.addInput(input));
-  input.apply(esp32keybridge::keyEvent(esp32keybridge::Key::B, true));
+  input.apply(esp32keybridge::keyEvent(esp32keybridge::KeySymbol::B, true));
   bridge.clearOutputs();
   bridge.update();
   assert(output.writeCount() == 2);
-  assert(bridge.outputState().isPressed(esp32keybridge::Key::A));
-  assert(bridge.outputState().isPressed(esp32keybridge::Key::B));
+  assert(bridge.outputState().isPressed(esp32keybridge::KeySymbol::A));
+  assert(bridge.outputState().isPressed(esp32keybridge::KeySymbol::B));
 }
 
 static void test_core_merge_options()
@@ -649,13 +693,13 @@ static void test_core_merge_options()
   config.merge.shareKeyboardKeys = false;
   bridge.applyConfig(config);
 
-  input.state_.press(esp32keybridge::Key::LeftShift);
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::LeftShift);
+  input.state_.press(esp32keybridge::KeySymbol::A);
 
   bridge.update();
 
-  assert(output.state().isPressed(esp32keybridge::Key::LeftShift));
-  assert(!output.state().isPressed(esp32keybridge::Key::A));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::LeftShift));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::A));
   assert(output.state().codeCount() == 1);
 }
 
@@ -679,16 +723,16 @@ static void test_core_merge_options_are_domain_specific()
   config.merge.shareVendor = false;
   bridge.applyConfig(config);
 
-  input.state_.press(esp32keybridge::Key::LeftShift);
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::LeftShift);
+  input.state_.press(esp32keybridge::KeySymbol::A);
   input.state_.press(consumer);
   input.state_.press(pointerButton);
   input.state_.press(vendor);
 
   bridge.update();
 
-  assert(output.state().isPressed(esp32keybridge::Key::LeftShift));
-  assert(!output.state().isPressed(esp32keybridge::Key::A));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::LeftShift));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::A));
   assert(output.state().isPressed(consumer));
   assert(!output.state().isPressed(pointerButton));
   assert(!output.state().isPressed(vendor));
@@ -707,23 +751,23 @@ static void test_per_input_transform_runs_before_merge_and_global_transform()
   assert(bridge.addOutput(output));
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  assert(config.input(1).remap(esp32keybridge::Key::Enter, esp32keybridge::Key::Tab));
-  assert(config.input(0).disable(esp32keybridge::Key::Insert));
-  assert(config.global.remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+  assert(config.input(1).remap(esp32keybridge::KeySymbol::Enter, esp32keybridge::KeySymbol::Tab));
+  assert(config.input(0).disable(esp32keybridge::KeySymbol::Insert));
+  assert(config.global.remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B));
   bridge.applyConfig(config);
 
-  keyboard.state_.press(esp32keybridge::Key::Enter);
-  keyboard.state_.press(esp32keybridge::Key::Insert);
-  scanner.state_.press(esp32keybridge::Key::Enter);
-  scanner.state_.press(esp32keybridge::Key::A);
+  keyboard.state_.press(esp32keybridge::KeySymbol::Enter);
+  keyboard.state_.press(esp32keybridge::KeySymbol::Insert);
+  scanner.state_.press(esp32keybridge::KeySymbol::Enter);
+  scanner.state_.press(esp32keybridge::KeySymbol::A);
 
   bridge.update();
 
-  assert(output.state().isPressed(esp32keybridge::Key::Enter));
-  assert(output.state().isPressed(esp32keybridge::Key::Tab));
-  assert(output.state().isPressed(esp32keybridge::Key::B));
-  assert(!output.state().isPressed(esp32keybridge::Key::A));
-  assert(!output.state().isPressed(esp32keybridge::Key::Insert));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::Enter));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::Tab));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::B));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::A));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::Insert));
   assert(output.state().codeCount() == 3);
 }
 
@@ -738,16 +782,16 @@ static void test_input_can_bind_to_explicit_config_index()
   assert(!bridge.addInput(input, esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs));
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  assert(config.input(0).remap(esp32keybridge::Key::A, esp32keybridge::Key::C));
-  assert(config.input(2).remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+  assert(config.input(0).remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::C));
+  assert(config.input(2).remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B));
   bridge.applyConfig(config);
 
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::A);
   bridge.update();
 
-  assert(output.state().isPressed(esp32keybridge::Key::B));
-  assert(!output.state().isPressed(esp32keybridge::Key::A));
-  assert(!output.state().isPressed(esp32keybridge::Key::C));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::B));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::A));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::C));
 }
 
 static void test_config_try_input_reports_out_of_range()
@@ -759,11 +803,11 @@ static void test_config_try_input_reports_out_of_range()
   assert(config.tryInput(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs) == nullptr);
 
   config.input(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs).remap(
-    esp32keybridge::Key::A,
-    esp32keybridge::Key::B
+    esp32keybridge::KeySymbol::A,
+    esp32keybridge::KeySymbol::B
   );
 
-  assert(config.input(0).map(esp32keybridge::Key::A) == esp32keybridge::Key::A);
+  assert(config.input(0).map(esp32keybridge::KeySymbol::A) == esp32keybridge::KeySymbol::A);
 }
 
 static void test_validate_config_rejects_out_of_range_input_config()
@@ -776,8 +820,8 @@ static void test_validate_config_rejects_out_of_range_input_config()
   assert(error.message == nullptr);
 
   config.input(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs).remap(
-    esp32keybridge::Key::A,
-    esp32keybridge::Key::B
+    esp32keybridge::KeySymbol::A,
+    esp32keybridge::KeySymbol::B
   );
 
   assert(!bridge.validateConfig(config, error));
@@ -791,15 +835,15 @@ static void test_config_clear_resets_all_sections()
   esp32keybridge::ESP32KeyBridgeConfig config;
   esp32keybridge::ESP32KeyBridgeConfigError error;
 
-  assert(config.input(0).remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+  assert(config.input(0).remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B));
   assert(config.input(esp32keybridge::ESP32KeyBridgeConfig::MaxInputConfigs).remap(
-    esp32keybridge::Key::B,
-    esp32keybridge::Key::C
+    esp32keybridge::KeySymbol::B,
+    esp32keybridge::KeySymbol::C
   ));
-  assert(config.global.disable(esp32keybridge::Key::Insert));
-  config.layer.setMomentary(esp32keybridge::Key::Fn1);
-  assert(config.layer.remap(esp32keybridge::Key::A, esp32keybridge::Key::C));
-  assert(config.layout.map(esp32keybridge::Key::A, esp32keybridge::Key::B));
+  assert(config.global.disable(esp32keybridge::KeySymbol::Insert));
+  config.layer.setMomentary(esp32keybridge::KeySymbol::Fn1);
+  assert(config.layer.remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::C));
+  assert(config.layout.map(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B));
   config.merge.shareKeyboardKeys = false;
 
   assert(!bridge.validateConfig(config, error));
@@ -807,10 +851,10 @@ static void test_config_clear_resets_all_sections()
 
   assert(bridge.validateConfig(config, error));
   assert(error.message == nullptr);
-  assert(config.input(0).map(esp32keybridge::Key::A) == esp32keybridge::Key::A);
-  assert(!config.global.isDisabled(esp32keybridge::Key::Insert));
+  assert(config.input(0).map(esp32keybridge::KeySymbol::A) == esp32keybridge::KeySymbol::A);
+  assert(!config.global.isDisabled(esp32keybridge::KeySymbol::Insert));
   assert(!config.layer.enabled());
-  assert(config.layout.convert(esp32keybridge::Key::A) == esp32keybridge::Key::A);
+  assert(config.layout.convert(esp32keybridge::KeySymbol::A) == esp32keybridge::KeySymbol::A);
   assert(config.merge.shareModifiers);
   assert(config.merge.shareKeyboardKeys);
   assert(config.merge.shareConsumer);
@@ -829,27 +873,27 @@ static void test_momentary_layer_remaps_while_trigger_is_pressed()
   assert(bridge.addOutput(output));
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  config.layer.setMomentary(esp32keybridge::Key::Fn1);
-  assert(config.layer.remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
+  config.layer.setMomentary(esp32keybridge::KeySymbol::Fn1);
+  assert(config.layer.remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B));
   bridge.applyConfig(config);
 
-  input.state_.press(esp32keybridge::Key::Fn1);
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::Fn1);
+  input.state_.press(esp32keybridge::KeySymbol::A);
 
   bridge.update();
 
-  assert(output.state().isPressed(esp32keybridge::Key::B));
-  assert(!output.state().isPressed(esp32keybridge::Key::A));
-  assert(!output.state().isPressed(esp32keybridge::Key::Fn1));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::B));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::A));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::Fn1));
   assert(output.state().codeCount() == 1);
 
   input.state_.clear();
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::A);
 
   bridge.update();
 
-  assert(output.state().isPressed(esp32keybridge::Key::A));
-  assert(!output.state().isPressed(esp32keybridge::Key::B));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::A));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::B));
   assert(output.state().codeCount() == 1);
 }
 
@@ -863,24 +907,24 @@ static void test_transform_macro_expands_trigger_to_key_sequence()
   assert(bridge.addOutput(output));
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  const esp32keybridge::Key macroKeys[] = {
-    esp32keybridge::Key::LeftCtrl,
-    esp32keybridge::Key::A,
-    esp32keybridge::Key::B,
+  const esp32keybridge::KeySymbol macroKeys[] = {
+    esp32keybridge::KeySymbol::LeftCtrl,
+    esp32keybridge::KeySymbol::A,
+    esp32keybridge::KeySymbol::B,
   };
-  assert(config.global.macro(esp32keybridge::Key::Fn1, macroKeys, 3));
-  assert(config.global.remap(esp32keybridge::Key::Fn1, esp32keybridge::Key::C));
+  assert(config.global.macro(esp32keybridge::KeySymbol::Fn1, macroKeys, 3));
+  assert(config.global.remap(esp32keybridge::KeySymbol::Fn1, esp32keybridge::KeySymbol::C));
   bridge.applyConfig(config);
 
-  input.state_.press(esp32keybridge::Key::Fn1);
+  input.state_.press(esp32keybridge::KeySymbol::Fn1);
 
   bridge.update();
 
-  assert(output.state().isPressed(esp32keybridge::Key::LeftCtrl));
-  assert(output.state().isPressed(esp32keybridge::Key::A));
-  assert(output.state().isPressed(esp32keybridge::Key::B));
-  assert(!output.state().isPressed(esp32keybridge::Key::Fn1));
-  assert(!output.state().isPressed(esp32keybridge::Key::C));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::LeftCtrl));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::A));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::B));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::Fn1));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::C));
   assert(output.state().codeCount() == 3);
 }
 
@@ -894,17 +938,17 @@ static void test_layout_conversion_runs_before_global_transform()
   assert(bridge.addOutput(output));
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  assert(config.layout.map(esp32keybridge::Key::A, esp32keybridge::Key::B));
-  assert(config.global.remap(esp32keybridge::Key::B, esp32keybridge::Key::C));
+  assert(config.layout.map(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B));
+  assert(config.global.remap(esp32keybridge::KeySymbol::B, esp32keybridge::KeySymbol::C));
   bridge.applyConfig(config);
 
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::A);
 
   bridge.update();
 
-  assert(output.state().isPressed(esp32keybridge::Key::C));
-  assert(!output.state().isPressed(esp32keybridge::Key::A));
-  assert(!output.state().isPressed(esp32keybridge::Key::B));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::C));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::A));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::B));
   assert(output.state().codeCount() == 1);
 }
 
@@ -920,22 +964,22 @@ static void test_non_keyboard_codes_pass_through_pipeline()
   assert(bridge.addOutput(output));
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  assert(config.global.remap(esp32keybridge::Key::A, esp32keybridge::Key::B));
-  assert(config.layout.map(esp32keybridge::Key::B, esp32keybridge::Key::C));
-  config.layer.setMomentary(esp32keybridge::Key::Fn1);
-  assert(config.layer.remap(esp32keybridge::Key::A, esp32keybridge::Key::C));
+  assert(config.global.remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B));
+  assert(config.layout.map(esp32keybridge::KeySymbol::B, esp32keybridge::KeySymbol::C));
+  config.layer.setMomentary(esp32keybridge::KeySymbol::Fn1);
+  assert(config.layer.remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::C));
   bridge.applyConfig(config);
 
   input.state_.press(consumer);
   input.state_.press(pointerButton);
-  input.state_.press(esp32keybridge::Key::A);
+  input.state_.press(esp32keybridge::KeySymbol::A);
 
   bridge.update();
 
   assert(output.state().isPressed(consumer));
   assert(output.state().isPressed(pointerButton));
-  assert(output.state().isPressed(esp32keybridge::Key::B));
-  assert(!output.state().isPressed(esp32keybridge::Key::A));
+  assert(output.state().isPressed(esp32keybridge::KeySymbol::B));
+  assert(!output.state().isPressed(esp32keybridge::KeySymbol::A));
   assert(output.state().codeCount() == 3);
 }
 
@@ -988,31 +1032,31 @@ static void test_capacity_limits_report_failure()
   esp32keybridge::TransformConfig transform;
   for (size_t i = 0; i < esp32keybridge::TransformConfig::MaxRemaps; ++i)
   {
-    assert(transform.remap(static_cast<esp32keybridge::Key>(100 + i), esp32keybridge::Key::A));
+    assert(transform.remap(static_cast<esp32keybridge::KeySymbol>(100 + i), esp32keybridge::KeySymbol::A));
   }
-  assert(!transform.remap(esp32keybridge::Key::CapsLock, esp32keybridge::Key::LeftCtrl));
+  assert(!transform.remap(esp32keybridge::KeySymbol::CapsLock, esp32keybridge::KeySymbol::LeftCtrl));
 
   esp32keybridge::TransformConfig disabled;
   for (size_t i = 0; i < esp32keybridge::TransformConfig::MaxDisabledKeys; ++i)
   {
-    assert(disabled.disable(static_cast<esp32keybridge::Key>(200 + i)));
+    assert(disabled.disable(static_cast<esp32keybridge::KeySymbol>(200 + i)));
   }
-  assert(!disabled.disable(esp32keybridge::Key::Insert));
+  assert(!disabled.disable(esp32keybridge::KeySymbol::Insert));
 
   esp32keybridge::TransformConfig macros;
-  const esp32keybridge::Key macroKeys[] = {esp32keybridge::Key::A};
+  const esp32keybridge::KeySymbol macroKeys[] = {esp32keybridge::KeySymbol::A};
   for (size_t i = 0; i < esp32keybridge::TransformConfig::MaxMacros; ++i)
   {
-    assert(macros.macro(static_cast<esp32keybridge::Key>(300 + i), macroKeys, 1));
+    assert(macros.macro(static_cast<esp32keybridge::KeySymbol>(300 + i), macroKeys, 1));
   }
-  assert(!macros.macro(esp32keybridge::Key::Fn1, macroKeys, 1));
+  assert(!macros.macro(esp32keybridge::KeySymbol::Fn1, macroKeys, 1));
 
   esp32keybridge::LayoutConfig layout;
   for (size_t i = 0; i < esp32keybridge::LayoutConfig::MaxMappings; ++i)
   {
-    assert(layout.map(static_cast<esp32keybridge::Key>(400 + i), esp32keybridge::Key::B));
+    assert(layout.map(static_cast<esp32keybridge::KeySymbol>(400 + i), esp32keybridge::KeySymbol::B));
   }
-  assert(!layout.map(esp32keybridge::Key::A, esp32keybridge::Key::C));
+  assert(!layout.map(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::C));
 
   esp32keybridge::InputState full;
   esp32keybridge::InputState extra;

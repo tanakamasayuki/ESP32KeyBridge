@@ -4,7 +4,7 @@
 class FixedKeyboardInput : public esp32keybridge::InputAdapter
 {
 public:
-  explicit FixedKeyboardInput(esp32keybridge::Key key)
+  explicit FixedKeyboardInput(esp32keybridge::KeySymbol key)
     : key_(key)
   {
   }
@@ -21,7 +21,7 @@ public:
   }
 
 private:
-  esp32keybridge::Key key_;
+  esp32keybridge::KeySymbol key_;
   esp32keybridge::InputState state_;
 };
 
@@ -40,7 +40,7 @@ public:
     for (size_t i = 0; i < state.codeCount(); ++i)
     {
       Serial.print(' ');
-      Serial.print(esp32keybridge::keyName(state.keyAt(i)));
+      Serial.print(esp32keybridge::keySymbolName(state.keyAt(i)));
     }
     Serial.println();
   }
@@ -50,8 +50,8 @@ private:
 };
 
 esp32keybridge::ESP32KeyBridge bridge;
-FixedKeyboardInput inputA(esp32keybridge::Key::A);
-FixedKeyboardInput inputB(esp32keybridge::Key::B);
+FixedKeyboardInput inputA(esp32keybridge::KeySymbol::A);
+FixedKeyboardInput inputB(esp32keybridge::KeySymbol::B);
 SerialKeyboardOutput outputA("outputA");
 SerialKeyboardOutput outputB("outputB");
 

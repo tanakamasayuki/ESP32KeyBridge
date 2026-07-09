@@ -4,7 +4,7 @@
 class FixedKeyboardInput : public esp32keybridge::InputAdapter
 {
 public:
-  FixedKeyboardInput(esp32keybridge::Key first, esp32keybridge::Key second = esp32keybridge::Key::None)
+  FixedKeyboardInput(esp32keybridge::KeySymbol first, esp32keybridge::KeySymbol second = esp32keybridge::KeySymbol::None)
     : first_(first), second_(second)
   {
   }
@@ -22,8 +22,8 @@ public:
   }
 
 private:
-  esp32keybridge::Key first_;
-  esp32keybridge::Key second_;
+  esp32keybridge::KeySymbol first_;
+  esp32keybridge::KeySymbol second_;
   esp32keybridge::InputState state_;
 };
 
@@ -36,15 +36,15 @@ public:
     for (size_t i = 0; i < state.codeCount(); ++i)
     {
       Serial.print(' ');
-      Serial.print(esp32keybridge::keyName(state.keyAt(i)));
+      Serial.print(esp32keybridge::keySymbolName(state.keyAt(i)));
     }
     Serial.println();
   }
 };
 
 esp32keybridge::ESP32KeyBridge bridge;
-FixedKeyboardInput keyboard(esp32keybridge::Key::Enter);
-FixedKeyboardInput scanner(esp32keybridge::Key::Enter, esp32keybridge::Key::A);
+FixedKeyboardInput keyboard(esp32keybridge::KeySymbol::Enter);
+FixedKeyboardInput scanner(esp32keybridge::KeySymbol::Enter, esp32keybridge::KeySymbol::A);
 SerialKeyboardOutput output;
 
 void setup()
@@ -56,8 +56,8 @@ void setup()
   bridge.addOutput(output);
 
   esp32keybridge::ESP32KeyBridgeConfig config;
-  config.input(1).remap(esp32keybridge::Key::Enter, esp32keybridge::Key::Tab);
-  config.global.remap(esp32keybridge::Key::A, esp32keybridge::Key::B);
+  config.input(1).remap(esp32keybridge::KeySymbol::Enter, esp32keybridge::KeySymbol::Tab);
+  config.global.remap(esp32keybridge::KeySymbol::A, esp32keybridge::KeySymbol::B);
 
   bridge.applyConfig(config);
   bridge.begin();

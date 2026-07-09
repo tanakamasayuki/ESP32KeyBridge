@@ -40,6 +40,7 @@ Physical Input
 - 入力ごとの現在 state を更新する。
 
 USB adapter が `EspUsbHost` を使う場合でも、その依存は adapter 内に閉じ込めます。
+`esp32keybridge::EspUsbHostKeyboardInputAdapter` のような任意 include の helper adapter は、adapter ヘッダ内で `EspUsbHost` に依存できます。core 本体は引き続き `EspUsbHost` に依存しません。
 
 ## Per-Input Pipeline
 
@@ -80,12 +81,13 @@ DeviceState
 将来、mouse、trackpad、wheel などを扱えるように event domain を拡張できる余地を残します。ただし MVP は keyboard / consumer control を優先します。
 
 core には `esp32keybridge::InputCode` を置き、keyboard、consumer control、pointer button、pointer axis、vendor などの domain を表せるようにします。`esp32keybridge::InputState` は `InputCode` の集合を保持し、keyboard 以外の code も同じ state として扱います。
-`esp32keybridge::Key` は keyboard domain の convenience enum で、基本キーは USB HID keyboard usage ID に寄せた値を持ちます。adapter は raw HID usage と `esp32keybridge::Key` / `esp32keybridge::InputCode` の対応を単純に扱えるようにします。言語・地域依存の物理キーは `NonUsHash`、`NonUsBackslash`、`International1`-`International9`、`Lang1`-`Lang9` として HID usage に沿って表します。
-HID adapter は `esp32keybridge::keyFromHidUsage()` と `esp32keybridge::hidUsageFromKey()` を使って raw HID usage と `esp32keybridge::Key` を変換できます。実 HID keyboard usage として出せるかは `esp32keybridge::isHidKeyboardKey()` で確認できます。`esp32keybridge::Fn1` のような core 内 symbolic key は HID usage ではないため、`esp32keybridge::hidUsageFromKey()` では `0` になります。
+`esp32keybridge::KeySymbol` は keyboard domain の意味キーです。`A` は文字・意味としての A であり、USB HID usage `0x04` そのものではありません。raw USB HID keyboard usage は `esp32keybridge::HidUsage` で表し、名前も `Usage04` のような数値ベースにします。
+HID adapter は raw HID usage を `esp32keybridge::KeyboardLayout` で decode してから `esp32keybridge::KeySymbol` / `esp32keybridge::InputCode` として state に入れます。出力 adapter は `esp32keybridge::KeySymbol` を出力先 layout で encode して raw HID usage に戻します。`esp32keybridge::keySymbolFromHidUsage()` と `esp32keybridge::hidUsageFromKeySymbol()` は US layout 用の薄い互換 helper として扱い、layout 依存の変換では `esp32keybridge::KeyboardLayout::decode()` / `encode()` を使います。
 
-`esp32keybridge::TransformConfig` は `InputCode` ベースの remap / disable を持ちます。`esp32keybridge::Key` を受け取る API は keyboard domain 用の convenience です。これにより Consumer Control のような keyboard 以外の code も、同じ transform pipeline で扱えます。
+`esp32keybridge::TransformConfig` は `InputCode` ベースの remap / disable を持ちます。`esp32keybridge::KeySymbol` を受け取る API は keyboard domain 用の convenience です。これにより Consumer Control のような keyboard 以外の code も、同じ transform pipeline で扱えます。
 
 layout conversion と state macro は現時点では keyboard domain 中心です。keyboard 以外の domain は、明示的に remap / disable されない限り pipeline を通過します。
+現在の `esp32keybridge::LayoutConfig` は key-to-key の簡易 table です。実 layout の decode / encode は `esp32keybridge::KeyboardLayout` が担当します。例えば FR layout で受け取った `esp32keybridge::HidUsage::Usage04` は `esp32keybridge::KeySymbol::Q` に decode され、US layout で出力すると `esp32keybridge::HidUsage::Usage14` に encode されます。
 
 press / release の差分には `esp32keybridge::InputEvent` を使います。`esp32keybridge::InputState::apply(event)` で event を state に反映できます。debounce、hold/tap、event macro sequence などはこの event 表現を使って後から追加する想定です。
 pointer axis のような値付き入力は、押下状態とは別に `esp32keybridge::InputValueEvent` で表します。`esp32keybridge::PointerAxis` は `X`、`Y`、`Wheel`、`Pan` を持ち、`esp32keybridge::pointerAxisValueEvent()` で delta を表現できます。値付き入力を state pipeline に統合するか、output adapter / example 側で別 queue として扱うかは、mouse / trackpad の実装時にユースケースを見て決めます。
