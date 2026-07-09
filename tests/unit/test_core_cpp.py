@@ -215,6 +215,25 @@ def test_core_cpp_behaviors(tmp_path):
               assert(state.codeCount() == 1);
             }
 
+            static void test_input_state_holds_more_than_boot_keyboard_rollover()
+            {
+              esp32keybridge::InputState state;
+
+              for (uint16_t usage = 1; usage <= esp32keybridge::InputState::MaxCodes; ++usage)
+              {
+                assert(state.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::Key>(usage))));
+              }
+
+              assert(state.codeCount() == esp32keybridge::InputState::MaxCodes);
+              assert(state.isPressed(static_cast<esp32keybridge::Key>(7)));
+              assert(state.isPressed(static_cast<esp32keybridge::Key>(esp32keybridge::InputState::MaxCodes)));
+              assert(!state.press(static_cast<esp32keybridge::Key>(esp32keybridge::InputState::MaxCodes + 1)));
+
+              const esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(state);
+              assert(report.keyCount == esp32keybridge::HidKeyboardReport::MaxKeys);
+              assert(report.overflow);
+            }
+
             static void test_input_state_can_merge_other_state()
             {
               esp32keybridge::InputState left;
@@ -970,6 +989,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("pointer_axis_helpers", test_pointer_axis_helpers);
               run("input_state_accepts_input_codes", test_input_state_accepts_input_codes);
               run("input_state_accepts_non_keyboard_input_code", test_input_state_accepts_non_keyboard_input_code);
+              run("input_state_holds_more_than_boot_keyboard_rollover", test_input_state_holds_more_than_boot_keyboard_rollover);
               run("input_state_can_merge_other_state", test_input_state_can_merge_other_state);
               run("input_state_applies_input_events", test_input_state_applies_input_events);
               run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
