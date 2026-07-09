@@ -14,6 +14,7 @@ HidConsumerReport	KEYWORD1
 HidPointerReport	KEYWORD1
 RecordingOutputAdapter	KEYWORD1
 RecordingHidKeyboardOutputAdapter	KEYWORD1
+RecordingHidKeyboardRolloverOutputAdapter	KEYWORD1
 RecordingHidConsumerOutputAdapter	KEYWORD1
 RecordingHidPointerOutputAdapter	KEYWORD1
 

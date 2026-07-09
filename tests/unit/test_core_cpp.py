@@ -515,6 +515,33 @@ def test_core_cpp_behaviors(tmp_path):
               assert(output.report().empty());
             }
 
+            static void test_recording_hid_keyboard_rollover_output_adapter()
+            {
+              esp32keybridge::ESP32KeyBridge bridge;
+              VirtualInput input;
+              esp32keybridge::RecordingHidKeyboardRolloverOutputAdapter output;
+
+              assert(bridge.addInput(input));
+              assert(bridge.addOutput(output));
+
+              for (uint16_t usage = 4; usage < 4 + 10; ++usage)
+              {
+                input.state_.press(esp32keybridge::keyboardCode(static_cast<esp32keybridge::Key>(usage)));
+              }
+
+              bridge.update();
+
+              assert(output.writeCount() == 1);
+              assert(output.report().keyCount == 10);
+              assert(output.report().keys[0] == 0x04);
+              assert(output.report().keys[9] == 0x0d);
+              assert(!output.report().overflow);
+
+              output.clear();
+              assert(output.writeCount() == 0);
+              assert(output.report().empty());
+            }
+
             static void test_recording_hid_consumer_output_adapter()
             {
               esp32keybridge::ESP32KeyBridge bridge;
@@ -1034,6 +1061,7 @@ def test_core_cpp_behaviors(tmp_path):
               run("hid_pointer_report_builder", test_hid_pointer_report_builder);
               run("hid_pointer_report_reports_overflow", test_hid_pointer_report_reports_overflow);
               run("recording_hid_keyboard_output_adapter", test_recording_hid_keyboard_output_adapter);
+              run("recording_hid_keyboard_rollover_output_adapter", test_recording_hid_keyboard_rollover_output_adapter);
               run("recording_hid_consumer_output_adapter", test_recording_hid_consumer_output_adapter);
               run("recording_hid_pointer_output_adapter", test_recording_hid_pointer_output_adapter);
               run("event_input_adapter_applies_events", test_event_input_adapter_applies_events);

@@ -353,6 +353,19 @@ private:
   size_t writeCount_ = 0;
 };
 
+class RecordingHidKeyboardRolloverOutputAdapter : public OutputAdapter
+{
+public:
+  void write(const InputState &state) override;
+  const HidKeyboardRolloverReport &report() const;
+  size_t writeCount() const;
+  void clear();
+
+private:
+  HidKeyboardRolloverReport report_;
+  size_t writeCount_ = 0;
+};
+
 class RecordingHidConsumerOutputAdapter : public OutputAdapter
 {
 public:

@@ -246,7 +246,7 @@ esp32keybridge::HidPointerReport pointer = esp32keybridge::buildHidPointerReport
 pointer.apply(esp32keybridge::pointerAxisValueEvent(esp32keybridge::PointerAxis::Wheel, 1));
 ```
 
-`esp32keybridge::RecordingHidKeyboardOutputAdapter`、`esp32keybridge::RecordingHidConsumerOutputAdapter`、`esp32keybridge::RecordingHidPointerOutputAdapter` は、実出力なしで report 化結果を確認するための adapter です。最小 example は [examples/NonKeyboardReports](../examples/NonKeyboardReports/README.ja.md) に置きます。
+`esp32keybridge::RecordingHidKeyboardOutputAdapter`、`esp32keybridge::RecordingHidKeyboardRolloverOutputAdapter`、`esp32keybridge::RecordingHidConsumerOutputAdapter`、`esp32keybridge::RecordingHidPointerOutputAdapter` は、実出力なしで report 化結果を確認するための adapter です。最小 example は [examples/NonKeyboardReports](../examples/NonKeyboardReports/README.ja.md) に置きます。
 
 ## Runtime Config Apply
 

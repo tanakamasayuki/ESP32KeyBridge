@@ -868,6 +868,28 @@ void RecordingHidKeyboardOutputAdapter::clear()
   writeCount_ = 0;
 }
 
+void RecordingHidKeyboardRolloverOutputAdapter::write(const InputState &state)
+{
+  report_ = buildHidKeyboardRolloverReport(state);
+  ++writeCount_;
+}
+
+const HidKeyboardRolloverReport &RecordingHidKeyboardRolloverOutputAdapter::report() const
+{
+  return report_;
+}
+
+size_t RecordingHidKeyboardRolloverOutputAdapter::writeCount() const
+{
+  return writeCount_;
+}
+
+void RecordingHidKeyboardRolloverOutputAdapter::clear()
+{
+  report_.clear();
+  writeCount_ = 0;
+}
+
 void RecordingHidConsumerOutputAdapter::write(const InputState &state)
 {
   report_ = buildHidConsumerReport(state);
