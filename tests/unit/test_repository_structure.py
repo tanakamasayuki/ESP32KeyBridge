@@ -35,6 +35,11 @@ def test_required_project_files_exist():
         "tests/peer/usb_host_keyboard/test_usb_host_keyboard.py",
         "tests/peer/usb_host_keyboard/peer_device/peer_device.ino",
         "tests/peer/usb_host_keyboard/peer_device/sketch.yaml",
+        "tests/peer/usb_device_keyboard_output/usb_device_keyboard_output.ino",
+        "tests/peer/usb_device_keyboard_output/sketch.yaml",
+        "tests/peer/usb_device_keyboard_output/test_usb_device_keyboard_output.py",
+        "tests/peer/usb_device_keyboard_output/peer_device/peer_device.ino",
+        "tests/peer/usb_device_keyboard_output/peer_device/sketch.yaml",
         "tests/manual/README.ja.md",
         "tests/manual/README.md",
     ]

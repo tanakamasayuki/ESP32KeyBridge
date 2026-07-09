@@ -70,10 +70,10 @@ peer テストは、USB adapter が実 USB 経由で期待どおり event / stat
 追加済み:
 
 - `usb_host_keyboard`: Device 役 S3 が HID keyboard report を送信し、Host 役 S3 の USB Host adapter が受け取った key event を `esp32keybridge::ESP32KeyBridge` の input pipeline へ流す。
+- `usb_device_keyboard_output`: Device 役 S3 が `esp32keybridge::ESP32KeyBridge` の output pipeline から USB Device keyboard report を出力し、Host 役 S3 が USB Host で観測する。
 
 初期候補:
 
-- `usb_device_keyboard_output`: Device 役 S3 が `esp32keybridge::ESP32KeyBridge` の output pipeline から USB Device keyboard report を出力し、Host 役 S3 が USB Host で観測する。
 - `usb_hid_cdc_config`: HID 出力と CDC 設定 reference example の最低限の共存を確認する。複雑な WebSerial UI 操作は manual に残す。
 
 USB-to-USB bridge 全体の完全な end-to-end 自動化は、入力 source、bridge、output observer の 3 役が必要になりやすいため初期必須にしません。2台 peer では adapter 境界を優先します。

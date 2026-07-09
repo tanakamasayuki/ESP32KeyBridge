@@ -39,10 +39,10 @@ TEST_SERIAL_PORT_PEER_DEVICE_S3_PEER_DEVICE=/dev/ttyUSB1
 ## 追加済み
 
 - `usb_host_keyboard`: Device board が HID keyboard report を送信し、Host board の USB Host adapter が受け取った key event を `esp32keybridge::ESP32KeyBridge` の input pipeline へ流せることを確認する。
+- `usb_device_keyboard_output`: Device board 側で `esp32keybridge::ESP32KeyBridge` の output pipeline から USB Device keyboard report を出力し、Host board が USB Host で観測する。
 
 ## 初期候補
 
-- `usb_device_keyboard_output`: Device board 側で `esp32keybridge::ESP32KeyBridge` の output pipeline から USB Device keyboard report を出力し、Host board が USB Host で観測する。
 - `usb_hid_cdc_config`: HID 出力と CDC 設定 reference example の最低限の共存を確認する。
 
 USB-to-USB bridge 全体の完全な end-to-end 自動化は、入力 source、bridge、output observer の 3 役が必要になりやすいため初期必須にしません。2台 peer では adapter 境界を優先します。
