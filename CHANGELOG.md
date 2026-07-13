@@ -10,6 +10,12 @@
   key set (`KeySet`), union merge across inputs with release-when-all-release
   semantics, disconnect handling that drops a lost input's keys, and keyboard
   modifier normalization helpers. Fixed by host unit tests.
+- Implement core step 2, key transforms: single-step kind-crossing remap and
+  disable (`TransformConfig`), per-input transforms bound by config slot,
+  momentary layers triggered by virtual keys (`LayerConfig`), and press-time
+  resolution (a held key keeps the mapping it was pressed with, so layer and
+  config changes never produce stuck keys). Add the `SwapCtrlCapsLock`
+  example (UC1).
 
 - Define the intermediate data model through use-case-driven review:
   key identity as kind + value (keyboard / consumer / mouse button /

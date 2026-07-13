@@ -219,6 +219,279 @@ static void test_bridge_can_clear_inputs()
   assert(bridge.mergedKeys().count() == 0);
 }
 
+static void test_global_remap_swaps_without_chaining()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key capsLock = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock);
+  esp32keybridge::Key leftCtrl = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftCtrl);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.global.remap(capsLock, leftCtrl));
+  assert(config.global.remap(leftCtrl, capsLock));
+
+  esp32keybridge::ESP32KeyBridgeConfigError error;
+  assert(bridge.validateConfig(config, error));
+  bridge.applyConfig(config);
+
+  assert(keyboard.press(capsLock));
+  assert(keyboard.press(leftCtrl));
+  bridge.update();
+
+  // Single-step lookup: both keys swap, neither chains back.
+  assert(bridge.outputKeys().contains(leftCtrl));
+  assert(bridge.outputKeys().contains(capsLock));
+  assert(bridge.outputKeys().count() == 2);
+  assert(bridge.mergedKeys().contains(capsLock));
+
+  assert(keyboard.release(capsLock));
+  bridge.update();
+  assert(bridge.outputKeys().contains(capsLock));
+  assert(!bridge.outputKeys().contains(leftCtrl));
+}
+
+static void test_remap_crosses_key_kinds()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.global.remap(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::F13),
+                             esp32keybridge::consumerKey(esp32keybridge::ConsumerUsage::VolumeIncrement)));
+  bridge.applyConfig(config);
+
+  assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::F13)));
+  bridge.update();
+  assert(bridge.outputKeys().contains(esp32keybridge::consumerKey(0x00e9)));
+  assert(bridge.outputKeys().count() == 1);
+}
+
+static void test_global_disable_drops_key()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key insert = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Insert);
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.global.disable(insert));
+  bridge.applyConfig(config);
+
+  assert(keyboard.press(insert));
+  assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A)));
+  bridge.update();
+  assert(!bridge.outputKeys().contains(insert));
+  assert(bridge.outputKeys().count() == 1);
+  assert(bridge.mergedKeys().contains(insert));
+
+  assert(keyboard.release(insert));
+  bridge.update();
+  assert(bridge.outputKeys().count() == 1);
+}
+
+static void test_per_input_remap_applies_to_one_input()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  esp32keybridge::ManualInputAdapter scanner;
+  assert(bridge.addInput(keyboard)); // config slot 0
+  assert(bridge.addInput(scanner));  // config slot 1
+
+  esp32keybridge::Key enter = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Enter);
+  esp32keybridge::Key tab = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Tab);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.input(1).remap(enter, tab));
+  bridge.applyConfig(config);
+
+  assert(keyboard.press(enter));
+  bridge.update();
+  assert(bridge.outputKeys().contains(enter));
+  assert(!bridge.outputKeys().contains(tab));
+
+  assert(keyboard.release(enter));
+  assert(scanner.press(enter));
+  bridge.update();
+  assert(bridge.outputKeys().contains(tab));
+  assert(!bridge.outputKeys().contains(enter));
+}
+
+static void test_explicit_config_index_binding()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter scanner;
+  assert(bridge.addInput(scanner, 3));
+
+  esp32keybridge::Key enter = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Enter);
+  esp32keybridge::Key tab = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Tab);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.input(3).remap(enter, tab));
+  bridge.applyConfig(config);
+
+  assert(scanner.press(enter));
+  bridge.update();
+  assert(bridge.outputKeys().contains(tab));
+}
+
+static void test_momentary_layer_with_press_time_resolution()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key fn1 = esp32keybridge::virtualKey(1);
+  esp32keybridge::Key h = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::H);
+  esp32keybridge::Key left = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Left);
+  esp32keybridge::Key capsLock = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.global.remap(capsLock, fn1)); // donor key -> virtual trigger
+  config.layer(0).setTrigger(fn1);
+  assert(config.layer(0).remap(h, left));
+  bridge.applyConfig(config);
+
+  // Without the layer, H is H.
+  assert(keyboard.press(h));
+  bridge.update();
+  assert(bridge.outputKeys().contains(h));
+  assert(keyboard.release(h));
+  bridge.update();
+
+  // Trigger held: new press resolves through the layer; trigger is consumed.
+  assert(keyboard.press(capsLock));
+  bridge.update();
+  assert(bridge.outputKeys().count() == 0);
+
+  assert(keyboard.press(h));
+  bridge.update();
+  assert(bridge.outputKeys().contains(left));
+  assert(!bridge.outputKeys().contains(h));
+
+  // Press-time resolution: releasing the trigger keeps the held key as Left.
+  assert(keyboard.release(capsLock));
+  bridge.update();
+  assert(bridge.outputKeys().contains(left));
+  assert(!bridge.outputKeys().contains(h));
+
+  // Release uses the press-time value: no stuck key.
+  assert(keyboard.release(h));
+  bridge.update();
+  assert(bridge.outputKeys().count() == 0);
+
+  // After the layer, H resolves to H again.
+  assert(keyboard.press(h));
+  bridge.update();
+  assert(bridge.outputKeys().contains(h));
+}
+
+static void test_layer_trigger_and_key_in_same_update()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key fn1 = esp32keybridge::virtualKey(1);
+  esp32keybridge::Key h = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::H);
+  esp32keybridge::Key left = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Left);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  config.layer(0).setTrigger(fn1);
+  assert(config.layer(0).remap(h, left));
+  bridge.applyConfig(config);
+
+  // Trigger and target arrive in the same update: trigger-first semantics.
+  assert(keyboard.press(fn1));
+  assert(keyboard.press(h));
+  bridge.update();
+  assert(bridge.outputKeys().contains(left));
+  assert(bridge.outputKeys().count() == 1);
+
+  // Trigger release and a new press in the same update: layer is off first.
+  assert(keyboard.release(fn1));
+  assert(keyboard.release(h));
+  bridge.update();
+  assert(keyboard.press(fn1));
+  bridge.update();
+  assert(keyboard.release(fn1));
+  assert(keyboard.press(h));
+  bridge.update();
+  assert(bridge.outputKeys().contains(h));
+  assert(!bridge.outputKeys().contains(left));
+}
+
+static void test_layer_works_across_inputs()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter pedal;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(pedal));
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key fn1 = esp32keybridge::virtualKey(1);
+  esp32keybridge::Key h = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::H);
+  esp32keybridge::Key left = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Left);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  config.layer(0).setTrigger(fn1);
+  assert(config.layer(0).remap(h, left));
+  bridge.applyConfig(config);
+
+  // Layer state is managed at the merged level: a pedal trigger affects the
+  // keyboard's keys.
+  assert(pedal.press(fn1));
+  bridge.update();
+  assert(keyboard.press(h));
+  bridge.update();
+  assert(bridge.outputKeys().contains(left));
+}
+
+static void test_apply_config_keeps_held_resolution()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+  esp32keybridge::Key b = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::B);
+
+  assert(keyboard.press(a));
+  bridge.update();
+  assert(bridge.outputKeys().contains(a));
+
+  // A new remap applied while A is held does not re-resolve the held press.
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.global.remap(a, b));
+  bridge.applyConfig(config);
+  bridge.update();
+  assert(bridge.outputKeys().contains(a));
+  assert(!bridge.outputKeys().contains(b));
+
+  // Re-pressing resolves with the new configuration.
+  assert(keyboard.release(a));
+  bridge.update();
+  assert(keyboard.press(a));
+  bridge.update();
+  assert(bridge.outputKeys().contains(b));
+  assert(!bridge.outputKeys().contains(a));
+}
+
+static void test_unconsumed_virtual_key_stays_in_output()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  // No layer uses virtual 9: it passes through to outputKeys(); output
+  // adapters are responsible for dropping what they cannot represent.
+  assert(keyboard.press(esp32keybridge::virtualKey(9)));
+  bridge.update();
+  assert(bridge.outputKeys().contains(esp32keybridge::virtualKey(9)));
+}
+
 static void run(const char *name, void (*test)())
 {
   Serial.print("RUN ");
@@ -243,6 +516,16 @@ void setup()
   run("bridge_disconnected_input_releases_keys", test_bridge_disconnected_input_releases_keys);
   run("bridge_merge_overflow_is_reported", test_bridge_merge_overflow_is_reported);
   run("bridge_can_clear_inputs", test_bridge_can_clear_inputs);
+  run("global_remap_swaps_without_chaining", test_global_remap_swaps_without_chaining);
+  run("remap_crosses_key_kinds", test_remap_crosses_key_kinds);
+  run("global_disable_drops_key", test_global_disable_drops_key);
+  run("per_input_remap_applies_to_one_input", test_per_input_remap_applies_to_one_input);
+  run("explicit_config_index_binding", test_explicit_config_index_binding);
+  run("momentary_layer_with_press_time_resolution", test_momentary_layer_with_press_time_resolution);
+  run("layer_trigger_and_key_in_same_update", test_layer_trigger_and_key_in_same_update);
+  run("layer_works_across_inputs", test_layer_works_across_inputs);
+  run("apply_config_keeps_held_resolution", test_apply_config_keeps_held_resolution);
+  run("unconsumed_virtual_key_stays_in_output", test_unconsumed_virtual_key_stays_in_output);
   Serial.print("TEST done ");
   Serial.print(g_total);
   Serial.print("/");

@@ -4,11 +4,10 @@
 
 ## Core Examples
 
-(実装順 1〜2 の完了後に追加予定)
+- `SwapCtrlCapsLock`: global remap 2 エントリで Ctrl と CapsLock を入れ替える(UC1)。
 
 ## 追加予定
 
-- Ctrl と CapsLock の入れ替え(UC1)
 - 複数入力の統合(UC2)
 - GPIO 単独キー / フットスイッチ(UC7)
 - メディアキー remap(UC9)

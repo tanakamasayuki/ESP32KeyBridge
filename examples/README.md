@@ -4,11 +4,10 @@ The old examples were removed together with the pre-spec implementation (referen
 
 ## Core Examples
 
-(to be added after implementation steps 1-2)
+- `SwapCtrlCapsLock`: swap Ctrl and CapsLock with two global remap entries (UC1).
 
 ## Planned
 
-- Swap Ctrl and CapsLock (UC1)
 - Multi-input merge (UC2)
 - Single GPIO key / foot switch (UC7)
 - Media key remap (UC9)

@@ -351,35 +351,172 @@ private:
 };
 
 // ---------------------------------------------------------------------------
+// Transform configuration
+// ---------------------------------------------------------------------------
+
+struct KeyRemap
+{
+  Key from;
+  Key to;
+};
+
+// Remap and disable table. remap() entries are a single-step lookup and never
+// chain: registering A->B and B->A swaps the two keys. Entries may cross key
+// kinds (keyboard key -> consumer key, any key -> virtual key, ...).
+class TransformConfig
+{
+public:
+  static constexpr size_t MaxRemaps = 32;
+  static constexpr size_t MaxDisabledKeys = 32;
+
+  bool remap(Key from, Key to);
+  bool disable(Key key);
+  void clear();
+
+  Key map(Key key) const;
+  bool isDisabled(Key key) const;
+  bool empty() const;
+
+private:
+  KeyRemap remaps_[MaxRemaps] = {};
+  size_t remapCount_ = 0;
+  Key disabled_[MaxDisabledKeys] = {};
+  size_t disabledCount_ = 0;
+};
+
+// Momentary layer: while the trigger key is held (after per-input and global
+// remap), the layer's remap table overlays the resolution of new presses.
+// The trigger key itself is consumed and never emitted.
+class LayerConfig
+{
+public:
+  static constexpr size_t MaxRemaps = 16;
+
+  void setTrigger(Key trigger);
+  bool remap(Key from, Key to);
+  void clear();
+
+  bool enabled() const;
+  Key trigger() const;
+
+  // Returns the overlay mapping, or the key itself when no entry exists.
+  Key map(Key key) const;
+  bool hasMapping(Key key) const;
+
+private:
+  Key trigger_;
+  KeyRemap remaps_[MaxRemaps] = {};
+  size_t remapCount_ = 0;
+};
+
+class ESP32KeyBridgeConfig
+{
+public:
+  static constexpr size_t MaxInputConfigs = 8;
+  static constexpr size_t MaxLayers = 4;
+
+  // Per-input transform, addressed by config slot (see addInput()). An
+  // out-of-range index returns a writable dummy that is never applied.
+  TransformConfig &input(size_t index);
+  const TransformConfig &input(size_t index) const;
+
+  LayerConfig &layer(size_t index = 0);
+  const LayerConfig &layer(size_t index = 0) const;
+
+  void clear();
+
+  TransformConfig global;
+
+private:
+  TransformConfig inputs_[MaxInputConfigs];
+  LayerConfig layers_[MaxLayers];
+  TransformConfig dummyInput_;
+  LayerConfig dummyLayer_;
+};
+
+struct ESP32KeyBridgeConfigError
+{
+  const char *message = nullptr;
+};
+
+// ---------------------------------------------------------------------------
 // Bridge
 // ---------------------------------------------------------------------------
+//
+// Key resolution is fixed at press time: when a key appears on an input, it is
+// resolved once through per-input remap -> global remap -> layer overlay ->
+// disable, and the result is held until that key is released. Layer changes or
+// applyConfig() while a key is held never re-resolve it, so releases always
+// release exactly what was pressed (no stuck keys).
+//
+// Within one update, releases are processed before presses, and presses that
+// resolve to a layer trigger are processed before other presses (a trigger and
+// a target key arriving in the same update behave as trigger-first).
 
 class ESP32KeyBridge
 {
 public:
   static constexpr size_t MaxInputs = 8;
+  static constexpr size_t MaxHeldKeys = 64;
 
+  // Registers an input. The config slot defaults to the registration order;
+  // the second form binds an explicit slot of ESP32KeyBridgeConfig::input().
   bool addInput(InputAdapter &input);
+  bool addInput(InputAdapter &input, size_t configIndex);
   void clearInputs();
   size_t inputCount() const;
 
+  bool validateConfig(const ESP32KeyBridgeConfig &config, ESP32KeyBridgeConfigError &error) const;
+  void applyConfig(const ESP32KeyBridgeConfig &config);
+
   void begin();
 
-  // Updates all inputs and rebuilds the merged state as the union of the key
-  // sets of all connected inputs. A key stays pressed until every input that
-  // holds it releases it; a disconnected input contributes nothing.
+  // Updates all inputs, tracks press/release transitions, and rebuilds both
+  // key sets. A key stays pressed until every input that holds it releases
+  // it; a disconnected input contributes nothing.
   void update();
 
+  // Raw union of connected inputs' keys, before any transform.
   const KeySet &mergedKeys() const;
 
-  // True when the last update dropped keys because the merged set was full.
+  // Transformed result: resolved keys of all held presses. Virtual keys that
+  // were not consumed as layer triggers remain here; output adapters emit
+  // only what they can represent.
+  const KeySet &outputKeys() const;
+
+  // True when the last update dropped keys (merged set full).
   bool mergedOverflow() const;
 
+  // True when the last update dropped transformed keys (held table or output
+  // set full). Dropped keys are never emitted, so they cannot get stuck.
+  bool outputOverflow() const;
+
 private:
+  struct HeldKey
+  {
+    uint8_t inputIndex = 0;
+    Key source;
+    Key resolved;
+    uint8_t layerTriggerMask = 0;
+  };
+
+  size_t findHeld(uint8_t inputIndex, Key source) const;
+  void removeHeld(size_t index);
+  uint8_t layerTriggerMaskFor(Key key) const;
+  Key applyLayerOverlay(Key key) const;
+  void resolvePress(uint8_t inputIndex, Key source, bool triggersOnly);
+
   InputAdapter *inputs_[MaxInputs] = {};
+  size_t inputConfigIndexes_[MaxInputs] = {};
   size_t inputCount_ = 0;
+  ESP32KeyBridgeConfig config_;
+  HeldKey held_[MaxHeldKeys] = {};
+  size_t heldCount_ = 0;
+  uint16_t layerHoldCounts_[ESP32KeyBridgeConfig::MaxLayers] = {};
   KeySet merged_;
+  KeySet output_;
   bool mergedOverflow_ = false;
+  bool outputOverflow_ = false;
 };
 
 } // namespace esp32keybridge

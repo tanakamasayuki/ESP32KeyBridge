@@ -4,6 +4,11 @@ KeyKind	KEYWORD1
 KeyboardUsage	KEYWORD1
 ConsumerUsage	KEYWORD1
 KeySet	KEYWORD1
+KeyRemap	KEYWORD1
+TransformConfig	KEYWORD1
+LayerConfig	KEYWORD1
+ESP32KeyBridgeConfig	KEYWORD1
+ESP32KeyBridgeConfigError	KEYWORD1
 InputAdapter	KEYWORD1
 ManualInputAdapter	KEYWORD1
 
@@ -33,7 +38,27 @@ inputCount	KEYWORD2
 begin	KEYWORD2
 update	KEYWORD2
 mergedKeys	KEYWORD2
+outputKeys	KEYWORD2
 mergedOverflow	KEYWORD2
+outputOverflow	KEYWORD2
+remap	KEYWORD2
+disable	KEYWORD2
+map	KEYWORD2
+isDisabled	KEYWORD2
+empty	KEYWORD2
+setTrigger	KEYWORD2
+trigger	KEYWORD2
+hasMapping	KEYWORD2
+enabled	KEYWORD2
+input	KEYWORD2
+layer	KEYWORD2
+validateConfig	KEYWORD2
+applyConfig	KEYWORD2
 
 MaxKeys	LITERAL1
 MaxInputs	LITERAL1
+MaxRemaps	LITERAL1
+MaxDisabledKeys	LITERAL1
+MaxLayers	LITERAL1
+MaxInputConfigs	LITERAL1
+MaxHeldKeys	LITERAL1
