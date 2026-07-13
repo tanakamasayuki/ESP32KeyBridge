@@ -16,6 +16,12 @@
   resolution (a held key keeps the mapping it was pressed with, so layer and
   config changes never produce stuck keys). Add the `SwapCtrlCapsLock`
   example (UC1).
+- Implement core step 3, lock state: an internal `LockState` shadow with a
+  single authority chain (the first connected lock-reporting output wins;
+  without one the bridge acts as the terminal host and toggles
+  Caps/Num/Scroll on resolved key presses), push notification to input
+  adapters on change and on (re)connect, and the `OutputAdapter` interface
+  with `ManualOutputAdapter` for tests and sketches.
 
 - Define the intermediate data model through use-case-driven review:
   key identity as kind + value (keyboard / consumer / mouse button /

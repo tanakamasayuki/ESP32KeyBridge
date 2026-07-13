@@ -310,6 +310,36 @@ private:
 };
 
 // ---------------------------------------------------------------------------
+// Lock state
+// ---------------------------------------------------------------------------
+//
+// Lock state is owned by whoever interprets it. While a lock-reporting output
+// (USB device / BLE HID connected to a host) is present, that host is the
+// authority and the bridge only relays. Without one, the bridge acts as the
+// terminal host and toggles Caps/Num/Scroll on lock key presses itself. The
+// bridge always keeps one internal shadow copy and notifies every input
+// adapter (keyboard LEDs, GPIO pins) when it changes.
+
+struct LockState
+{
+  bool numLock = false;
+  bool capsLock = false;
+  bool scrollLock = false;
+  bool kana = false; // JIS Kana LED. Forwarded only; never toggled by the bridge.
+
+  constexpr bool operator==(const LockState &other) const
+  {
+    return numLock == other.numLock && capsLock == other.capsLock &&
+           scrollLock == other.scrollLock && kana == other.kana;
+  }
+
+  constexpr bool operator!=(const LockState &other) const
+  {
+    return !(*this == other);
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Input adapters
 // ---------------------------------------------------------------------------
 
@@ -329,6 +359,11 @@ public:
   // While false, the bridge treats this input as absent: its keys drop out of
   // the merged state (all keys released). Adapters report disconnection here.
   virtual bool connected() const { return true; }
+
+  // Called when the bridge's lock state changes and once after this input is
+  // added or reconnects. Adapters reflect it to their device (USB LED report,
+  // GPIO pins, BLE output report). Default: ignore.
+  virtual void setLockState(const LockState &state) { (void)state; }
 };
 
 // Minimal input adapter driven by direct press/release calls. Used by unit
@@ -339,15 +374,100 @@ public:
   void update() override {}
   const KeySet &keys() const override { return keys_; }
   bool connected() const override { return connected_; }
+  void setLockState(const LockState &state) override
+  {
+    lockState_ = state;
+    ++lockStateCount_;
+  }
 
   bool press(Key key) { return keys_.press(key); }
   bool release(Key key) { return keys_.release(key); }
   void clear() { keys_.clear(); }
   void setConnected(bool connected) { connected_ = connected; }
 
+  // Last lock state received from the bridge (LED view of this input).
+  const LockState &lockState() const { return lockState_; }
+  size_t lockStateCount() const { return lockStateCount_; }
+
 private:
   KeySet keys_;
   bool connected_ = true;
+  LockState lockState_;
+  size_t lockStateCount_ = 0;
+};
+
+// ---------------------------------------------------------------------------
+// Output adapters
+// ---------------------------------------------------------------------------
+
+class OutputAdapter
+{
+public:
+  virtual ~OutputAdapter() = default;
+
+  // Receives the transformed key set once per bridge update. Adapters emit
+  // what they can represent and silently drop the rest (e.g. virtual keys).
+  virtual void write(const KeySet &keys) = 0;
+
+  // While false, the bridge does not write to this output and it cannot act
+  // as the lock authority.
+  virtual bool connected() const { return true; }
+
+  // Lock-reporting outputs (USB device / BLE HID receiving LED output
+  // reports from a host) return true and provide the host's lock state.
+  virtual bool reportsLockState() const { return false; }
+  virtual bool getLockState(LockState &out) const
+  {
+    (void)out;
+    return false;
+  }
+};
+
+// Minimal output adapter that records what the bridge writes and lets tests
+// or sketches simulate a lock-reporting host. Counterpart of
+// ManualInputAdapter.
+class ManualOutputAdapter : public OutputAdapter
+{
+public:
+  void write(const KeySet &keys) override
+  {
+    keys_ = keys;
+    ++writeCount_;
+  }
+  bool connected() const override { return connected_; }
+  bool reportsLockState() const override { return reportsLockState_; }
+  bool getLockState(LockState &out) const override
+  {
+    if (!reportsLockState_)
+    {
+      return false;
+    }
+    out = hostLockState_;
+    return true;
+  }
+
+  const KeySet &keys() const { return keys_; }
+  size_t writeCount() const { return writeCount_; }
+  void clear()
+  {
+    keys_.clear();
+    writeCount_ = 0;
+  }
+
+  void setConnected(bool connected) { connected_ = connected; }
+  // Simulates a host that reports lock state via LED output reports.
+  void setHostLockState(const LockState &state)
+  {
+    reportsLockState_ = true;
+    hostLockState_ = state;
+  }
+
+private:
+  KeySet keys_;
+  size_t writeCount_ = 0;
+  bool connected_ = true;
+  bool reportsLockState_ = false;
+  LockState hostLockState_;
 };
 
 // ---------------------------------------------------------------------------
@@ -457,6 +577,7 @@ class ESP32KeyBridge
 {
 public:
   static constexpr size_t MaxInputs = 8;
+  static constexpr size_t MaxOutputs = 4;
   static constexpr size_t MaxHeldKeys = 64;
 
   // Registers an input. The config slot defaults to the registration order;
@@ -466,15 +587,29 @@ public:
   void clearInputs();
   size_t inputCount() const;
 
+  bool addOutput(OutputAdapter &output);
+  void clearOutputs();
+  size_t outputCount() const;
+
   bool validateConfig(const ESP32KeyBridgeConfig &config, ESP32KeyBridgeConfigError &error) const;
   void applyConfig(const ESP32KeyBridgeConfig &config);
 
   void begin();
 
-  // Updates all inputs, tracks press/release transitions, and rebuilds both
-  // key sets. A key stays pressed until every input that holds it releases
+  // Updates all inputs, tracks press/release transitions, rebuilds both key
+  // sets, maintains the lock state, and writes the result to all connected
+  // outputs. A key stays pressed until every input that holds it releases
   // it; a disconnected input contributes nothing.
   void update();
+
+  // Internal lock state shadow. While a connected lock-reporting output is
+  // present (the first registered one is the authority), it mirrors that
+  // host. Otherwise the bridge is the terminal host and toggles
+  // Caps/Num/Scroll on lock key presses in the output keys.
+  const LockState &lockState() const;
+
+  // True while the lock state follows an external authority.
+  bool lockAuthorityPresent() const;
 
   // Raw union of connected inputs' keys, before any transform.
   const KeySet &mergedKeys() const;
@@ -505,10 +640,14 @@ private:
   uint8_t layerTriggerMaskFor(Key key) const;
   Key applyLayerOverlay(Key key) const;
   void resolvePress(uint8_t inputIndex, Key source, bool triggersOnly);
+  void updateLockState();
 
   InputAdapter *inputs_[MaxInputs] = {};
   size_t inputConfigIndexes_[MaxInputs] = {};
+  bool inputWasConnected_[MaxInputs] = {};
   size_t inputCount_ = 0;
+  OutputAdapter *outputs_[MaxOutputs] = {};
+  size_t outputCount_ = 0;
   ESP32KeyBridgeConfig config_;
   HeldKey held_[MaxHeldKeys] = {};
   size_t heldCount_ = 0;
@@ -517,6 +656,9 @@ private:
   KeySet output_;
   bool mergedOverflow_ = false;
   bool outputOverflow_ = false;
+  LockState lockState_;
+  bool lockAuthorityPresent_ = false;
+  bool prevLockKeyPressed_[3] = {}; // Caps, Num, Scroll in outputKeys()
 };
 
 } // namespace esp32keybridge

@@ -492,6 +492,226 @@ static void test_unconsumed_virtual_key_stays_in_output()
   assert(bridge.outputKeys().contains(esp32keybridge::virtualKey(9)));
 }
 
+static void test_outputs_receive_output_keys()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  esp32keybridge::ManualOutputAdapter usb;
+  assert(bridge.addInput(keyboard));
+  assert(bridge.addOutput(usb));
+  assert(bridge.outputCount() == 1);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.global.remap(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock),
+                             esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftCtrl)));
+  bridge.applyConfig(config);
+
+  assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock)));
+  bridge.update();
+  assert(usb.writeCount() == 1);
+  assert(usb.keys().contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftCtrl)));
+
+  // Disconnected outputs are not written.
+  usb.setConnected(false);
+  bridge.update();
+  assert(usb.writeCount() == 1);
+}
+
+static void test_terminal_host_toggles_locks_on_press()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key capsLock = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock);
+  esp32keybridge::Key numLock = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::NumLock);
+
+  // No lock-reporting output: the bridge is the terminal host.
+  bridge.update();
+  assert(!bridge.lockAuthorityPresent());
+  assert(!bridge.lockState().capsLock);
+
+  // Toggle on press, not on release, and not again while held.
+  assert(keyboard.press(capsLock));
+  bridge.update();
+  assert(bridge.lockState().capsLock);
+  bridge.update();
+  assert(bridge.lockState().capsLock);
+  assert(keyboard.release(capsLock));
+  bridge.update();
+  assert(bridge.lockState().capsLock);
+
+  assert(keyboard.press(capsLock));
+  bridge.update();
+  assert(!bridge.lockState().capsLock);
+  assert(keyboard.release(capsLock));
+
+  assert(keyboard.press(numLock));
+  bridge.update();
+  assert(bridge.lockState().numLock);
+  assert(!bridge.lockState().capsLock);
+  assert(!bridge.lockState().kana);
+}
+
+static void test_terminal_host_toggle_uses_resolved_key()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key capsLock = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock);
+  esp32keybridge::Key leftCtrl = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftCtrl);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.global.remap(capsLock, leftCtrl));
+  assert(config.global.remap(leftCtrl, capsLock));
+  bridge.applyConfig(config);
+
+  // Physical CapsLock resolves to LeftCtrl: no toggle.
+  assert(keyboard.press(capsLock));
+  bridge.update();
+  assert(!bridge.lockState().capsLock);
+  assert(keyboard.release(capsLock));
+  bridge.update();
+
+  // Physical LeftCtrl resolves to CapsLock: toggles, as a host would.
+  assert(keyboard.press(leftCtrl));
+  bridge.update();
+  assert(bridge.lockState().capsLock);
+}
+
+static void test_lock_state_is_pushed_to_inputs()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  // Newly added inputs receive the current state on the first update.
+  bridge.update();
+  assert(keyboard.lockStateCount() == 1);
+
+  // Changes are pushed to every connected input.
+  assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock)));
+  bridge.update();
+  assert(keyboard.lockStateCount() == 2);
+  assert(keyboard.lockState().capsLock);
+
+  // No change, no push. Release before the disconnect below so that the
+  // reconnect does not replay the press (and toggle again).
+  assert(keyboard.release(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock)));
+  bridge.update();
+  assert(keyboard.lockStateCount() == 2);
+
+  // A reconnecting input gets the current state pushed again.
+  keyboard.setConnected(false);
+  bridge.update();
+  keyboard.setConnected(true);
+  bridge.update();
+  assert(keyboard.lockStateCount() == 3);
+
+  // A late-joining input gets the state on its first update.
+  esp32keybridge::ManualInputAdapter second;
+  assert(bridge.addInput(second));
+  bridge.update();
+  assert(second.lockStateCount() == 1);
+  assert(second.lockState().capsLock);
+}
+
+static void test_lock_authority_overrides_and_disables_toggle()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  esp32keybridge::ManualOutputAdapter usb;
+  assert(bridge.addInput(keyboard));
+  assert(bridge.addOutput(usb));
+
+  esp32keybridge::LockState host;
+  host.numLock = true;
+  host.kana = true;
+  usb.setHostLockState(host);
+
+  bridge.update();
+  assert(bridge.lockAuthorityPresent());
+  assert(bridge.lockState().numLock);
+  assert(bridge.lockState().kana);
+  assert(keyboard.lockState().numLock);
+
+  // While an authority is present the bridge never self-toggles: CapsLock
+  // press is relayed as a key, and the state follows only the host.
+  assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock)));
+  bridge.update();
+  assert(!bridge.lockState().capsLock);
+
+  // The host reports the change: shadow and inputs follow.
+  host.capsLock = true;
+  usb.setHostLockState(host);
+  bridge.update();
+  assert(bridge.lockState().capsLock);
+  assert(keyboard.lockState().capsLock);
+}
+
+static void test_lock_authority_wins_over_terminal_state()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  // Terminal mode: caps on.
+  assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock)));
+  bridge.update();
+  assert(keyboard.release(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock)));
+  bridge.update();
+  assert(bridge.lockState().capsLock);
+
+  // An authority appears with caps off: external wins.
+  esp32keybridge::ManualOutputAdapter usb;
+  usb.setHostLockState(esp32keybridge::LockState());
+  assert(bridge.addOutput(usb));
+  bridge.update();
+  assert(bridge.lockAuthorityPresent());
+  assert(!bridge.lockState().capsLock);
+
+  // The authority disappears: terminal mode continues from the last value.
+  usb.setConnected(false);
+  bridge.update();
+  assert(!bridge.lockAuthorityPresent());
+  assert(!bridge.lockState().capsLock);
+  assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock)));
+  bridge.update();
+  assert(bridge.lockState().capsLock);
+}
+
+static void test_first_lock_reporting_output_is_authority()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualOutputAdapter log;   // not lock-reporting
+  esp32keybridge::ManualOutputAdapter usb;   // first lock-reporting output
+  esp32keybridge::ManualOutputAdapter ble;   // second: state is not followed
+  assert(bridge.addOutput(log));
+  assert(bridge.addOutput(usb));
+  assert(bridge.addOutput(ble));
+
+  esp32keybridge::LockState usbState;
+  usbState.capsLock = true;
+  usb.setHostLockState(usbState);
+
+  esp32keybridge::LockState bleState;
+  bleState.numLock = true;
+  ble.setHostLockState(bleState);
+
+  bridge.update();
+  assert(bridge.lockAuthorityPresent());
+  assert(bridge.lockState().capsLock);
+  assert(!bridge.lockState().numLock);
+
+  // When the first authority disconnects, the next lock-reporting output
+  // takes over.
+  usb.setConnected(false);
+  bridge.update();
+  assert(bridge.lockAuthorityPresent());
+  assert(bridge.lockState().numLock);
+}
+
 static void run(const char *name, void (*test)())
 {
   Serial.print("RUN ");
@@ -526,6 +746,13 @@ void setup()
   run("layer_works_across_inputs", test_layer_works_across_inputs);
   run("apply_config_keeps_held_resolution", test_apply_config_keeps_held_resolution);
   run("unconsumed_virtual_key_stays_in_output", test_unconsumed_virtual_key_stays_in_output);
+  run("outputs_receive_output_keys", test_outputs_receive_output_keys);
+  run("terminal_host_toggles_locks_on_press", test_terminal_host_toggles_locks_on_press);
+  run("terminal_host_toggle_uses_resolved_key", test_terminal_host_toggle_uses_resolved_key);
+  run("lock_state_is_pushed_to_inputs", test_lock_state_is_pushed_to_inputs);
+  run("lock_authority_overrides_and_disables_toggle", test_lock_authority_overrides_and_disables_toggle);
+  run("lock_authority_wins_over_terminal_state", test_lock_authority_wins_over_terminal_state);
+  run("first_lock_reporting_output_is_authority", test_first_lock_reporting_output_is_authority);
   Serial.print("TEST done ");
   Serial.print(g_total);
   Serial.print("/");

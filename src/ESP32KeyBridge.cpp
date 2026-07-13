@@ -379,6 +379,7 @@ bool ESP32KeyBridge::addInput(InputAdapter &input, size_t configIndex)
   }
   inputs_[inputCount_] = &input;
   inputConfigIndexes_[inputCount_] = configIndex;
+  inputWasConnected_[inputCount_] = false; // first update pushes the lock state
   ++inputCount_;
   return true;
 }
@@ -395,11 +396,37 @@ void ESP32KeyBridge::clearInputs()
   output_.clear();
   mergedOverflow_ = false;
   outputOverflow_ = false;
+  for (size_t i = 0; i < 3; ++i)
+  {
+    prevLockKeyPressed_[i] = false;
+  }
 }
 
 size_t ESP32KeyBridge::inputCount() const
 {
   return inputCount_;
+}
+
+bool ESP32KeyBridge::addOutput(OutputAdapter &output)
+{
+  if (outputCount_ >= MaxOutputs)
+  {
+    return false;
+  }
+  outputs_[outputCount_] = &output;
+  ++outputCount_;
+  return true;
+}
+
+void ESP32KeyBridge::clearOutputs()
+{
+  outputCount_ = 0;
+  lockAuthorityPresent_ = false;
+}
+
+size_t ESP32KeyBridge::outputCount() const
+{
+  return outputCount_;
 }
 
 bool ESP32KeyBridge::validateConfig(const ESP32KeyBridgeConfig &config,
@@ -602,11 +629,95 @@ void ESP32KeyBridge::update()
       outputOverflow_ = true;
     }
   }
+
+  updateLockState();
+
+  for (size_t i = 0; i < outputCount_; ++i)
+  {
+    if (outputs_[i]->connected())
+    {
+      outputs_[i]->write(output_);
+    }
+  }
+}
+
+void ESP32KeyBridge::updateLockState()
+{
+  // Authority: the first registered, connected, lock-reporting output.
+  const OutputAdapter *authority = nullptr;
+  for (size_t i = 0; i < outputCount_; ++i)
+  {
+    if (outputs_[i]->reportsLockState() && outputs_[i]->connected())
+    {
+      authority = outputs_[i];
+      break;
+    }
+  }
+  lockAuthorityPresent_ = authority != nullptr;
+
+  bool changed = false;
+
+  // Track press transitions of the lock keys in the transformed output. Kept
+  // up to date in both modes so that losing the authority while a lock key is
+  // held does not cause a spurious toggle.
+  const Key lockKeys[3] = {
+      keyboardKey(KeyboardUsage::CapsLock),
+      keyboardKey(KeyboardUsage::NumLock),
+      keyboardKey(KeyboardUsage::ScrollLock),
+  };
+  bool *lockBits[3] = {&lockState_.capsLock, &lockState_.numLock, &lockState_.scrollLock};
+  for (size_t i = 0; i < 3; ++i)
+  {
+    const bool pressed = output_.contains(lockKeys[i]);
+    const bool newPress = pressed && !prevLockKeyPressed_[i];
+    prevLockKeyPressed_[i] = pressed;
+
+    // Terminal host mode: the bridge owns the lock state and toggles on
+    // press. Kana has no standard toggle key and is never self-toggled.
+    if (!lockAuthorityPresent_ && newPress)
+    {
+      *lockBits[i] = !*lockBits[i];
+      changed = true;
+    }
+  }
+
+  if (authority != nullptr)
+  {
+    LockState reported;
+    if (authority->getLockState(reported) && reported != lockState_)
+    {
+      lockState_ = reported;
+      changed = true;
+    }
+  }
+
+  // Notify inputs on change, and push the current state to inputs seen
+  // connected for the first time (hosts only report changes, so late-joining
+  // keyboards need the push).
+  for (size_t i = 0; i < inputCount_; ++i)
+  {
+    const bool connected = inputs_[i]->connected();
+    if (connected && (changed || !inputWasConnected_[i]))
+    {
+      inputs_[i]->setLockState(lockState_);
+    }
+    inputWasConnected_[i] = connected;
+  }
 }
 
 const KeySet &ESP32KeyBridge::mergedKeys() const
 {
   return merged_;
+}
+
+const LockState &ESP32KeyBridge::lockState() const
+{
+  return lockState_;
+}
+
+bool ESP32KeyBridge::lockAuthorityPresent() const
+{
+  return lockAuthorityPresent_;
 }
 
 const KeySet &ESP32KeyBridge::outputKeys() const

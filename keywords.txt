@@ -9,8 +9,11 @@ TransformConfig	KEYWORD1
 LayerConfig	KEYWORD1
 ESP32KeyBridgeConfig	KEYWORD1
 ESP32KeyBridgeConfigError	KEYWORD1
+LockState	KEYWORD1
 InputAdapter	KEYWORD1
 ManualInputAdapter	KEYWORD1
+OutputAdapter	KEYWORD1
+ManualOutputAdapter	KEYWORD1
 
 keyboardKey	KEYWORD2
 consumerKey	KEYWORD2
@@ -54,9 +57,22 @@ input	KEYWORD2
 layer	KEYWORD2
 validateConfig	KEYWORD2
 applyConfig	KEYWORD2
+addOutput	KEYWORD2
+clearOutputs	KEYWORD2
+outputCount	KEYWORD2
+write	KEYWORD2
+writeCount	KEYWORD2
+lockState	KEYWORD2
+lockStateCount	KEYWORD2
+lockAuthorityPresent	KEYWORD2
+setLockState	KEYWORD2
+getLockState	KEYWORD2
+reportsLockState	KEYWORD2
+setHostLockState	KEYWORD2
 
 MaxKeys	LITERAL1
 MaxInputs	LITERAL1
+MaxOutputs	LITERAL1
 MaxRemaps	LITERAL1
 MaxDisabledKeys	LITERAL1
 MaxLayers	LITERAL1
