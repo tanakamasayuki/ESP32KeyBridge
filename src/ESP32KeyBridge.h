@@ -310,6 +310,70 @@ private:
 };
 
 // ---------------------------------------------------------------------------
+// Relative axes (one-shot events with a delta payload)
+// ---------------------------------------------------------------------------
+
+enum class Axis : uint8_t
+{
+  X = 0,
+  Y = 1,
+  Wheel = 2,
+  Pan = 3,
+};
+
+constexpr size_t kAxisCount = 4;
+
+// ---------------------------------------------------------------------------
+// Host layout (character <-> key + shift table of the host's layout setting)
+// ---------------------------------------------------------------------------
+//
+// Used to synthesize keystrokes from characters (text macros, serial text).
+// Digits map to the main row only, so encoded strokes never depend on
+// NumLock. Caps Lock compensation is applied by the typing engine, not here.
+
+struct KeyStroke
+{
+  Key key;
+  bool shift = false;
+};
+
+struct HostLayoutEntry
+{
+  uint16_t usage; // KeyboardUsage value
+  uint16_t base;  // codepoint without shift (0 = none)
+  uint16_t shift; // codepoint with shift (0 = none)
+  bool capsAffects;
+};
+
+class HostLayout
+{
+public:
+  HostLayout(); // defaults to en_us
+
+  static HostLayout enUs();
+  static HostLayout jaJp();
+  // Lookup by locale name ("en_us", "ja_jp"). Returns en_us when unknown and
+  // sets *found to false if provided.
+  static HostLayout byName(const char *name, bool *found = nullptr);
+
+  // Encodes a printable character. Returns false when this layout cannot
+  // type the character. Control characters are handled by the typing engine.
+  bool encode(char32_t codepoint, KeyStroke &stroke) const;
+
+  // True when Caps Lock inverts the shift requirement of this stroke's key.
+  bool capsAffects(Key key) const;
+
+  const char *name() const;
+
+private:
+  HostLayout(const HostLayoutEntry *entries, size_t count, const char *layoutName);
+
+  const HostLayoutEntry *entries_;
+  size_t count_;
+  const char *name_;
+};
+
+// ---------------------------------------------------------------------------
 // Lock state
 // ---------------------------------------------------------------------------
 //
@@ -364,6 +428,14 @@ public:
   // added or reconnects. Adapters reflect it to their device (USB LED report,
   // GPIO pins, BLE output report). Default: ignore.
   virtual void setLockState(const LockState &state) { (void)state; }
+
+  // Returns the accumulated relative delta of an axis since the last call
+  // and resets it (mouse movement, wheel, encoder rotation). Default: none.
+  virtual int32_t takeAxisDelta(Axis axis)
+  {
+    (void)axis;
+    return 0;
+  }
 };
 
 // Minimal input adapter driven by direct press/release calls. Used by unit
@@ -380,10 +452,19 @@ public:
     ++lockStateCount_;
   }
 
+  int32_t takeAxisDelta(Axis axis) override
+  {
+    const size_t index = static_cast<size_t>(axis);
+    const int32_t delta = axisDeltas_[index];
+    axisDeltas_[index] = 0;
+    return delta;
+  }
+
   bool press(Key key) { return keys_.press(key); }
   bool release(Key key) { return keys_.release(key); }
   void clear() { keys_.clear(); }
   void setConnected(bool connected) { connected_ = connected; }
+  void addAxisDelta(Axis axis, int32_t delta) { axisDeltas_[static_cast<size_t>(axis)] += delta; }
 
   // Last lock state received from the bridge (LED view of this input).
   const LockState &lockState() const { return lockState_; }
@@ -394,6 +475,7 @@ private:
   bool connected_ = true;
   LockState lockState_;
   size_t lockStateCount_ = 0;
+  int32_t axisDeltas_[kAxisCount] = {};
 };
 
 // ---------------------------------------------------------------------------
@@ -421,6 +503,20 @@ public:
     (void)out;
     return false;
   }
+
+  // Receives every character consumed from the text stream, including ones
+  // the host layout cannot type. Text-native outputs (UART log, network)
+  // take them directly; HID outputs rely on the synthesized keystrokes in
+  // write(). Default: ignore.
+  virtual void writeText(char32_t codepoint) { (void)codepoint; }
+
+  // Receives non-zero relative axis totals once per update (after scaling).
+  // Report packing, saturation, and carry are the adapter's business.
+  virtual void writeAxisDelta(Axis axis, int32_t delta)
+  {
+    (void)axis;
+    (void)delta;
+  }
 };
 
 // Minimal output adapter that records what the bridge writes and lets tests
@@ -446,12 +542,31 @@ public:
     return true;
   }
 
+  void writeText(char32_t codepoint) override
+  {
+    lastText_ = codepoint;
+    ++textCount_;
+  }
+  void writeAxisDelta(Axis axis, int32_t delta) override
+  {
+    axisTotals_[static_cast<size_t>(axis)] += delta;
+  }
+
   const KeySet &keys() const { return keys_; }
   size_t writeCount() const { return writeCount_; }
+  char32_t lastText() const { return lastText_; }
+  size_t textCount() const { return textCount_; }
+  int32_t axisTotal(Axis axis) const { return axisTotals_[static_cast<size_t>(axis)]; }
   void clear()
   {
     keys_.clear();
     writeCount_ = 0;
+    lastText_ = 0;
+    textCount_ = 0;
+    for (size_t i = 0; i < kAxisCount; ++i)
+    {
+      axisTotals_[i] = 0;
+    }
   }
 
   void setConnected(bool connected) { connected_ = connected; }
@@ -468,6 +583,9 @@ private:
   bool connected_ = true;
   bool reportsLockState_ = false;
   LockState hostLockState_;
+  char32_t lastText_ = 0;
+  size_t textCount_ = 0;
+  int32_t axisTotals_[kAxisCount] = {};
 };
 
 // ---------------------------------------------------------------------------
@@ -529,11 +647,23 @@ private:
   size_t remapCount_ = 0;
 };
 
+// Text macro: pressing the trigger key (after remap) enqueues the stored
+// characters into the text stream. The trigger itself is consumed.
+struct TextMacro
+{
+  static constexpr size_t MaxLength = 31;
+
+  Key trigger;
+  char32_t text[MaxLength] = {};
+  size_t length = 0;
+};
+
 class ESP32KeyBridgeConfig
 {
 public:
   static constexpr size_t MaxInputConfigs = 8;
   static constexpr size_t MaxLayers = 4;
+  static constexpr size_t MaxTextMacros = 4;
 
   // Per-input transform, addressed by config slot (see addInput()). An
   // out-of-range index returns a writable dummy that is never applied.
@@ -543,13 +673,34 @@ public:
   LayerConfig &layer(size_t index = 0);
   const LayerConfig &layer(size_t index = 0) const;
 
+  // Registers a text macro (UTF-8). Returns false when the macro table is
+  // full or the text is too long / invalid.
+  bool textMacro(Key trigger, const char *utf8);
+  const TextMacro *findTextMacro(Key trigger) const;
+
+  // Relative axis transform: negative scale inverts (natural scrolling),
+  // magnitude multiplies. Default 1.
+  void setAxisScale(Axis axis, int16_t scale);
+  int16_t axisScale(Axis axis) const;
+
   void clear();
 
   TransformConfig global;
 
+  // Layout of the host the output is connected to; used to synthesize
+  // keystrokes from characters. Default: en_us.
+  HostLayout hostLayout;
+
+  // When true, text typing waits until no keyboard modifier held by any
+  // input is present, instead of temporarily releasing them per character.
+  bool deferTypingWhileModifiersHeld = false;
+
 private:
   TransformConfig inputs_[MaxInputConfigs];
   LayerConfig layers_[MaxLayers];
+  TextMacro textMacros_[MaxTextMacros];
+  size_t textMacroCount_ = 0;
+  int16_t axisScales_[kAxisCount] = {1, 1, 1, 1};
   TransformConfig dummyInput_;
   LayerConfig dummyLayer_;
 };
@@ -611,6 +762,32 @@ public:
   // True while the lock state follows an external authority.
   bool lockAuthorityPresent() const;
 
+  // --- Text stream -------------------------------------------------------
+  //
+  // Characters are carried as characters and expanded into keystrokes at the
+  // output edge using config.hostLayout. The typing engine emits one phase
+  // per update (modifiers, key down, key up), keeps each character's frame
+  // atomic, temporarily parks user-held keyboard modifiers, and applies Caps
+  // Lock compensation from the lock state shadow.
+
+  // Enqueues one character / a UTF-8 string. Returns false when characters
+  // were dropped because the queue was full.
+  bool typeChar(char32_t codepoint);
+  bool typeText(const char *utf8);
+
+  size_t textQueueLength() const;
+  bool typingActive() const;
+  // Characters dropped because the queue was full.
+  uint32_t textOverflowCount() const;
+  // Characters the host layout could not type (skipped, still sent to
+  // writeText outputs).
+  uint32_t textEncodeFailCount() const;
+
+  // --- Relative axes ------------------------------------------------------
+
+  // Total delta of the last update (sum over inputs, after axis scale).
+  int32_t axisDelta(Axis axis) const;
+
   // Raw union of connected inputs' keys, before any transform.
   const KeySet &mergedKeys() const;
 
@@ -635,12 +812,19 @@ private:
     uint8_t layerTriggerMask = 0;
   };
 
+  static constexpr size_t MaxTextQueue = 64;
+
   size_t findHeld(uint8_t inputIndex, Key source) const;
   void removeHeld(size_t index);
   uint8_t layerTriggerMaskFor(Key key) const;
   Key applyLayerOverlay(Key key) const;
   void resolvePress(uint8_t inputIndex, Key source, bool triggersOnly);
   void updateLockState();
+  bool enqueueChar(char32_t codepoint);
+  void enqueueMacro(const TextMacro &macro);
+  bool encodeCharForTyping(char32_t codepoint, KeyStroke &stroke) const;
+  void stepTyping();
+  void updateAxes();
 
   InputAdapter *inputs_[MaxInputs] = {};
   size_t inputConfigIndexes_[MaxInputs] = {};
@@ -659,6 +843,19 @@ private:
   LockState lockState_;
   bool lockAuthorityPresent_ = false;
   bool prevLockKeyPressed_[3] = {}; // Caps, Num, Scroll in outputKeys()
+
+  // Text stream ring buffer and typing engine state.
+  char32_t textQueue_[MaxTextQueue] = {};
+  size_t textHead_ = 0;
+  size_t textCount_ = 0;
+  bool lastEnqueuedCR_ = false;
+  bool typingActive_ = false;
+  uint8_t typingPhase_ = 0; // 0: modifiers, 1: modifiers+key, 2: modifiers only
+  KeyStroke typingStroke_;
+  uint32_t textOverflowCount_ = 0;
+  uint32_t textEncodeFailCount_ = 0;
+
+  int32_t axisDeltas_[kAxisCount] = {};
 };
 
 } // namespace esp32keybridge

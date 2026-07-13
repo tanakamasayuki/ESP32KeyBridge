@@ -22,6 +22,14 @@
   Caps/Num/Scroll on resolved key presses), push notification to input
   adapters on change and on (re)connect, and the `OutputAdapter` interface
   with `ManualOutputAdapter` for tests and sketches.
+- Implement core step 4, one-shot events: the text stream (`typeChar` /
+  `typeText`, UTF-8) with `HostLayout` tables (`en_us`, `ja_jp`) that expand
+  characters into keystrokes at the output edge, a typing engine with atomic
+  per-character frames (modifier-first phases, user modifier parking with an
+  optional defer mode, Caps Lock compensation, standard control character
+  mapping with CRLF collapsing, overflow / unencodable counters), text
+  macros triggered by consumed keys, `writeText` for text-native outputs,
+  and relative axes with per-axis invert/scale and one-shot drain semantics.
 
 - Define the intermediate data model through use-case-driven review:
   key identity as kind + value (keyboard / consumer / mouse button /

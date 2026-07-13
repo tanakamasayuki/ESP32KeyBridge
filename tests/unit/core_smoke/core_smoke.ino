@@ -712,6 +712,267 @@ static void test_first_lock_reporting_output_is_authority()
   assert(bridge.lockState().numLock);
 }
 
+static void test_host_layout_encode()
+{
+  esp32keybridge::KeyStroke stroke;
+
+  esp32keybridge::HostLayout enUs = esp32keybridge::HostLayout::enUs();
+  assert(enUs.encode(U'a', stroke) && stroke.key.code == 0x04 && !stroke.shift);
+  assert(enUs.encode(U'A', stroke) && stroke.key.code == 0x04 && stroke.shift);
+  assert(enUs.encode(U'@', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit2) &&
+         stroke.shift);
+  assert(enUs.encode(U'"', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Quote) &&
+         stroke.shift);
+  assert(!enUs.encode(U'¥', stroke)); // Yen is not typable on en_us
+
+  esp32keybridge::HostLayout jaJp = esp32keybridge::HostLayout::jaJp();
+  assert(jaJp.encode(U'@', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftBracket) &&
+         !stroke.shift);
+  assert(jaJp.encode(U'"', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit2) &&
+         stroke.shift);
+  assert(jaJp.encode(U'¥', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::International3) &&
+         !stroke.shift);
+
+  bool found = false;
+  assert(esp32keybridge::HostLayout::byName("ja_jp", &found).encode(U'@', stroke));
+  assert(found);
+  assert(stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftBracket));
+  esp32keybridge::HostLayout::byName("xx_xx", &found);
+  assert(!found);
+}
+
+static void test_typing_produces_atomic_frames()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualOutputAdapter usb;
+  assert(bridge.addOutput(usb));
+
+  esp32keybridge::Key digit1 = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit1);
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+
+  // '!' on en_us = Shift + Digit1: modifier-first, then key, then release.
+  assert(bridge.typeChar(U'!'));
+  bridge.update();
+  assert(bridge.typingActive());
+  assert(bridge.outputKeys().contains(leftShift));
+  assert(!bridge.outputKeys().contains(digit1));
+  bridge.update();
+  assert(bridge.outputKeys().contains(leftShift));
+  assert(bridge.outputKeys().contains(digit1));
+  bridge.update();
+  assert(bridge.outputKeys().contains(leftShift));
+  assert(!bridge.outputKeys().contains(digit1));
+  bridge.update();
+  assert(!bridge.typingActive());
+  assert(bridge.outputKeys().count() == 0);
+  assert(usb.textCount() == 1);
+  assert(usb.lastText() == U'!');
+}
+
+static void test_typing_parks_user_modifiers()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+  esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+
+  assert(keyboard.press(leftShift));
+  bridge.update();
+  assert(bridge.outputKeys().contains(leftShift));
+
+  // Typing 'a' (no shift required) while the user holds Shift: the user's
+  // modifier is parked during the frame and restored afterwards.
+  assert(bridge.typeChar(U'a'));
+  bridge.update();
+  assert(!bridge.outputKeys().contains(leftShift));
+  bridge.update();
+  assert(bridge.outputKeys().contains(a));
+  assert(!bridge.outputKeys().contains(leftShift));
+  bridge.update();
+  bridge.update();
+  assert(!bridge.typingActive());
+  assert(bridge.outputKeys().contains(leftShift));
+}
+
+static void test_typing_defer_option_waits_for_modifiers()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  config.deferTypingWhileModifiersHeld = true;
+  bridge.applyConfig(config);
+
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+
+  assert(keyboard.press(leftShift));
+  bridge.update();
+  assert(bridge.typeChar(U'a'));
+  bridge.update();
+  bridge.update();
+  assert(!bridge.typingActive());
+  assert(bridge.textQueueLength() == 1);
+  assert(bridge.outputKeys().contains(leftShift));
+
+  assert(keyboard.release(leftShift));
+  bridge.update();
+  assert(bridge.typingActive());
+  bridge.update();
+  assert(bridge.outputKeys().contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A)));
+}
+
+static void test_typing_caps_lock_compensation()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualOutputAdapter usb;
+  assert(bridge.addOutput(usb));
+
+  esp32keybridge::LockState host;
+  host.capsLock = true;
+  usb.setHostLockState(host);
+  bridge.update();
+  assert(bridge.lockState().capsLock);
+
+  esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+
+  // Caps on: 'a' needs Shift to come out lowercase.
+  assert(bridge.typeChar(U'a'));
+  bridge.update();
+  bridge.update();
+  assert(bridge.outputKeys().contains(a));
+  assert(bridge.outputKeys().contains(leftShift));
+  bridge.update();
+  bridge.update();
+
+  // Caps on: 'A' needs no Shift.
+  assert(bridge.typeChar(U'A'));
+  bridge.update();
+  bridge.update();
+  assert(bridge.outputKeys().contains(a));
+  assert(!bridge.outputKeys().contains(leftShift));
+}
+
+static void test_typing_control_chars_and_crlf()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualOutputAdapter usb;
+  assert(bridge.addOutput(usb));
+
+  // CRLF collapses to one Enter at the enqueue edge.
+  assert(bridge.typeText("a\r\nb"));
+  assert(bridge.textQueueLength() == 3); // 'a', CR, 'b'
+
+  bool sawEnter = false;
+  for (int i = 0; i < 12; ++i)
+  {
+    bridge.update();
+    if (bridge.outputKeys().contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Enter)))
+    {
+      sawEnter = true;
+    }
+  }
+  assert(sawEnter);
+  assert(!bridge.typingActive());
+  assert(usb.textCount() == 3);
+  assert(bridge.textEncodeFailCount() == 0);
+}
+
+static void test_typing_unencodable_chars_are_counted()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualOutputAdapter log;
+  assert(bridge.addOutput(log));
+
+  // en_us cannot type Yen: dropped, counted, still delivered to writeText.
+  assert(bridge.typeChar(U'¥'));
+  bridge.update();
+  assert(!bridge.typingActive());
+  assert(bridge.textEncodeFailCount() == 1);
+  assert(log.textCount() == 1);
+  assert(log.lastText() == U'¥');
+}
+
+static void test_text_macro_types_on_trigger()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  esp32keybridge::ManualOutputAdapter usb;
+  assert(bridge.addInput(keyboard));
+  assert(bridge.addOutput(usb));
+
+  esp32keybridge::Key fn2 = esp32keybridge::virtualKey(2);
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(config.textMacro(fn2, "hi"));
+  bridge.applyConfig(config);
+
+  assert(keyboard.press(fn2));
+  bridge.update();
+  // The trigger is consumed and typing starts.
+  assert(!bridge.outputKeys().contains(fn2));
+  assert(bridge.typingActive());
+
+  bool sawH = false;
+  bool sawI = false;
+  for (int i = 0; i < 10; ++i)
+  {
+    bridge.update();
+    if (bridge.outputKeys().contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::H)))
+    {
+      sawH = true;
+    }
+    if (bridge.outputKeys().contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::I)))
+    {
+      sawI = true;
+    }
+  }
+  assert(sawH);
+  assert(sawI);
+  assert(usb.textCount() == 2);
+
+  // Holding the trigger does not retype; a new press does.
+  assert(keyboard.release(fn2));
+  bridge.update();
+  assert(keyboard.press(fn2));
+  bridge.update();
+  assert(bridge.textQueueLength() + (bridge.typingActive() ? 1 : 0) >= 1);
+}
+
+static void test_relative_axes_scale_and_drain()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter mouse;
+  esp32keybridge::ManualOutputAdapter usb;
+  assert(bridge.addInput(mouse));
+  assert(bridge.addOutput(usb));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  config.setAxisScale(esp32keybridge::Axis::Wheel, -2); // natural scrolling, doubled
+  bridge.applyConfig(config);
+
+  mouse.addAxisDelta(esp32keybridge::Axis::X, 5);
+  mouse.addAxisDelta(esp32keybridge::Axis::Wheel, 1);
+  bridge.update();
+  assert(bridge.axisDelta(esp32keybridge::Axis::X) == 5);
+  assert(bridge.axisDelta(esp32keybridge::Axis::Wheel) == -2);
+  assert(usb.axisTotal(esp32keybridge::Axis::X) == 5);
+  assert(usb.axisTotal(esp32keybridge::Axis::Wheel) == -2);
+
+  // Deltas are one-shot: drained after the update.
+  bridge.update();
+  assert(bridge.axisDelta(esp32keybridge::Axis::X) == 0);
+  assert(usb.axisTotal(esp32keybridge::Axis::X) == 5);
+}
+
 static void run(const char *name, void (*test)())
 {
   Serial.print("RUN ");
@@ -753,6 +1014,15 @@ void setup()
   run("lock_authority_overrides_and_disables_toggle", test_lock_authority_overrides_and_disables_toggle);
   run("lock_authority_wins_over_terminal_state", test_lock_authority_wins_over_terminal_state);
   run("first_lock_reporting_output_is_authority", test_first_lock_reporting_output_is_authority);
+  run("host_layout_encode", test_host_layout_encode);
+  run("typing_produces_atomic_frames", test_typing_produces_atomic_frames);
+  run("typing_parks_user_modifiers", test_typing_parks_user_modifiers);
+  run("typing_defer_option_waits_for_modifiers", test_typing_defer_option_waits_for_modifiers);
+  run("typing_caps_lock_compensation", test_typing_caps_lock_compensation);
+  run("typing_control_chars_and_crlf", test_typing_control_chars_and_crlf);
+  run("typing_unencodable_chars_are_counted", test_typing_unencodable_chars_are_counted);
+  run("text_macro_types_on_trigger", test_text_macro_types_on_trigger);
+  run("relative_axes_scale_and_drain", test_relative_axes_scale_and_drain);
   Serial.print("TEST done ");
   Serial.print(g_total);
   Serial.print("/");

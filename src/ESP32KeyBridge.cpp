@@ -7,7 +7,189 @@ namespace
 {
 constexpr uint16_t kKeyboardModifierFirst = 0xe0;
 constexpr uint16_t kKeyboardModifierLast = 0xe7;
+
+constexpr uint16_t U(KeyboardUsage usage)
+{
+  return static_cast<uint16_t>(usage);
+}
+
+// clang-format off
+const HostLayoutEntry kEnUsEntries[] = {
+    {U(KeyboardUsage::A), 'a', 'A', true}, {U(KeyboardUsage::B), 'b', 'B', true},
+    {U(KeyboardUsage::C), 'c', 'C', true}, {U(KeyboardUsage::D), 'd', 'D', true},
+    {U(KeyboardUsage::E), 'e', 'E', true}, {U(KeyboardUsage::F), 'f', 'F', true},
+    {U(KeyboardUsage::G), 'g', 'G', true}, {U(KeyboardUsage::H), 'h', 'H', true},
+    {U(KeyboardUsage::I), 'i', 'I', true}, {U(KeyboardUsage::J), 'j', 'J', true},
+    {U(KeyboardUsage::K), 'k', 'K', true}, {U(KeyboardUsage::L), 'l', 'L', true},
+    {U(KeyboardUsage::M), 'm', 'M', true}, {U(KeyboardUsage::N), 'n', 'N', true},
+    {U(KeyboardUsage::O), 'o', 'O', true}, {U(KeyboardUsage::P), 'p', 'P', true},
+    {U(KeyboardUsage::Q), 'q', 'Q', true}, {U(KeyboardUsage::R), 'r', 'R', true},
+    {U(KeyboardUsage::S), 's', 'S', true}, {U(KeyboardUsage::T), 't', 'T', true},
+    {U(KeyboardUsage::U), 'u', 'U', true}, {U(KeyboardUsage::V), 'v', 'V', true},
+    {U(KeyboardUsage::W), 'w', 'W', true}, {U(KeyboardUsage::X), 'x', 'X', true},
+    {U(KeyboardUsage::Y), 'y', 'Y', true}, {U(KeyboardUsage::Z), 'z', 'Z', true},
+    {U(KeyboardUsage::Digit1), '1', '!', false}, {U(KeyboardUsage::Digit2), '2', '@', false},
+    {U(KeyboardUsage::Digit3), '3', '#', false}, {U(KeyboardUsage::Digit4), '4', '$', false},
+    {U(KeyboardUsage::Digit5), '5', '%', false}, {U(KeyboardUsage::Digit6), '6', '^', false},
+    {U(KeyboardUsage::Digit7), '7', '&', false}, {U(KeyboardUsage::Digit8), '8', '*', false},
+    {U(KeyboardUsage::Digit9), '9', '(', false}, {U(KeyboardUsage::Digit0), '0', ')', false},
+    {U(KeyboardUsage::Space), ' ', 0, false},
+    {U(KeyboardUsage::Minus), '-', '_', false},
+    {U(KeyboardUsage::Equal), '=', '+', false},
+    {U(KeyboardUsage::LeftBracket), '[', '{', false},
+    {U(KeyboardUsage::RightBracket), ']', '}', false},
+    {U(KeyboardUsage::Backslash), '\\', '|', false},
+    {U(KeyboardUsage::Semicolon), ';', ':', false},
+    {U(KeyboardUsage::Quote), '\'', '"', false},
+    {U(KeyboardUsage::Grave), '`', '~', false},
+    {U(KeyboardUsage::Comma), ',', '<', false},
+    {U(KeyboardUsage::Period), '.', '>', false},
+    {U(KeyboardUsage::Slash), '/', '?', false},
+};
+
+// JIS layout as interpreted by a ja_jp host (Windows 106/109). The Grave key
+// is Zenkaku/Hankaku (no character) and International2/4/5 are IME keys, so
+// they are not in the table.
+const HostLayoutEntry kJaJpEntries[] = {
+    {U(KeyboardUsage::A), 'a', 'A', true}, {U(KeyboardUsage::B), 'b', 'B', true},
+    {U(KeyboardUsage::C), 'c', 'C', true}, {U(KeyboardUsage::D), 'd', 'D', true},
+    {U(KeyboardUsage::E), 'e', 'E', true}, {U(KeyboardUsage::F), 'f', 'F', true},
+    {U(KeyboardUsage::G), 'g', 'G', true}, {U(KeyboardUsage::H), 'h', 'H', true},
+    {U(KeyboardUsage::I), 'i', 'I', true}, {U(KeyboardUsage::J), 'j', 'J', true},
+    {U(KeyboardUsage::K), 'k', 'K', true}, {U(KeyboardUsage::L), 'l', 'L', true},
+    {U(KeyboardUsage::M), 'm', 'M', true}, {U(KeyboardUsage::N), 'n', 'N', true},
+    {U(KeyboardUsage::O), 'o', 'O', true}, {U(KeyboardUsage::P), 'p', 'P', true},
+    {U(KeyboardUsage::Q), 'q', 'Q', true}, {U(KeyboardUsage::R), 'r', 'R', true},
+    {U(KeyboardUsage::S), 's', 'S', true}, {U(KeyboardUsage::T), 't', 'T', true},
+    {U(KeyboardUsage::U), 'u', 'U', true}, {U(KeyboardUsage::V), 'v', 'V', true},
+    {U(KeyboardUsage::W), 'w', 'W', true}, {U(KeyboardUsage::X), 'x', 'X', true},
+    {U(KeyboardUsage::Y), 'y', 'Y', true}, {U(KeyboardUsage::Z), 'z', 'Z', true},
+    {U(KeyboardUsage::Digit1), '1', '!', false}, {U(KeyboardUsage::Digit2), '2', '"', false},
+    {U(KeyboardUsage::Digit3), '3', '#', false}, {U(KeyboardUsage::Digit4), '4', '$', false},
+    {U(KeyboardUsage::Digit5), '5', '%', false}, {U(KeyboardUsage::Digit6), '6', '&', false},
+    {U(KeyboardUsage::Digit7), '7', '\'', false}, {U(KeyboardUsage::Digit8), '8', '(', false},
+    {U(KeyboardUsage::Digit9), '9', ')', false}, {U(KeyboardUsage::Digit0), '0', 0, false},
+    {U(KeyboardUsage::Space), ' ', 0, false},
+    {U(KeyboardUsage::Minus), '-', '=', false},
+    {U(KeyboardUsage::Equal), '^', '~', false},
+    {U(KeyboardUsage::LeftBracket), '@', '`', false},
+    {U(KeyboardUsage::RightBracket), '[', '{', false},
+    {U(KeyboardUsage::NonUsHash), ']', '}', false},
+    {U(KeyboardUsage::Semicolon), ';', '+', false},
+    {U(KeyboardUsage::Quote), ':', '*', false},
+    {U(KeyboardUsage::Comma), ',', '<', false},
+    {U(KeyboardUsage::Period), '.', '>', false},
+    {U(KeyboardUsage::Slash), '/', '?', false},
+    {U(KeyboardUsage::International1), '\\', '_', false},
+    {U(KeyboardUsage::International3), 0x00a5, '|', false}, // Yen sign
+};
+// clang-format on
+
+bool nameEquals(const char *a, const char *b)
+{
+  if (a == nullptr || b == nullptr)
+  {
+    return false;
+  }
+  size_t i = 0;
+  while (a[i] != '\0' && b[i] != '\0')
+  {
+    if (a[i] != b[i])
+    {
+      return false;
+    }
+    ++i;
+  }
+  return a[i] == b[i];
+}
 } // namespace
+
+HostLayout::HostLayout()
+    : entries_(kEnUsEntries), count_(sizeof(kEnUsEntries) / sizeof(kEnUsEntries[0])),
+      name_("en_us")
+{
+}
+
+HostLayout::HostLayout(const HostLayoutEntry *entries, size_t count, const char *layoutName)
+    : entries_(entries), count_(count), name_(layoutName)
+{
+}
+
+HostLayout HostLayout::enUs()
+{
+  return HostLayout();
+}
+
+HostLayout HostLayout::jaJp()
+{
+  return HostLayout(kJaJpEntries, sizeof(kJaJpEntries) / sizeof(kJaJpEntries[0]), "ja_jp");
+}
+
+HostLayout HostLayout::byName(const char *name, bool *found)
+{
+  if (nameEquals(name, "ja_jp"))
+  {
+    if (found != nullptr)
+    {
+      *found = true;
+    }
+    return jaJp();
+  }
+  const bool isEnUs = nameEquals(name, "en_us");
+  if (found != nullptr)
+  {
+    *found = isEnUs;
+  }
+  return enUs();
+}
+
+bool HostLayout::encode(char32_t codepoint, KeyStroke &stroke) const
+{
+  if (codepoint == 0)
+  {
+    return false;
+  }
+  for (size_t i = 0; i < count_; ++i)
+  {
+    if (entries_[i].base == codepoint)
+    {
+      stroke.key = keyboardKey(entries_[i].usage);
+      stroke.shift = false;
+      return true;
+    }
+  }
+  for (size_t i = 0; i < count_; ++i)
+  {
+    if (entries_[i].shift == codepoint)
+    {
+      stroke.key = keyboardKey(entries_[i].usage);
+      stroke.shift = true;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool HostLayout::capsAffects(Key key) const
+{
+  if (key.kind != KeyKind::Keyboard)
+  {
+    return false;
+  }
+  for (size_t i = 0; i < count_; ++i)
+  {
+    if (entries_[i].usage == key.code)
+    {
+      return entries_[i].capsAffects;
+    }
+  }
+  return false;
+}
+
+const char *HostLayout::name() const
+{
+  return name_;
+}
 
 bool isValid(Key key)
 {
@@ -353,6 +535,125 @@ const LayerConfig &ESP32KeyBridgeConfig::layer(size_t index) const
   return layers_[index];
 }
 
+namespace
+{
+// Minimal UTF-8 decoder. Returns the number of bytes consumed (0 on an
+// invalid sequence) and stores the codepoint.
+size_t decodeUtf8(const char *utf8, char32_t &codepoint)
+{
+  const uint8_t first = static_cast<uint8_t>(utf8[0]);
+  if (first < 0x80)
+  {
+    codepoint = first;
+    return 1;
+  }
+  size_t length = 0;
+  char32_t value = 0;
+  if ((first & 0xe0) == 0xc0)
+  {
+    length = 2;
+    value = first & 0x1f;
+  }
+  else if ((first & 0xf0) == 0xe0)
+  {
+    length = 3;
+    value = first & 0x0f;
+  }
+  else if ((first & 0xf8) == 0xf0)
+  {
+    length = 4;
+    value = first & 0x07;
+  }
+  else
+  {
+    return 0;
+  }
+  for (size_t i = 1; i < length; ++i)
+  {
+    const uint8_t byte = static_cast<uint8_t>(utf8[i]);
+    if ((byte & 0xc0) != 0x80)
+    {
+      return 0;
+    }
+    value = (value << 6) | (byte & 0x3f);
+  }
+  codepoint = value;
+  return length;
+}
+} // namespace
+
+bool ESP32KeyBridgeConfig::textMacro(Key trigger, const char *utf8)
+{
+  if (!esp32keybridge::isValid(trigger) || utf8 == nullptr)
+  {
+    return false;
+  }
+
+  TextMacro *slot = nullptr;
+  for (size_t i = 0; i < textMacroCount_; ++i)
+  {
+    if (textMacros_[i].trigger == trigger)
+    {
+      slot = &textMacros_[i];
+      break;
+    }
+  }
+  if (slot == nullptr)
+  {
+    if (textMacroCount_ >= MaxTextMacros)
+    {
+      return false;
+    }
+    slot = &textMacros_[textMacroCount_];
+  }
+
+  TextMacro macro;
+  macro.trigger = trigger;
+  size_t pos = 0;
+  while (utf8[pos] != '\0')
+  {
+    char32_t codepoint = 0;
+    const size_t consumed = decodeUtf8(utf8 + pos, codepoint);
+    if (consumed == 0 || macro.length >= TextMacro::MaxLength)
+    {
+      return false;
+    }
+    macro.text[macro.length] = codepoint;
+    ++macro.length;
+    pos += consumed;
+  }
+
+  const bool isNew = slot == &textMacros_[textMacroCount_];
+  *slot = macro;
+  if (isNew)
+  {
+    ++textMacroCount_;
+  }
+  return true;
+}
+
+const TextMacro *ESP32KeyBridgeConfig::findTextMacro(Key trigger) const
+{
+  for (size_t i = 0; i < textMacroCount_; ++i)
+  {
+    if (textMacros_[i].trigger == trigger)
+    {
+      return &textMacros_[i];
+    }
+  }
+  return nullptr;
+}
+
+void ESP32KeyBridgeConfig::setAxisScale(Axis axis, int16_t scale)
+{
+  axisScales_[static_cast<size_t>(axis)] = scale;
+}
+
+int16_t ESP32KeyBridgeConfig::axisScale(Axis axis) const
+{
+  return axisScales_[static_cast<size_t>(axis)];
+}
+
 void ESP32KeyBridgeConfig::clear()
 {
   global.clear();
@@ -364,6 +665,17 @@ void ESP32KeyBridgeConfig::clear()
   {
     layers_[i].clear();
   }
+  for (size_t i = 0; i < MaxTextMacros; ++i)
+  {
+    textMacros_[i] = TextMacro();
+  }
+  textMacroCount_ = 0;
+  for (size_t i = 0; i < kAxisCount; ++i)
+  {
+    axisScales_[i] = 1;
+  }
+  hostLayout = HostLayout::enUs();
+  deferTypingWhileModifiersHeld = false;
 }
 
 bool ESP32KeyBridge::addInput(InputAdapter &input)
@@ -548,10 +860,19 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
   }
   else if (!disabled)
   {
-    key = applyLayerOverlay(key);
-    if (!config_.global.isDisabled(key))
+    const TextMacro *macro = config_.findTextMacro(key);
+    if (macro != nullptr)
     {
-      entry.resolved = key;
+      // Text macro triggers are consumed; the press enqueues the text.
+      enqueueMacro(*macro);
+    }
+    else
+    {
+      key = applyLayerOverlay(key);
+      if (!config_.global.isDisabled(key))
+      {
+        entry.resolved = key;
+      }
     }
   }
 
@@ -630,6 +951,8 @@ void ESP32KeyBridge::update()
     }
   }
 
+  stepTyping();
+  updateAxes();
   updateLockState();
 
   for (size_t i = 0; i < outputCount_; ++i)
@@ -639,6 +962,240 @@ void ESP32KeyBridge::update()
       outputs_[i]->write(output_);
     }
   }
+}
+
+bool ESP32KeyBridge::enqueueChar(char32_t codepoint)
+{
+  // CRLF is normalized to a single Enter at the enqueue edge.
+  const bool skipLF = codepoint == '\n' && lastEnqueuedCR_;
+  lastEnqueuedCR_ = codepoint == '\r';
+  if (skipLF)
+  {
+    return true;
+  }
+  if (textCount_ >= MaxTextQueue)
+  {
+    ++textOverflowCount_;
+    return false;
+  }
+  textQueue_[(textHead_ + textCount_) % MaxTextQueue] = codepoint;
+  ++textCount_;
+  return true;
+}
+
+bool ESP32KeyBridge::typeChar(char32_t codepoint)
+{
+  return enqueueChar(codepoint);
+}
+
+bool ESP32KeyBridge::typeText(const char *utf8)
+{
+  if (utf8 == nullptr)
+  {
+    return false;
+  }
+  bool ok = true;
+  size_t pos = 0;
+  while (utf8[pos] != '\0')
+  {
+    char32_t codepoint = 0;
+    const size_t consumed = decodeUtf8(utf8 + pos, codepoint);
+    if (consumed == 0)
+    {
+      ++textEncodeFailCount_;
+      ++pos;
+      ok = false;
+      continue;
+    }
+    if (!enqueueChar(codepoint))
+    {
+      ok = false;
+    }
+    pos += consumed;
+  }
+  return ok;
+}
+
+void ESP32KeyBridge::enqueueMacro(const TextMacro &macro)
+{
+  for (size_t i = 0; i < macro.length; ++i)
+  {
+    enqueueChar(macro.text[i]);
+  }
+}
+
+bool ESP32KeyBridge::encodeCharForTyping(char32_t codepoint, KeyStroke &stroke) const
+{
+  switch (codepoint)
+  {
+  case '\t':
+    stroke.key = keyboardKey(KeyboardUsage::Tab);
+    stroke.shift = false;
+    return true;
+  case '\n':
+  case '\r':
+    stroke.key = keyboardKey(KeyboardUsage::Enter);
+    stroke.shift = false;
+    return true;
+  case 0x08:
+    stroke.key = keyboardKey(KeyboardUsage::Backspace);
+    stroke.shift = false;
+    return true;
+  case 0x1b:
+    stroke.key = keyboardKey(KeyboardUsage::Escape);
+    stroke.shift = false;
+    return true;
+  default:
+    break;
+  }
+  if (codepoint < 0x20 || codepoint == 0x7f)
+  {
+    return false;
+  }
+  if (!config_.hostLayout.encode(codepoint, stroke))
+  {
+    return false;
+  }
+  // Caps Lock compensation against the lock state shadow.
+  if (lockState_.capsLock && config_.hostLayout.capsAffects(stroke.key))
+  {
+    stroke.shift = !stroke.shift;
+  }
+  return true;
+}
+
+void ESP32KeyBridge::stepTyping()
+{
+  // The user's keyboard modifier state before any suppression: used for the
+  // defer option and restored automatically once typing goes idle.
+  const uint8_t userModifiers = output_.keyboardModifierMask();
+
+  if (!typingActive_)
+  {
+    if (textCount_ == 0)
+    {
+      return;
+    }
+    if (config_.deferTypingWhileModifiersHeld && userModifiers != 0)
+    {
+      return;
+    }
+    // Consume characters until one produces a stroke. Every consumed
+    // character is delivered to text-native outputs, even unencodable ones.
+    while (textCount_ > 0 && !typingActive_)
+    {
+      const char32_t codepoint = textQueue_[textHead_];
+      textHead_ = (textHead_ + 1) % MaxTextQueue;
+      --textCount_;
+      for (size_t i = 0; i < outputCount_; ++i)
+      {
+        if (outputs_[i]->connected())
+        {
+          outputs_[i]->writeText(codepoint);
+        }
+      }
+      KeyStroke stroke;
+      if (encodeCharForTyping(codepoint, stroke))
+      {
+        typingStroke_ = stroke;
+        typingPhase_ = 0;
+        typingActive_ = true;
+      }
+      else
+      {
+        ++textEncodeFailCount_;
+      }
+    }
+    if (!typingActive_)
+    {
+      return;
+    }
+  }
+
+  // One atomic character frame, one phase per update: (0) modifiers only,
+  // (1) modifiers + key, (2) modifiers only. User-held keyboard modifiers
+  // are parked during the frame and reappear when typing goes idle.
+  KeySet result;
+  for (size_t i = 0; i < output_.count(); ++i)
+  {
+    const Key key = output_.at(i);
+    if (isKeyboardModifier(key))
+    {
+      continue;
+    }
+    result.press(key);
+  }
+  if (typingStroke_.shift)
+  {
+    result.press(keyboardKey(KeyboardUsage::LeftShift));
+  }
+  if (typingPhase_ == 1)
+  {
+    result.press(typingStroke_.key);
+  }
+  output_ = result;
+
+  ++typingPhase_;
+  if (typingPhase_ >= 3)
+  {
+    typingActive_ = false;
+  }
+}
+
+void ESP32KeyBridge::updateAxes()
+{
+  for (size_t axis = 0; axis < kAxisCount; ++axis)
+  {
+    int32_t total = 0;
+    for (size_t i = 0; i < inputCount_; ++i)
+    {
+      // Drain disconnected inputs too so stale deltas are not replayed on
+      // reconnect, but only connected inputs contribute.
+      const int32_t delta = inputs_[i]->takeAxisDelta(static_cast<Axis>(axis));
+      if (inputs_[i]->connected())
+      {
+        total += delta;
+      }
+    }
+    total *= config_.axisScale(static_cast<Axis>(axis));
+    axisDeltas_[axis] = total;
+    if (total == 0)
+    {
+      continue;
+    }
+    for (size_t i = 0; i < outputCount_; ++i)
+    {
+      if (outputs_[i]->connected())
+      {
+        outputs_[i]->writeAxisDelta(static_cast<Axis>(axis), total);
+      }
+    }
+  }
+}
+
+size_t ESP32KeyBridge::textQueueLength() const
+{
+  return textCount_;
+}
+
+bool ESP32KeyBridge::typingActive() const
+{
+  return typingActive_;
+}
+
+uint32_t ESP32KeyBridge::textOverflowCount() const
+{
+  return textOverflowCount_;
+}
+
+uint32_t ESP32KeyBridge::textEncodeFailCount() const
+{
+  return textEncodeFailCount_;
+}
+
+int32_t ESP32KeyBridge::axisDelta(Axis axis) const
+{
+  return axisDeltas_[static_cast<size_t>(axis)];
 }
 
 void ESP32KeyBridge::updateLockState()
