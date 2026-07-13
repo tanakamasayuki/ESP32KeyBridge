@@ -45,7 +45,7 @@ ESP32-P4 は常時接続の自動テスト環境には含めません。P4 は U
 | 3 | LockState(シャドウ / 正本の連鎖 / 終端ホストモード) | 実装済み | | | | |
 | 4 | 文字ストリーム / アクション列 / 相対値 / ホストレイアウト記述 | 実装済み | | | | |
 | 5 | レイアウト変換((キー,Shift) 表 / Shift 合成 / on-off 切替) | 実装済み | | | | |
-| 6 | マウス(ボタン / 相対軸 / report builder) | 予定 | 予定 | | | |
+| 6 | マウス(ボタン / 相対軸)と HID report builder(6KRO / rollover / consumer / mouse) | 実装済み | | | | |
 | 7 | Arduino runtime core smoke | | | 予定 | | |
 | 7 | USB Host keyboard / mouse input adapter | 予定 | 予定 | | 予定 | 実 keyboard 確認 |
 | 7 | USB Device keyboard / 複合 output adapter | 予定 | 予定 | | 予定 | Host OS 認識 / LED report |

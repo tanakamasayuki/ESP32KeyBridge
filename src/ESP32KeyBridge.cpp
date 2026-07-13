@@ -728,6 +728,263 @@ void ESP32KeyBridgeConfig::clear()
   deferTypingWhileModifiersHeld = false;
 }
 
+namespace
+{
+int8_t saturateToInt8(int32_t value)
+{
+  if (value > 127)
+  {
+    return 127;
+  }
+  if (value < -127)
+  {
+    return -127;
+  }
+  return static_cast<int8_t>(value);
+}
+} // namespace
+
+void HidKeyboardReport::clear()
+{
+  modifiers = 0;
+  for (size_t i = 0; i < MaxKeys; ++i)
+  {
+    keys[i] = 0;
+  }
+  keyCount = 0;
+  overflow = false;
+}
+
+bool HidKeyboardReport::empty() const
+{
+  return modifiers == 0 && keyCount == 0;
+}
+
+bool HidKeyboardReport::writeBootReport(uint8_t *buffer, size_t size) const
+{
+  if (buffer == nullptr || size < BootReportSize)
+  {
+    return false;
+  }
+  buffer[0] = modifiers;
+  buffer[1] = 0;
+  for (size_t i = 0; i < MaxKeys; ++i)
+  {
+    buffer[2 + i] = i < keyCount ? keys[i] : 0;
+  }
+  return true;
+}
+
+void HidKeyboardRolloverReport::clear()
+{
+  modifiers = 0;
+  for (size_t i = 0; i < MaxKeys; ++i)
+  {
+    keys[i] = 0;
+  }
+  keyCount = 0;
+  overflow = false;
+}
+
+bool HidKeyboardRolloverReport::empty() const
+{
+  return modifiers == 0 && keyCount == 0;
+}
+
+bool HidKeyboardRolloverReport::writeReport(uint8_t *buffer, size_t size) const
+{
+  if (buffer == nullptr || size < ReportSize)
+  {
+    return false;
+  }
+  buffer[0] = modifiers;
+  for (size_t i = 0; i < MaxKeys; ++i)
+  {
+    buffer[1 + i] = i < keyCount ? keys[i] : 0;
+  }
+  return true;
+}
+
+void HidConsumerReport::clear()
+{
+  usage = 0;
+  overflow = false;
+}
+
+bool HidConsumerReport::empty() const
+{
+  return usage == 0;
+}
+
+bool HidConsumerReport::writeReport(uint8_t *buffer, size_t size) const
+{
+  if (buffer == nullptr || size < ReportSize)
+  {
+    return false;
+  }
+  buffer[0] = static_cast<uint8_t>(usage & 0xff);
+  buffer[1] = static_cast<uint8_t>((usage >> 8) & 0xff);
+  return true;
+}
+
+void HidMouseReport::clear()
+{
+  buttons = 0;
+  x = 0;
+  y = 0;
+  wheel = 0;
+  pan = 0;
+  overflow = false;
+}
+
+bool HidMouseReport::empty() const
+{
+  return buttons == 0 && x == 0 && y == 0 && wheel == 0 && pan == 0;
+}
+
+int32_t HidMouseReport::applyAxisDelta(Axis axis, int32_t delta)
+{
+  int8_t *field = nullptr;
+  switch (axis)
+  {
+  case Axis::X:
+    field = &x;
+    break;
+  case Axis::Y:
+    field = &y;
+    break;
+  case Axis::Wheel:
+    field = &wheel;
+    break;
+  case Axis::Pan:
+    field = &pan;
+    break;
+  }
+  if (field == nullptr)
+  {
+    return delta;
+  }
+  const int32_t total = static_cast<int32_t>(*field) + delta;
+  *field = saturateToInt8(total);
+  return total - *field;
+}
+
+bool HidMouseReport::writeReport(uint8_t *buffer, size_t size) const
+{
+  if (buffer == nullptr || size < ReportSize)
+  {
+    return false;
+  }
+  buffer[0] = buttons;
+  buffer[1] = static_cast<uint8_t>(x);
+  buffer[2] = static_cast<uint8_t>(y);
+  buffer[3] = static_cast<uint8_t>(wheel);
+  buffer[4] = static_cast<uint8_t>(pan);
+  return true;
+}
+
+HidKeyboardReport buildHidKeyboardReport(const KeySet &keys)
+{
+  HidKeyboardReport report;
+  for (size_t i = 0; i < keys.count(); ++i)
+  {
+    const Key key = keys.at(i);
+    if (key.kind != KeyKind::Keyboard)
+    {
+      continue;
+    }
+    const uint8_t modifierMask = keyboardModifierMask(key);
+    if (modifierMask != 0)
+    {
+      report.modifiers |= modifierMask;
+      continue;
+    }
+    if (key.code > 0xff)
+    {
+      continue;
+    }
+    if (report.keyCount >= HidKeyboardReport::MaxKeys)
+    {
+      report.overflow = true;
+      continue;
+    }
+    report.keys[report.keyCount] = static_cast<uint8_t>(key.code);
+    ++report.keyCount;
+  }
+  return report;
+}
+
+HidKeyboardRolloverReport buildHidKeyboardRolloverReport(const KeySet &keys)
+{
+  HidKeyboardRolloverReport report;
+  for (size_t i = 0; i < keys.count(); ++i)
+  {
+    const Key key = keys.at(i);
+    if (key.kind != KeyKind::Keyboard)
+    {
+      continue;
+    }
+    const uint8_t modifierMask = keyboardModifierMask(key);
+    if (modifierMask != 0)
+    {
+      report.modifiers |= modifierMask;
+      continue;
+    }
+    if (key.code > 0xff)
+    {
+      continue;
+    }
+    if (report.keyCount >= HidKeyboardRolloverReport::MaxKeys)
+    {
+      report.overflow = true;
+      continue;
+    }
+    report.keys[report.keyCount] = static_cast<uint8_t>(key.code);
+    ++report.keyCount;
+  }
+  return report;
+}
+
+HidConsumerReport buildHidConsumerReport(const KeySet &keys)
+{
+  HidConsumerReport report;
+  for (size_t i = 0; i < keys.count(); ++i)
+  {
+    const Key key = keys.at(i);
+    if (key.kind != KeyKind::Consumer)
+    {
+      continue;
+    }
+    if (report.usage != 0)
+    {
+      report.overflow = true;
+      continue;
+    }
+    report.usage = key.code;
+  }
+  return report;
+}
+
+HidMouseReport buildHidMouseReport(const KeySet &keys)
+{
+  HidMouseReport report;
+  for (size_t i = 0; i < keys.count(); ++i)
+  {
+    const Key key = keys.at(i);
+    if (key.kind != KeyKind::MouseButton)
+    {
+      continue;
+    }
+    if (key.code < 1 || key.code > HidMouseReport::MaxButtons)
+    {
+      report.overflow = true;
+      continue;
+    }
+    report.buttons |= static_cast<uint8_t>(1u << (key.code - 1));
+  }
+  return report;
+}
+
 bool ESP32KeyBridge::addInput(InputAdapter &input)
 {
   return addInput(input, inputCount_);

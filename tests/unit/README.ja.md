@@ -12,3 +12,4 @@
 - LockState の正本規則(authority / 終端ホストモード / 入力への通知)(実装済み)。
 - 文字ストリーム / タイピングエンジン / 相対値とホストレイアウト記述(実装済み)。
 - レイアウト変換(Shift 消費/合成・ショートカット素通し・on/off 切替)(実装済み)。
+- HID report builder(6KRO / rollover / consumer / mouse、飽和と繰り越し)(実装済み)。

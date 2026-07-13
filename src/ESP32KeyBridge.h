@@ -409,6 +409,88 @@ struct LockState
 };
 
 // ---------------------------------------------------------------------------
+// HID report builders (pure functions; descriptors and transmission are the
+// output adapter's business)
+// ---------------------------------------------------------------------------
+
+// USB boot keyboard report: modifier byte + up to 6 key usages.
+struct HidKeyboardReport
+{
+  static constexpr size_t MaxKeys = 6;
+  static constexpr size_t BootReportSize = 8;
+
+  uint8_t modifiers = 0;
+  uint8_t keys[MaxKeys] = {};
+  size_t keyCount = 0;
+  bool overflow = false;
+
+  void clear();
+  bool empty() const;
+  bool writeBootReport(uint8_t *buffer, size_t size) const;
+};
+
+// Rollover keyboard report: modifier byte + up to 32 key usages.
+struct HidKeyboardRolloverReport
+{
+  static constexpr size_t MaxKeys = 32;
+  static constexpr size_t ReportSize = 33;
+
+  uint8_t modifiers = 0;
+  uint8_t keys[MaxKeys] = {};
+  size_t keyCount = 0;
+  bool overflow = false;
+
+  void clear();
+  bool empty() const;
+  bool writeReport(uint8_t *buffer, size_t size) const;
+};
+
+// Minimal consumer report: one 16-bit usage (little endian). Multiple
+// simultaneous consumer keys set overflow; richer report formats are an
+// output adapter extension.
+struct HidConsumerReport
+{
+  static constexpr size_t ReportSize = 2;
+
+  uint16_t usage = 0;
+  bool overflow = false;
+
+  void clear();
+  bool empty() const;
+  bool writeReport(uint8_t *buffer, size_t size) const;
+};
+
+// Relative mouse report: 8 button bits + X/Y/Wheel/Pan deltas.
+struct HidMouseReport
+{
+  static constexpr size_t MaxButtons = 8;
+  static constexpr size_t ReportSize = 5;
+
+  uint8_t buttons = 0;
+  int8_t x = 0;
+  int8_t y = 0;
+  int8_t wheel = 0;
+  int8_t pan = 0;
+  bool overflow = false;
+
+  void clear();
+  bool empty() const;
+
+  // Adds a delta to an axis field, saturating to the int8 report range, and
+  // returns the remainder to carry into the next report.
+  int32_t applyAxisDelta(Axis axis, int32_t delta);
+
+  bool writeReport(uint8_t *buffer, size_t size) const;
+};
+
+// Builders skip keys their report cannot represent (other kinds, virtual
+// keys) per the "emit what you can represent" rule.
+HidKeyboardReport buildHidKeyboardReport(const KeySet &keys);
+HidKeyboardRolloverReport buildHidKeyboardRolloverReport(const KeySet &keys);
+HidConsumerReport buildHidConsumerReport(const KeySet &keys);
+HidMouseReport buildHidMouseReport(const KeySet &keys);
+
+// ---------------------------------------------------------------------------
 // Input adapters
 // ---------------------------------------------------------------------------
 

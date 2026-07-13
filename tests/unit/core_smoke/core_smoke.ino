@@ -1182,6 +1182,109 @@ static void test_layout_conversion_toggle_key()
   assert(bridge.layoutConversionEnabled());
 }
 
+static void test_hid_keyboard_report_builder()
+{
+  esp32keybridge::KeySet keys;
+  assert(keys.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift)));
+  assert(keys.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A)));
+  assert(keys.press(esp32keybridge::consumerKey(0x00e9)));  // skipped
+  assert(keys.press(esp32keybridge::mouseButtonKey(1)));    // skipped
+  assert(keys.press(esp32keybridge::virtualKey(1)));        // skipped
+
+  esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(keys);
+  assert(report.modifiers == 0x02);
+  assert(report.keyCount == 1);
+  assert(report.keys[0] == 0x04);
+  assert(!report.overflow);
+  assert(!report.empty());
+
+  uint8_t buffer[esp32keybridge::HidKeyboardReport::BootReportSize] = {};
+  assert(report.writeBootReport(buffer, sizeof(buffer)));
+  assert(buffer[0] == 0x02);
+  assert(buffer[1] == 0x00);
+  assert(buffer[2] == 0x04);
+  assert(buffer[3] == 0x00);
+  assert(!report.writeBootReport(buffer, 4));
+
+  report.clear();
+  assert(report.empty());
+}
+
+static void test_hid_keyboard_report_overflow()
+{
+  esp32keybridge::KeySet keys;
+  for (uint16_t i = 0; i < 7; ++i)
+  {
+    assert(keys.press(esp32keybridge::keyboardKey(static_cast<uint16_t>(0x04 + i))));
+  }
+
+  esp32keybridge::HidKeyboardReport report = esp32keybridge::buildHidKeyboardReport(keys);
+  assert(report.keyCount == 6);
+  assert(report.overflow);
+
+  esp32keybridge::HidKeyboardRolloverReport rollover =
+      esp32keybridge::buildHidKeyboardRolloverReport(keys);
+  assert(rollover.keyCount == 7);
+  assert(!rollover.overflow);
+
+  uint8_t buffer[esp32keybridge::HidKeyboardRolloverReport::ReportSize] = {};
+  assert(rollover.writeReport(buffer, sizeof(buffer)));
+  assert(buffer[0] == 0x00);
+  assert(buffer[1] == 0x04);
+  assert(buffer[7] == 0x0a);
+}
+
+static void test_hid_consumer_report_builder()
+{
+  esp32keybridge::KeySet keys;
+  assert(keys.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A)));
+  assert(keys.press(esp32keybridge::consumerKey(esp32keybridge::ConsumerUsage::VolumeIncrement)));
+
+  esp32keybridge::HidConsumerReport report = esp32keybridge::buildHidConsumerReport(keys);
+  assert(report.usage == 0x00e9);
+  assert(!report.overflow);
+
+  uint8_t buffer[esp32keybridge::HidConsumerReport::ReportSize] = {};
+  assert(report.writeReport(buffer, sizeof(buffer)));
+  assert(buffer[0] == 0xe9);
+  assert(buffer[1] == 0x00);
+
+  assert(keys.press(esp32keybridge::consumerKey(esp32keybridge::ConsumerUsage::Mute)));
+  report = esp32keybridge::buildHidConsumerReport(keys);
+  assert(report.overflow);
+}
+
+static void test_hid_mouse_report_builder()
+{
+  esp32keybridge::KeySet keys;
+  assert(keys.press(esp32keybridge::mouseButtonKey(1)));
+  assert(keys.press(esp32keybridge::mouseButtonKey(3)));
+  assert(keys.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A))); // skipped
+
+  esp32keybridge::HidMouseReport report = esp32keybridge::buildHidMouseReport(keys);
+  assert(report.buttons == 0x05);
+  assert(!report.overflow);
+
+  // Axis saturation with carry.
+  int32_t remainder = report.applyAxisDelta(esp32keybridge::Axis::X, 200);
+  assert(report.x == 127);
+  assert(remainder == 73);
+  remainder = report.applyAxisDelta(esp32keybridge::Axis::Wheel, -3);
+  assert(report.wheel == -3);
+  assert(remainder == 0);
+
+  uint8_t buffer[esp32keybridge::HidMouseReport::ReportSize] = {};
+  assert(report.writeReport(buffer, sizeof(buffer)));
+  assert(buffer[0] == 0x05);
+  assert(buffer[1] == 0x7f);
+  assert(buffer[3] == 0xfd);
+
+  // Button 9 cannot be represented.
+  assert(keys.press(esp32keybridge::mouseButtonKey(9)));
+  report = esp32keybridge::buildHidMouseReport(keys);
+  assert(report.overflow);
+}
+
 static void run(const char *name, void (*test)())
 {
   Serial.print("RUN ");
@@ -1239,6 +1342,10 @@ void setup()
   run("layout_conversion_shift_passes_for_nonprintable", test_layout_conversion_shift_passes_for_nonprintable);
   run("layout_conversion_untypable_is_dropped", test_layout_conversion_untypable_is_dropped);
   run("layout_conversion_toggle_key", test_layout_conversion_toggle_key);
+  run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
+  run("hid_keyboard_report_overflow", test_hid_keyboard_report_overflow);
+  run("hid_consumer_report_builder", test_hid_consumer_report_builder);
+  run("hid_mouse_report_builder", test_hid_mouse_report_builder);
   Serial.print("TEST done ");
   Serial.print(g_total);
   Serial.print("/");

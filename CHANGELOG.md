@@ -39,6 +39,11 @@
   (Shift+Arrow), untypable characters are dropped and counted, and a
   configurable toggle key (`layoutConversionToggle`) switches conversion
   off for BIOS-like environments.
+- Implement core step 6, HID report builders: pure functions that pack the
+  output key set into a boot keyboard report (6KRO), a 32-key rollover
+  report, a minimal consumer report, and a relative mouse report (button
+  bits plus X/Y/Wheel/Pan with int8 saturation and carry). Each builder
+  emits only what its report can represent.
 
 - Define the intermediate data model through use-case-driven review:
   key identity as kind + value (keyboard / consumer / mouse button /
