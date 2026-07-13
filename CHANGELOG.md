@@ -30,6 +30,15 @@
   mapping with CRLF collapsing, overflow / unencodable counters), text
   macros triggered by consumed keys, `writeText` for text-native outputs,
   and relative axes with per-axis invert/scale and one-shot drain semantics.
+- Implement core step 5, keyboard layout conversion: per-input opt-in
+  (`convertLayout`) that decodes printable keys with the engraving layout
+  (using that input's own Shift, which is consumed) and re-encodes them with
+  the host layout, synthesizing or suppressing Shift while the key is held.
+  Non-printable keys and Ctrl/Alt/GUI shortcuts pass through unconverted,
+  the real Shift is reflected while non-printable keys are held
+  (Shift+Arrow), untypable characters are dropped and counted, and a
+  configurable toggle key (`layoutConversionToggle`) switches conversion
+  off for BIOS-like environments.
 
 - Define the intermediate data model through use-case-driven review:
   key identity as kind + value (keyboard / consumer / mouse button /

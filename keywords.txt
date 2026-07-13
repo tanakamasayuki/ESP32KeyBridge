@@ -93,10 +93,18 @@ axisTotal	KEYWORD2
 setAxisScale	KEYWORD2
 axisScale	KEYWORD2
 encode	KEYWORD2
+decode	KEYWORD2
 capsAffects	KEYWORD2
 enUs	KEYWORD2
 jaJp	KEYWORD2
 byName	KEYWORD2
+convertLayout	KEYWORD2
+inputLayout	KEYWORD2
+inputLayoutEnabled	KEYWORD2
+setLayoutConversionEnabled	KEYWORD2
+layoutConversionEnabled	KEYWORD2
+layoutConvertFailCount	KEYWORD2
+layoutConversionToggle	KEYWORD2
 
 MaxKeys	LITERAL1
 MaxInputs	LITERAL1

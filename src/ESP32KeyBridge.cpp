@@ -170,6 +170,22 @@ bool HostLayout::encode(char32_t codepoint, KeyStroke &stroke) const
   return false;
 }
 
+char32_t HostLayout::decode(Key key, bool shift) const
+{
+  if (key.kind != KeyKind::Keyboard)
+  {
+    return 0;
+  }
+  for (size_t i = 0; i < count_; ++i)
+  {
+    if (entries_[i].usage == key.code)
+    {
+      return shift ? entries_[i].shift : entries_[i].base;
+    }
+  }
+  return 0;
+}
+
 bool HostLayout::capsAffects(Key key) const
 {
   if (key.kind != KeyKind::Keyboard)
@@ -644,6 +660,34 @@ const TextMacro *ESP32KeyBridgeConfig::findTextMacro(Key trigger) const
   return nullptr;
 }
 
+void ESP32KeyBridgeConfig::convertLayout(size_t inputIndex, const HostLayout &engraving)
+{
+  if (inputIndex >= MaxInputConfigs)
+  {
+    return;
+  }
+  inputLayouts_[inputIndex] = engraving;
+  inputLayoutEnabled_[inputIndex] = true;
+}
+
+bool ESP32KeyBridgeConfig::inputLayoutEnabled(size_t index) const
+{
+  if (index >= MaxInputConfigs)
+  {
+    return false;
+  }
+  return inputLayoutEnabled_[index];
+}
+
+const HostLayout &ESP32KeyBridgeConfig::inputLayout(size_t index) const
+{
+  if (index >= MaxInputConfigs)
+  {
+    return inputLayouts_[0];
+  }
+  return inputLayouts_[index];
+}
+
 void ESP32KeyBridgeConfig::setAxisScale(Axis axis, int16_t scale)
 {
   axisScales_[static_cast<size_t>(axis)] = scale;
@@ -674,6 +718,12 @@ void ESP32KeyBridgeConfig::clear()
   {
     axisScales_[i] = 1;
   }
+  for (size_t i = 0; i < MaxInputConfigs; ++i)
+  {
+    inputLayouts_[i] = HostLayout::enUs();
+    inputLayoutEnabled_[i] = false;
+  }
+  layoutConversionToggle = Key();
   hostLayout = HostLayout::enUs();
   deferTypingWhileModifiersHeld = false;
 }
@@ -818,16 +868,75 @@ Key ESP32KeyBridge::applyLayerOverlay(Key key) const
 
 void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersOnly)
 {
-  const TransformConfig &perInput = config_.input(inputConfigIndexes_[inputIndex]);
+  const size_t configIndex = inputConfigIndexes_[inputIndex];
+  const TransformConfig &perInput = config_.input(configIndex);
 
-  Key key = perInput.map(source);
-  bool disabled = perInput.isDisabled(key);
+  Key key = source;
+  bool converted = false;
+  bool requiresShift = false;
+  bool dropped = false;       // conversion produced an untypable character
+  bool shiftConsumed = false; // Shift of a converting input, used for decode
 
-  uint8_t triggerMask = 0;
-  if (!disabled)
+  // Layout conversion runs first, on the raw physical key of the engraving.
+  if (layoutConversionEnabled_ && config_.inputLayoutEnabled(configIndex) &&
+      source.kind == KeyKind::Keyboard)
   {
-    key = config_.global.map(key);
-    triggerMask = layerTriggerMaskFor(key);
+    const KeySet &inputKeys = inputs_[inputIndex]->keys();
+    const Key leftShift = keyboardKey(KeyboardUsage::LeftShift);
+    const Key rightShift = keyboardKey(KeyboardUsage::RightShift);
+    if (source == leftShift || source == rightShift)
+    {
+      shiftConsumed = true;
+    }
+    else
+    {
+      // Shortcut rule: keys pressed while Ctrl/Alt/GUI is held on the same
+      // input pass through unconverted (position semantics).
+      const bool shortcut = inputKeys.contains(keyboardKey(KeyboardUsage::LeftCtrl)) ||
+                            inputKeys.contains(keyboardKey(KeyboardUsage::RightCtrl)) ||
+                            inputKeys.contains(keyboardKey(KeyboardUsage::LeftAlt)) ||
+                            inputKeys.contains(keyboardKey(KeyboardUsage::RightAlt)) ||
+                            inputKeys.contains(keyboardKey(KeyboardUsage::LeftGui)) ||
+                            inputKeys.contains(keyboardKey(KeyboardUsage::RightGui));
+      if (!shortcut)
+      {
+        const bool shifted = inputKeys.contains(leftShift) || inputKeys.contains(rightShift);
+        const char32_t codepoint = config_.inputLayout(configIndex).decode(source, shifted);
+        if (codepoint != 0)
+        {
+          KeyStroke stroke;
+          if (config_.hostLayout.encode(codepoint, stroke))
+          {
+            key = stroke.key;
+            requiresShift = stroke.shift;
+            converted = true;
+          }
+          else
+          {
+            // The host layout cannot type this character (e.g. Yen on
+            // en_us): drop the press, never emit a wrong key.
+            converted = true;
+            dropped = true;
+          }
+        }
+      }
+    }
+  }
+
+  bool disabled = false;
+  uint8_t triggerMask = 0;
+  if (!shiftConsumed && !dropped)
+  {
+    if (!converted)
+    {
+      key = perInput.map(key);
+      disabled = perInput.isDisabled(key);
+    }
+    if (!disabled)
+    {
+      key = config_.global.map(key);
+      triggerMask = layerTriggerMaskFor(key);
+    }
   }
 
   if (triggersOnly && triggerMask == 0)
@@ -846,6 +955,15 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
   entry.source = source;
   entry.resolved = Key();
   entry.layerTriggerMask = triggerMask;
+  entry.converted = converted;
+  entry.requiresShift = converted && requiresShift;
+
+  // Side effects live below the triggersOnly gate so the two press passes
+  // cannot double-apply them.
+  if (dropped)
+  {
+    ++layoutConvertFailCount_;
+  }
 
   if (triggerMask != 0)
   {
@@ -858,20 +976,30 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
       }
     }
   }
-  else if (!disabled)
+  else if (!disabled && !shiftConsumed && !dropped)
   {
-    const TextMacro *macro = config_.findTextMacro(key);
-    if (macro != nullptr)
+    if (esp32keybridge::isValid(config_.layoutConversionToggle) &&
+        key == config_.layoutConversionToggle)
     {
-      // Text macro triggers are consumed; the press enqueues the text.
-      enqueueMacro(*macro);
+      // Consumed; toggles conversion for new presses only (held keys keep
+      // their press-time resolution).
+      layoutConversionEnabled_ = !layoutConversionEnabled_;
     }
     else
     {
-      key = applyLayerOverlay(key);
-      if (!config_.global.isDisabled(key))
+      const TextMacro *macro = config_.findTextMacro(key);
+      if (macro != nullptr)
       {
-        entry.resolved = key;
+        // Text macro triggers are consumed; the press enqueues the text.
+        enqueueMacro(*macro);
+      }
+      else
+      {
+        key = applyLayerOverlay(key);
+        if (!config_.global.isDisabled(key))
+        {
+          entry.resolved = key;
+        }
       }
     }
   }
@@ -939,6 +1067,7 @@ void ESP32KeyBridge::update()
   }
 
   output_.clear();
+  bool synthesizeShift = false;
   for (size_t i = 0; i < heldCount_; ++i)
   {
     if (!esp32keybridge::isValid(held_[i].resolved))
@@ -948,6 +1077,51 @@ void ESP32KeyBridge::update()
     if (!output_.press(held_[i].resolved))
     {
       outputOverflow_ = true;
+    }
+    if (held_[i].requiresShift)
+    {
+      synthesizeShift = true;
+    }
+  }
+  if (synthesizeShift)
+  {
+    output_.press(keyboardKey(KeyboardUsage::LeftShift));
+  }
+
+  // A converting input's Shift keys are consumed for decoding, but while a
+  // non-converted key of that input is held (arrows, shortcuts), its real
+  // Shift passes through so Shift+Arrow selection works.
+  for (size_t i = 0; i < inputCount_; ++i)
+  {
+    if (!inputs_[i]->connected() || !layoutConversionEnabled_ ||
+        !config_.inputLayoutEnabled(inputConfigIndexes_[i]))
+    {
+      continue;
+    }
+    const KeySet &inputKeys = inputs_[i]->keys();
+    const bool physLeft = inputKeys.contains(keyboardKey(KeyboardUsage::LeftShift));
+    const bool physRight = inputKeys.contains(keyboardKey(KeyboardUsage::RightShift));
+    if (!physLeft && !physRight)
+    {
+      continue;
+    }
+    for (size_t h = 0; h < heldCount_; ++h)
+    {
+      const HeldKey &entry = held_[h];
+      if (entry.inputIndex != i || entry.converted || !esp32keybridge::isValid(entry.resolved) ||
+          entry.resolved.kind != KeyKind::Keyboard || isKeyboardModifier(entry.resolved))
+      {
+        continue;
+      }
+      if (physLeft)
+      {
+        output_.press(keyboardKey(KeyboardUsage::LeftShift));
+      }
+      if (physRight)
+      {
+        output_.press(keyboardKey(KeyboardUsage::RightShift));
+      }
+      break;
     }
   }
 
@@ -1196,6 +1370,21 @@ uint32_t ESP32KeyBridge::textEncodeFailCount() const
 int32_t ESP32KeyBridge::axisDelta(Axis axis) const
 {
   return axisDeltas_[static_cast<size_t>(axis)];
+}
+
+void ESP32KeyBridge::setLayoutConversionEnabled(bool enabled)
+{
+  layoutConversionEnabled_ = enabled;
+}
+
+bool ESP32KeyBridge::layoutConversionEnabled() const
+{
+  return layoutConversionEnabled_;
+}
+
+uint32_t ESP32KeyBridge::layoutConvertFailCount() const
+{
+  return layoutConvertFailCount_;
 }
 
 void ESP32KeyBridge::updateLockState()

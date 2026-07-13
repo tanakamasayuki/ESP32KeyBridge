@@ -360,6 +360,11 @@ public:
   // type the character. Control characters are handled by the typing engine.
   bool encode(char32_t codepoint, KeyStroke &stroke) const;
 
+  // Decodes a key press under this layout (as engraved on a keyboard, or as
+  // interpreted by a host). Returns 0 when the key produces no character in
+  // that plane.
+  char32_t decode(Key key, bool shift) const;
+
   // True when Caps Lock inverts the shift requirement of this stroke's key.
   bool capsAffects(Key key) const;
 
@@ -683,12 +688,32 @@ public:
   void setAxisScale(Axis axis, int16_t scale);
   int16_t axisScale(Axis axis) const;
 
+  // --- Keyboard layout conversion (per input, opt-in) ---------------------
+  //
+  // For a keyboard whose engraving differs from the host's layout setting
+  // (e.g. a US-engraved keyboard on a ja_jp host). Printable keys of the
+  // input are decoded with the engraving layout (using that input's own
+  // Shift) and re-encoded with hostLayout; the input's Shift keys are
+  // consumed and the required Shift is synthesized while the key is held.
+  // Non-printable keys, and keys pressed while Ctrl/Alt/GUI is held on the
+  // same input (shortcuts), pass through unconverted.
+
+  void convertLayout(size_t inputIndex, const HostLayout &engraving);
+  bool inputLayoutEnabled(size_t index) const;
+  const HostLayout &inputLayout(size_t index) const;
+
+  // Pressing this key (after remap) toggles layout conversion on/off at
+  // runtime and is consumed. Required in practice: environments that
+  // interpret keys differently (BIOS, recovery) need a bypass.
+  Key layoutConversionToggle;
+
   void clear();
 
   TransformConfig global;
 
   // Layout of the host the output is connected to; used to synthesize
-  // keystrokes from characters. Default: en_us.
+  // keystrokes from characters and as the target of layout conversion.
+  // Default: en_us.
   HostLayout hostLayout;
 
   // When true, text typing waits until no keyboard modifier held by any
@@ -701,6 +726,8 @@ private:
   TextMacro textMacros_[MaxTextMacros];
   size_t textMacroCount_ = 0;
   int16_t axisScales_[kAxisCount] = {1, 1, 1, 1};
+  HostLayout inputLayouts_[MaxInputConfigs];
+  bool inputLayoutEnabled_[MaxInputConfigs] = {};
   TransformConfig dummyInput_;
   LayerConfig dummyLayer_;
 };
@@ -788,6 +815,16 @@ public:
   // Total delta of the last update (sum over inputs, after axis scale).
   int32_t axisDelta(Axis axis) const;
 
+  // --- Layout conversion --------------------------------------------------
+
+  // Master switch (also flipped by config.layoutConversionToggle). Held keys
+  // keep their press-time resolution when this changes.
+  void setLayoutConversionEnabled(bool enabled);
+  bool layoutConversionEnabled() const;
+
+  // Presses whose character the host layout could not type (dropped).
+  uint32_t layoutConvertFailCount() const;
+
   // Raw union of connected inputs' keys, before any transform.
   const KeySet &mergedKeys() const;
 
@@ -810,6 +847,8 @@ private:
     Key source;
     Key resolved;
     uint8_t layerTriggerMask = 0;
+    bool converted = false;     // produced by layout conversion
+    bool requiresShift = false; // synthesized Shift while held (converted only)
   };
 
   static constexpr size_t MaxTextQueue = 64;
@@ -856,6 +895,9 @@ private:
   uint32_t textEncodeFailCount_ = 0;
 
   int32_t axisDeltas_[kAxisCount] = {};
+
+  bool layoutConversionEnabled_ = true;
+  uint32_t layoutConvertFailCount_ = 0;
 };
 
 } // namespace esp32keybridge

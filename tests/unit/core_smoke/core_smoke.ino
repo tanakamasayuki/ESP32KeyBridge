@@ -973,6 +973,215 @@ static void test_relative_axes_scale_and_drain()
   assert(usb.axisTotal(esp32keybridge::Axis::X) == 5);
 }
 
+// UC5 setup: US-engraved keyboard on a ja_jp host.
+static void configureUsOnJa(esp32keybridge::ESP32KeyBridgeConfig &config)
+{
+  config.convertLayout(0, esp32keybridge::HostLayout::enUs());
+  config.hostLayout = esp32keybridge::HostLayout::jaJp();
+}
+
+static void test_layout_conversion_suppresses_shift()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  configureUsOnJa(config);
+  bridge.applyConfig(config);
+
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+  esp32keybridge::Key digit2 = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit2);
+  esp32keybridge::Key leftBracket = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftBracket);
+
+  // Engraved '@' = Shift+2 on the US keyboard -> ja_jp '@' key, no Shift.
+  assert(keyboard.press(leftShift));
+  assert(keyboard.press(digit2));
+  bridge.update();
+  assert(bridge.outputKeys().contains(leftBracket));
+  assert(!bridge.outputKeys().contains(digit2));
+  assert(!bridge.outputKeys().contains(leftShift)); // consumed, suppressed
+
+  // Held while the physical Shift is released first: press-time resolution.
+  assert(keyboard.release(leftShift));
+  bridge.update();
+  assert(bridge.outputKeys().contains(leftBracket));
+
+  assert(keyboard.release(digit2));
+  bridge.update();
+  assert(bridge.outputKeys().count() == 0);
+}
+
+static void test_layout_conversion_synthesizes_shift()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  configureUsOnJa(config);
+  bridge.applyConfig(config);
+
+  esp32keybridge::Key equal = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Equal);
+  esp32keybridge::Key minus = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Minus);
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+
+  // Engraved '=' (US Equal, no Shift) -> ja_jp '=' is Shift+Minus: Shift is
+  // synthesized and held.
+  assert(keyboard.press(equal));
+  bridge.update();
+  assert(bridge.outputKeys().contains(minus));
+  assert(bridge.outputKeys().contains(leftShift));
+  bridge.update();
+  assert(bridge.outputKeys().contains(minus)); // long press is preserved
+  assert(bridge.outputKeys().contains(leftShift));
+
+  assert(keyboard.release(equal));
+  bridge.update();
+  assert(bridge.outputKeys().count() == 0); // synthesized Shift released too
+}
+
+static void test_layout_conversion_letters_stay_identity()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  configureUsOnJa(config);
+  bridge.applyConfig(config);
+
+  esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+
+  // 'a' passes as A; Shift+'a' decodes to 'A' and re-synthesizes Shift+A.
+  assert(keyboard.press(a));
+  bridge.update();
+  assert(bridge.outputKeys().contains(a));
+  assert(!bridge.outputKeys().contains(leftShift));
+  assert(keyboard.release(a));
+  bridge.update();
+
+  assert(keyboard.press(leftShift));
+  assert(keyboard.press(a));
+  bridge.update();
+  assert(bridge.outputKeys().contains(a));
+  assert(bridge.outputKeys().contains(leftShift));
+}
+
+static void test_layout_conversion_shortcut_passthrough()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  configureUsOnJa(config);
+  bridge.applyConfig(config);
+
+  esp32keybridge::Key leftCtrl = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftCtrl);
+  esp32keybridge::Key digit2 = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit2);
+
+  // Ctrl+2 is a shortcut: position semantics, no conversion.
+  assert(keyboard.press(leftCtrl));
+  assert(keyboard.press(digit2));
+  bridge.update();
+  assert(bridge.outputKeys().contains(leftCtrl));
+  assert(bridge.outputKeys().contains(digit2));
+  assert(!bridge.outputKeys().contains(
+      esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftBracket)));
+}
+
+static void test_layout_conversion_shift_passes_for_nonprintable()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  configureUsOnJa(config);
+  bridge.applyConfig(config);
+
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+  esp32keybridge::Key left = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Left);
+
+  // Shift+Arrow selection: the arrow passes through, and the real Shift is
+  // reflected while it is held.
+  assert(keyboard.press(leftShift));
+  bridge.update();
+  assert(!bridge.outputKeys().contains(leftShift)); // consumed while alone
+
+  assert(keyboard.press(left));
+  bridge.update();
+  assert(bridge.outputKeys().contains(left));
+  assert(bridge.outputKeys().contains(leftShift));
+
+  assert(keyboard.release(left));
+  bridge.update();
+  assert(!bridge.outputKeys().contains(leftShift));
+}
+
+static void test_layout_conversion_untypable_is_dropped()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  // Reverse direction: JIS-engraved keyboard on an en_us host. Yen cannot
+  // be typed on en_us: the press is dropped and counted.
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  config.convertLayout(0, esp32keybridge::HostLayout::jaJp());
+  config.hostLayout = esp32keybridge::HostLayout::enUs();
+  bridge.applyConfig(config);
+
+  assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::International3)));
+  bridge.update();
+  assert(bridge.outputKeys().count() == 0);
+  assert(bridge.layoutConvertFailCount() == 1);
+}
+
+static void test_layout_conversion_toggle_key()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  assert(bridge.addInput(keyboard));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  configureUsOnJa(config);
+  config.layoutConversionToggle = esp32keybridge::virtualKey(5);
+  assert(config.global.remap(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::F14),
+                             esp32keybridge::virtualKey(5)));
+  bridge.applyConfig(config);
+
+  esp32keybridge::Key f14 = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::F14);
+  esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+  esp32keybridge::Key digit2 = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit2);
+
+  // Toggle off: the key is consumed.
+  assert(bridge.layoutConversionEnabled());
+  assert(keyboard.press(f14));
+  bridge.update();
+  assert(!bridge.layoutConversionEnabled());
+  assert(bridge.outputKeys().count() == 0);
+  assert(keyboard.release(f14));
+  bridge.update();
+
+  // Conversion off (BIOS etc.): raw passthrough.
+  assert(keyboard.press(leftShift));
+  assert(keyboard.press(digit2));
+  bridge.update();
+  assert(bridge.outputKeys().contains(leftShift));
+  assert(bridge.outputKeys().contains(digit2));
+  assert(keyboard.release(leftShift));
+  assert(keyboard.release(digit2));
+  bridge.update();
+
+  // Toggle back on.
+  assert(keyboard.press(f14));
+  bridge.update();
+  assert(bridge.layoutConversionEnabled());
+}
+
 static void run(const char *name, void (*test)())
 {
   Serial.print("RUN ");
@@ -1023,6 +1232,13 @@ void setup()
   run("typing_unencodable_chars_are_counted", test_typing_unencodable_chars_are_counted);
   run("text_macro_types_on_trigger", test_text_macro_types_on_trigger);
   run("relative_axes_scale_and_drain", test_relative_axes_scale_and_drain);
+  run("layout_conversion_suppresses_shift", test_layout_conversion_suppresses_shift);
+  run("layout_conversion_synthesizes_shift", test_layout_conversion_synthesizes_shift);
+  run("layout_conversion_letters_stay_identity", test_layout_conversion_letters_stay_identity);
+  run("layout_conversion_shortcut_passthrough", test_layout_conversion_shortcut_passthrough);
+  run("layout_conversion_shift_passes_for_nonprintable", test_layout_conversion_shift_passes_for_nonprintable);
+  run("layout_conversion_untypable_is_dropped", test_layout_conversion_untypable_is_dropped);
+  run("layout_conversion_toggle_key", test_layout_conversion_toggle_key);
   Serial.print("TEST done ");
   Serial.print(g_total);
   Serial.print("/");
