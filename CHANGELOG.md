@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Remove the pre-spec prototype implementation, examples, and their tests
+  (reference: commit `4d2d48151c62`). New examples and hardware tests will
+  be recreated as the implementation steps land.
+- Implement core step 1 of the finalized data model: key identity as kind +
+  value (`Key`, `KeyKind`, `KeyboardUsage`, `ConsumerUsage`), the pressed
+  key set (`KeySet`), union merge across inputs with release-when-all-release
+  semantics, disconnect handling that drops a lost input's keys, and keyboard
+  modifier normalization helpers. Fixed by host unit tests.
+
 - Define the intermediate data model through use-case-driven review:
   key identity as kind + value (keyboard / consumer / mouse button /
   virtual, HID-identical values), two traffic classes (held state sets

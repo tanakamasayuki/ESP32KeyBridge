@@ -3,269 +3,203 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// ESP32KeyBridge core.
+//
+// The core is portable C++ and depends only on <stdint.h> / <stddef.h>.
+// It never reads a clock, never allocates dynamically, and is driven from a
+// single execution context via update(). Platform specific code lives in
+// adapters. See docs/DATA_MODEL.ja.md and docs/CORE_DESIGN.ja.md.
+
 namespace esp32keybridge
 {
 
-enum class KeySymbol : uint16_t
+// ---------------------------------------------------------------------------
+// Key identity: kind + code
+// ---------------------------------------------------------------------------
+
+enum class KeyKind : uint8_t
 {
   None = 0,
-  A,
-  B,
-  C,
-  D,
-  E,
-  F,
-  G,
-  H,
-  I,
-  J,
-  K,
-  L,
-  M,
-  N,
-  O,
-  P,
-  Q,
-  R,
-  S,
-  T,
-  U,
-  V,
-  W,
-  X,
-  Y,
-  Z,
-  Num1,
-  Num2,
-  Num3,
-  Num4,
-  Num5,
-  Num6,
-  Num7,
-  Num8,
-  Num9,
-  Num0,
-  Enter,
-  Escape,
-  Backspace,
-  Tab,
-  Space,
-  Minus,
-  Equal,
-  LeftBracket,
-  RightBracket,
-  Backslash,
-  NonUsHash,
-  Semicolon,
-  Quote,
-  Grave,
-  Comma,
-  Dot,
-  Slash,
-  CapsLock,
-  F1,
-  F2,
-  F3,
-  F4,
-  F5,
-  F6,
-  F7,
-  F8,
-  F9,
-  F10,
-  F11,
-  F12,
-  PrintScreen,
-  ScrollLock,
-  Pause,
-  Insert,
-  Home,
-  PageUp,
-  Delete,
-  End,
-  PageDown,
-  Right,
-  Left,
-  Down,
-  Up,
-  NonUsBackslash,
-  International1,
-  International2,
-  International3,
-  International4,
-  International5,
-  International6,
-  International7,
-  International8,
-  International9,
-  Lang1,
-  Lang2,
-  Lang3,
-  Lang4,
-  Lang5,
-  Lang6,
-  Lang7,
-  Lang8,
-  Lang9,
-  LeftCtrl,
-  LeftShift,
-  LeftAlt,
-  LeftGui,
-  RightCtrl,
-  RightShift,
-  RightAlt,
-  RightGui,
-  Fn1 = 0x0100,
+  Keyboard = 1,    // HID keyboard page (0x07). code is numerically the Usage ID.
+  Consumer = 2,    // HID consumer page (0x0C). code is numerically the Usage ID.
+  MouseButton = 3, // Mouse button number, 1-origin.
+  Virtual = 4,     // Bridge internal keys. Never emitted to outputs.
 };
 
-enum class HidUsage : uint16_t
+struct Key
 {
-  None = 0,
-  Usage04 = 0x04,
-  Usage05 = 0x05,
-  Usage06 = 0x06,
-  Usage07 = 0x07,
-  Usage08 = 0x08,
-  Usage09 = 0x09,
-  Usage0A = 0x0a,
-  Usage0B = 0x0b,
-  Usage0C = 0x0c,
-  Usage0D = 0x0d,
-  Usage0E = 0x0e,
-  Usage0F = 0x0f,
-  Usage10 = 0x10,
-  Usage11 = 0x11,
-  Usage12 = 0x12,
-  Usage13 = 0x13,
-  Usage14 = 0x14,
-  Usage15 = 0x15,
-  Usage16 = 0x16,
-  Usage17 = 0x17,
-  Usage18 = 0x18,
-  Usage19 = 0x19,
-  Usage1A = 0x1a,
-  Usage1B = 0x1b,
-  Usage1C = 0x1c,
-  Usage1D = 0x1d,
-  Usage1E = 0x1e,
-  Usage1F = 0x1f,
-  Usage20 = 0x20,
-  Usage21 = 0x21,
-  Usage22 = 0x22,
-  Usage23 = 0x23,
-  Usage24 = 0x24,
-  Usage25 = 0x25,
-  Usage26 = 0x26,
-  Usage27 = 0x27,
-  Usage28 = 0x28,
-  Usage29 = 0x29,
-  Usage2A = 0x2a,
-  Usage2B = 0x2b,
-  Usage2C = 0x2c,
-  Usage2D = 0x2d,
-  Usage2E = 0x2e,
-  Usage2F = 0x2f,
-  Usage30 = 0x30,
-  Usage31 = 0x31,
-  Usage32 = 0x32,
-  Usage33 = 0x33,
-  Usage34 = 0x34,
-  Usage35 = 0x35,
-  Usage36 = 0x36,
-  Usage37 = 0x37,
-  Usage38 = 0x38,
-  Usage39 = 0x39,
-  Usage3A = 0x3a,
-  Usage3B = 0x3b,
-  Usage3C = 0x3c,
-  Usage3D = 0x3d,
-  Usage3E = 0x3e,
-  Usage3F = 0x3f,
-  Usage40 = 0x40,
-  Usage41 = 0x41,
-  Usage42 = 0x42,
-  Usage43 = 0x43,
-  Usage44 = 0x44,
-  Usage45 = 0x45,
-  Usage46 = 0x46,
-  Usage47 = 0x47,
-  Usage48 = 0x48,
-  Usage49 = 0x49,
-  Usage4A = 0x4a,
-  Usage4B = 0x4b,
-  Usage4C = 0x4c,
-  Usage4D = 0x4d,
-  Usage4E = 0x4e,
-  Usage4F = 0x4f,
-  Usage50 = 0x50,
-  Usage51 = 0x51,
-  Usage52 = 0x52,
-  Usage64 = 0x64,
-  Usage87 = 0x87,
-  Usage88 = 0x88,
-  Usage89 = 0x89,
-  Usage8A = 0x8a,
-  Usage8B = 0x8b,
-  Usage8C = 0x8c,
-  Usage8D = 0x8d,
-  Usage8E = 0x8e,
-  Usage8F = 0x8f,
-  Usage90 = 0x90,
-  Usage91 = 0x91,
-  Usage92 = 0x92,
-  Usage93 = 0x93,
-  Usage94 = 0x94,
-  Usage95 = 0x95,
-  Usage96 = 0x96,
-  Usage97 = 0x97,
-  Usage98 = 0x98,
-  UsageE0 = 0xe0,
-  UsageE1 = 0xe1,
-  UsageE2 = 0xe2,
-  UsageE3 = 0xe3,
-  UsageE4 = 0xe4,
-  UsageE5 = 0xe5,
-  UsageE6 = 0xe6,
-  UsageE7 = 0xe7,
+  KeyKind kind = KeyKind::None;
+  uint16_t code = 0;
+
+  constexpr Key() = default;
+  constexpr Key(KeyKind keyKind, uint16_t keyCode) : kind(keyKind), code(keyCode) {}
+
+  constexpr bool operator==(const Key &other) const
+  {
+    return kind == other.kind && code == other.code;
+  }
+
+  constexpr bool operator!=(const Key &other) const
+  {
+    return !(*this == other);
+  }
 };
 
-enum class KeyboardLayoutId : uint8_t
+// HID keyboard page usage IDs. Names follow the US legends used by the HID
+// usage table, but a value always identifies the physical key position and
+// never a character.
+enum class KeyboardUsage : uint16_t
 {
-  Us = 1,
-  Fr = 2,
+  None = 0x00,
+  A = 0x04,
+  B = 0x05,
+  C = 0x06,
+  D = 0x07,
+  E = 0x08,
+  F = 0x09,
+  G = 0x0a,
+  H = 0x0b,
+  I = 0x0c,
+  J = 0x0d,
+  K = 0x0e,
+  L = 0x0f,
+  M = 0x10,
+  N = 0x11,
+  O = 0x12,
+  P = 0x13,
+  Q = 0x14,
+  R = 0x15,
+  S = 0x16,
+  T = 0x17,
+  U = 0x18,
+  V = 0x19,
+  W = 0x1a,
+  X = 0x1b,
+  Y = 0x1c,
+  Z = 0x1d,
+  Digit1 = 0x1e,
+  Digit2 = 0x1f,
+  Digit3 = 0x20,
+  Digit4 = 0x21,
+  Digit5 = 0x22,
+  Digit6 = 0x23,
+  Digit7 = 0x24,
+  Digit8 = 0x25,
+  Digit9 = 0x26,
+  Digit0 = 0x27,
+  Enter = 0x28,
+  Escape = 0x29,
+  Backspace = 0x2a,
+  Tab = 0x2b,
+  Space = 0x2c,
+  Minus = 0x2d,
+  Equal = 0x2e,
+  LeftBracket = 0x2f,
+  RightBracket = 0x30,
+  Backslash = 0x31,
+  NonUsHash = 0x32,
+  Semicolon = 0x33,
+  Quote = 0x34,
+  Grave = 0x35,
+  Comma = 0x36,
+  Period = 0x37,
+  Slash = 0x38,
+  CapsLock = 0x39,
+  F1 = 0x3a,
+  F2 = 0x3b,
+  F3 = 0x3c,
+  F4 = 0x3d,
+  F5 = 0x3e,
+  F6 = 0x3f,
+  F7 = 0x40,
+  F8 = 0x41,
+  F9 = 0x42,
+  F10 = 0x43,
+  F11 = 0x44,
+  F12 = 0x45,
+  PrintScreen = 0x46,
+  ScrollLock = 0x47,
+  Pause = 0x48,
+  Insert = 0x49,
+  Home = 0x4a,
+  PageUp = 0x4b,
+  Delete = 0x4c,
+  End = 0x4d,
+  PageDown = 0x4e,
+  Right = 0x4f,
+  Left = 0x50,
+  Down = 0x51,
+  Up = 0x52,
+  NumLock = 0x53,
+  KeypadDivide = 0x54,
+  KeypadMultiply = 0x55,
+  KeypadMinus = 0x56,
+  KeypadPlus = 0x57,
+  KeypadEnter = 0x58,
+  Keypad1 = 0x59,
+  Keypad2 = 0x5a,
+  Keypad3 = 0x5b,
+  Keypad4 = 0x5c,
+  Keypad5 = 0x5d,
+  Keypad6 = 0x5e,
+  Keypad7 = 0x5f,
+  Keypad8 = 0x60,
+  Keypad9 = 0x61,
+  Keypad0 = 0x62,
+  KeypadPeriod = 0x63,
+  NonUsBackslash = 0x64,
+  Application = 0x65,
+  Power = 0x66,
+  KeypadEqual = 0x67,
+  F13 = 0x68,
+  F14 = 0x69,
+  F15 = 0x6a,
+  F16 = 0x6b,
+  F17 = 0x6c,
+  F18 = 0x6d,
+  F19 = 0x6e,
+  F20 = 0x6f,
+  F21 = 0x70,
+  F22 = 0x71,
+  F23 = 0x72,
+  F24 = 0x73,
+  International1 = 0x87, // JIS Ro
+  International2 = 0x88, // JIS Katakana/Hiragana
+  International3 = 0x89, // JIS Yen
+  International4 = 0x8a, // JIS Henkan
+  International5 = 0x8b, // JIS Muhenkan
+  International6 = 0x8c,
+  International7 = 0x8d,
+  International8 = 0x8e,
+  International9 = 0x8f,
+  Lang1 = 0x90, // Korean Hangul/English, Mac JIS Kana
+  Lang2 = 0x91, // Korean Hanja, Mac JIS Eisu
+  Lang3 = 0x92,
+  Lang4 = 0x93,
+  Lang5 = 0x94,
+  Lang6 = 0x95,
+  Lang7 = 0x96,
+  Lang8 = 0x97,
+  Lang9 = 0x98,
+  LeftCtrl = 0xe0,
+  LeftShift = 0xe1,
+  LeftAlt = 0xe2,
+  LeftGui = 0xe3,
+  RightCtrl = 0xe4,
+  RightShift = 0xe5,
+  RightAlt = 0xe6,
+  RightGui = 0xe7,
 };
 
-class KeyboardLayout
-{
-public:
-  static KeyboardLayout us();
-  static KeyboardLayout fr();
-
-  KeySymbol decode(HidUsage usage) const;
-  HidUsage encode(KeySymbol key) const;
-  KeyboardLayoutId id() const;
-
-private:
-  explicit KeyboardLayout(KeyboardLayoutId id);
-
-  KeyboardLayoutId id_;
-};
-
-enum class InputDomain : uint8_t
-{
-  Keyboard = 1,
-  Consumer = 2,
-  PointerButton = 3,
-  PointerAxis = 4,
-  Vendor = 255,
-};
-
+// HID consumer page usage IDs.
 enum class ConsumerUsage : uint16_t
 {
-  None = 0,
+  None = 0x0000,
   Power = 0x0030,
   Sleep = 0x0032,
   Menu = 0x0040,
+  BrightnessIncrement = 0x006f,
+  BrightnessDecrement = 0x0070,
   Play = 0x00b0,
   Pause = 0x00b1,
   Record = 0x00b2,
@@ -277,7 +211,6 @@ enum class ConsumerUsage : uint16_t
   Eject = 0x00b8,
   PlayPause = 0x00cd,
   Mute = 0x00e2,
-  BassBoost = 0x00e5,
   VolumeIncrement = 0x00e9,
   VolumeDecrement = 0x00ea,
   BrowserSearch = 0x0221,
@@ -288,389 +221,165 @@ enum class ConsumerUsage : uint16_t
   BrowserBookmarks = 0x022a,
 };
 
-enum class PointerAxis : uint16_t
+constexpr Key keyboardKey(KeyboardUsage usage)
 {
-  None = 0,
-  X = 1,
-  Y = 2,
-  Wheel = 3,
-  Pan = 4,
-};
+  return Key(KeyKind::Keyboard, static_cast<uint16_t>(usage));
+}
 
-struct InputCode
+constexpr Key keyboardKey(uint16_t usage)
 {
-  InputDomain domain = InputDomain::Keyboard;
-  uint16_t code = 0;
+  return Key(KeyKind::Keyboard, usage);
+}
 
-  bool operator==(const InputCode &other) const;
-  bool operator!=(const InputCode &other) const;
-};
-
-struct InputEvent
+constexpr Key consumerKey(ConsumerUsage usage)
 {
-  InputCode code;
-  bool pressed = false;
-  uint32_t timestampMs = 0;
-};
+  return Key(KeyKind::Consumer, static_cast<uint16_t>(usage));
+}
 
-struct InputValueEvent
+constexpr Key consumerKey(uint16_t usage)
 {
-  InputCode code;
-  int16_t value = 0;
-  uint32_t timestampMs = 0;
-};
+  return Key(KeyKind::Consumer, usage);
+}
 
-InputCode keyboardCode(KeySymbol key);
-InputCode consumerCode(uint16_t code);
-InputCode consumerCode(ConsumerUsage usage);
-InputCode pointerButtonCode(uint16_t code);
-InputCode pointerAxisCode(uint16_t code);
-InputCode pointerAxisCode(PointerAxis axis);
-InputCode vendorCode(uint16_t code);
-uint16_t hidUsageValue(HidUsage usage);
-HidUsage hidUsage(uint16_t usage);
-uint16_t hidUsageFromKeySymbol(KeySymbol key);
-KeySymbol keySymbolFromHidUsage(uint16_t usage);
-bool isHidKeyboardKeySymbol(KeySymbol key);
-KeySymbol keySymbolFromCode(InputCode code);
-const char *inputDomainName(InputDomain domain);
-bool isValid(InputCode code);
-InputEvent inputEvent(InputCode code, bool pressed, uint32_t timestampMs = 0);
-InputEvent keyEvent(KeySymbol key, bool pressed, uint32_t timestampMs = 0);
-InputValueEvent inputValueEvent(InputCode code, int16_t value, uint32_t timestampMs = 0);
-InputValueEvent pointerAxisValueEvent(PointerAxis axis, int16_t value, uint32_t timestampMs = 0);
-
-bool isModifierKeySymbol(KeySymbol key);
-const char *keySymbolName(KeySymbol key);
-const char *consumerUsageName(ConsumerUsage usage);
-const char *pointerAxisName(PointerAxis axis);
-
-struct HidKeyboardReport
+constexpr Key mouseButtonKey(uint16_t button)
 {
-  static constexpr size_t MaxKeys = 6;
-  static constexpr size_t BootReportSize = 8;
+  return Key(KeyKind::MouseButton, button);
+}
 
-  uint8_t modifiers = 0;
-  uint8_t keys[MaxKeys] = {};
-  size_t keyCount = 0;
-  bool overflow = false;
-
-  void clear();
-  bool empty() const;
-  bool writeBootReport(uint8_t *buffer, size_t size) const;
-};
-
-struct HidKeyboardRolloverReport
+constexpr Key virtualKey(uint16_t code)
 {
-  static constexpr size_t MaxKeys = 32;
-  static constexpr size_t ReportSize = 33;
+  return Key(KeyKind::Virtual, code);
+}
 
-  uint8_t modifiers = 0;
-  uint8_t keys[MaxKeys] = {};
-  size_t keyCount = 0;
-  bool overflow = false;
+bool isValid(Key key);
+const char *keyKindName(KeyKind kind);
 
-  void clear();
-  bool empty() const;
-  bool writeReport(uint8_t *buffer, size_t size) const;
-};
+// ---------------------------------------------------------------------------
+// Keyboard modifier normalization
+// ---------------------------------------------------------------------------
+//
+// Modifiers are ordinary keyboard keys (0xE0-0xE7) inside the core. These
+// helpers convert between the HID report modifier bitmask and Key values so
+// adapters can normalize reports on input and rebuild them on output.
 
-struct HidConsumerReport
-{
-  static constexpr size_t ReportSize = 2;
+bool isKeyboardModifier(Key key);
 
-  uint16_t usage = 0;
-  bool overflow = false;
+// Returns the modifier bitmask bit (0x01..0x80) for a modifier key, 0 otherwise.
+uint8_t keyboardModifierMask(Key key);
 
-  void clear();
-  bool empty() const;
-  bool writeReport(uint8_t *buffer, size_t size) const;
-};
+// Returns the modifier key for a bit index (0..7 -> LeftCtrl..RightGui).
+Key keyboardModifierFromBitIndex(uint8_t bitIndex);
 
-struct HidPointerReport
-{
-  static constexpr size_t MaxButtons = 8;
-  static constexpr size_t ReportSize = 5;
+// ---------------------------------------------------------------------------
+// KeySet: set of currently pressed keys (held state)
+// ---------------------------------------------------------------------------
 
-  uint8_t buttons = 0;
-  int8_t x = 0;
-  int8_t y = 0;
-  int8_t wheel = 0;
-  int8_t pan = 0;
-  bool overflow = false;
-
-  void clear();
-  bool empty() const;
-  bool apply(InputValueEvent event);
-  bool writeReport(uint8_t *buffer, size_t size) const;
-};
-
-class InputState
+class KeySet
 {
 public:
-  static constexpr size_t MaxCodes = 32;
+  static constexpr size_t MaxKeys = 32;
 
   void clear();
-  bool press(KeySymbol key);
-  bool press(InputCode code);
-  bool mergeFrom(const InputState &other);
-  bool release(KeySymbol key);
-  bool release(InputCode code);
-  bool contains(KeySymbol key) const;
-  bool contains(InputCode code) const;
-  bool isPressed(KeySymbol key) const;
-  bool isPressed(InputCode code) const;
-  bool apply(InputEvent event);
-  size_t codeCount() const;
-  KeySymbol keyAt(size_t index) const;
-  InputCode codeAt(size_t index) const;
+
+  // Adds a key. Returns false only when the set is full (already-pressed keys
+  // return true without duplication).
+  bool press(Key key);
+
+  // Removes a key. Returns true when the key was present.
+  bool release(Key key);
+
+  bool contains(Key key) const;
+
+  // Union with another set. Returns false when keys were dropped because this
+  // set became full.
+  bool mergeFrom(const KeySet &other);
+
+  size_t count() const;
+  Key at(size_t index) const;
+
+  // Builds the HID modifier bitmask from pressed modifier keys.
+  uint8_t keyboardModifierMask() const;
+
+  // Presses modifier keys for every bit set in the mask. Returns false when
+  // the set became full.
+  bool pressKeyboardModifiers(uint8_t mask);
 
 private:
-  InputCode codes_[MaxCodes] = {};
-  size_t codeCount_ = 0;
+  Key keys_[MaxKeys] = {};
+  size_t count_ = 0;
 };
 
-HidKeyboardReport buildHidKeyboardReport(const InputState &state);
-HidKeyboardRolloverReport buildHidKeyboardRolloverReport(const InputState &state);
-HidConsumerReport buildHidConsumerReport(const InputState &state);
-HidPointerReport buildHidPointerReport(const InputState &state);
+// ---------------------------------------------------------------------------
+// Input adapters
+// ---------------------------------------------------------------------------
 
 class InputAdapter
 {
 public:
   virtual ~InputAdapter() = default;
+
+  // Called once per bridge update. Adapters read their hardware here.
   virtual void update() = 0;
-  virtual const InputState &state() const = 0;
+
+  // Currently pressed keys of this input (logical presses; adapters may
+  // synthesize toggles, one-shots, or pulses that do not match physical
+  // switch state).
+  virtual const KeySet &keys() const = 0;
+
+  // While false, the bridge treats this input as absent: its keys drop out of
+  // the merged state (all keys released). Adapters report disconnection here.
+  virtual bool connected() const { return true; }
 };
 
-class EventInputAdapter : public InputAdapter
+// Minimal input adapter driven by direct press/release calls. Used by unit
+// tests, examples, and sketch-level custom inputs (buttons, pedals).
+class ManualInputAdapter : public InputAdapter
 {
 public:
-  void update() override;
-  const InputState &state() const override;
-  bool apply(InputEvent event);
-  void clear();
+  void update() override {}
+  const KeySet &keys() const override { return keys_; }
+  bool connected() const override { return connected_; }
+
+  bool press(Key key) { return keys_.press(key); }
+  bool release(Key key) { return keys_.release(key); }
+  void clear() { keys_.clear(); }
+  void setConnected(bool connected) { connected_ = connected; }
 
 private:
-  InputState state_;
+  KeySet keys_;
+  bool connected_ = true;
 };
 
-class OutputAdapter
-{
-public:
-  virtual ~OutputAdapter() = default;
-  virtual void write(const InputState &state) = 0;
-};
-
-class RecordingOutputAdapter : public OutputAdapter
-{
-public:
-  void write(const InputState &state) override;
-  const InputState &state() const;
-  size_t writeCount() const;
-  void clear();
-
-private:
-  InputState state_;
-  size_t writeCount_ = 0;
-};
-
-class RecordingHidKeyboardOutputAdapter : public OutputAdapter
-{
-public:
-  void write(const InputState &state) override;
-  const HidKeyboardReport &report() const;
-  size_t writeCount() const;
-  void clear();
-
-private:
-  HidKeyboardReport report_;
-  size_t writeCount_ = 0;
-};
-
-class RecordingHidKeyboardRolloverOutputAdapter : public OutputAdapter
-{
-public:
-  void write(const InputState &state) override;
-  const HidKeyboardRolloverReport &report() const;
-  size_t writeCount() const;
-  void clear();
-
-private:
-  HidKeyboardRolloverReport report_;
-  size_t writeCount_ = 0;
-};
-
-class RecordingHidConsumerOutputAdapter : public OutputAdapter
-{
-public:
-  void write(const InputState &state) override;
-  const HidConsumerReport &report() const;
-  size_t writeCount() const;
-  void clear();
-
-private:
-  HidConsumerReport report_;
-  size_t writeCount_ = 0;
-};
-
-class RecordingHidPointerOutputAdapter : public OutputAdapter
-{
-public:
-  void write(const InputState &state) override;
-  const HidPointerReport &report() const;
-  size_t writeCount() const;
-  void clear();
-
-private:
-  HidPointerReport report_;
-  size_t writeCount_ = 0;
-};
-
-struct CodeRemap
-{
-  InputCode from;
-  InputCode to;
-};
-
-struct KeyMacro
-{
-  static constexpr size_t MaxKeys = 8;
-
-  KeySymbol trigger = KeySymbol::None;
-  KeySymbol keys[MaxKeys] = {};
-  size_t keyCount = 0;
-};
-
-class TransformConfig
-{
-public:
-  static constexpr size_t MaxRemaps = 32;
-  static constexpr size_t MaxDisabledKeys = 32;
-  static constexpr size_t MaxMacros = 16;
-
-  bool remap(KeySymbol from, KeySymbol to);
-  bool remap(InputCode from, InputCode to);
-  bool disable(KeySymbol key);
-  bool disable(InputCode code);
-  bool macro(KeySymbol trigger, const KeySymbol *keys, size_t keyCount);
-  void clear();
-  KeySymbol map(KeySymbol key) const;
-  InputCode map(InputCode code) const;
-  bool isDisabled(KeySymbol key) const;
-  bool isDisabled(InputCode code) const;
-  const KeyMacro *findMacro(KeySymbol trigger) const;
-  bool empty() const;
-
-private:
-  CodeRemap remaps_[MaxRemaps] = {};
-  size_t remapCount_ = 0;
-  InputCode disabledCodes_[MaxDisabledKeys] = {};
-  size_t disabledCodeCount_ = 0;
-  KeyMacro macros_[MaxMacros] = {};
-  size_t macroCount_ = 0;
-};
-
-struct MergeConfig
-{
-  bool shareModifiers = true;
-  bool shareKeyboardKeys = true;
-  bool shareConsumer = true;
-  bool sharePointerButtons = true;
-  bool sharePointerAxes = true;
-  bool shareVendor = true;
-};
-
-class LayerConfig
-{
-public:
-  void setMomentary(KeySymbol trigger);
-  bool remap(KeySymbol from, KeySymbol to);
-  void clear();
-  bool enabled() const;
-  KeySymbol trigger() const;
-  KeySymbol map(KeySymbol key) const;
-
-private:
-  bool enabled_ = false;
-  KeySymbol trigger_ = KeySymbol::None;
-  TransformConfig transform_;
-};
-
-class LayoutConfig
-{
-public:
-  static constexpr size_t MaxMappings = 64;
-
-  bool map(KeySymbol from, KeySymbol to);
-  void clear();
-  KeySymbol convert(KeySymbol key) const;
-
-private:
-  CodeRemap mappings_[MaxMappings] = {};
-  size_t mappingCount_ = 0;
-};
-
-class ESP32KeyBridgeConfig
-{
-public:
-  static constexpr size_t MaxInputConfigs = 8;
-
-  TransformConfig &input(size_t index);
-  const TransformConfig &input(size_t index) const;
-  TransformConfig *tryInput(size_t index);
-  const TransformConfig *tryInput(size_t index) const;
-  bool hasInvalidInputConfig() const;
-  void clear();
-
-  TransformConfig global;
-  LayerConfig layer;
-  LayoutConfig layout;
-  MergeConfig merge;
-
-private:
-  TransformConfig inputTransforms_[MaxInputConfigs] = {};
-  TransformConfig invalidInputTransform_;
-};
-
-struct ESP32KeyBridgeConfigError
-{
-  const char *message = nullptr;
-};
+// ---------------------------------------------------------------------------
+// Bridge
+// ---------------------------------------------------------------------------
 
 class ESP32KeyBridge
 {
 public:
   static constexpr size_t MaxInputs = 8;
-  static constexpr size_t MaxOutputs = 4;
 
   bool addInput(InputAdapter &input);
-  bool addInput(InputAdapter &input, size_t configIndex);
-  bool addOutput(OutputAdapter &output);
   void clearInputs();
-  void clearOutputs();
-  bool validateConfig(const ESP32KeyBridgeConfig &config, ESP32KeyBridgeConfigError &error) const;
-  void applyConfig(const ESP32KeyBridgeConfig &config);
+  size_t inputCount() const;
+
   void begin();
+
+  // Updates all inputs and rebuilds the merged state as the union of the key
+  // sets of all connected inputs. A key stays pressed until every input that
+  // holds it releases it; a disconnected input contributes nothing.
   void update();
-  const InputState &mergedState() const;
-  const InputState &outputState() const;
+
+  const KeySet &mergedKeys() const;
+
+  // True when the last update dropped keys because the merged set was full.
+  bool mergedOverflow() const;
 
 private:
-  bool shouldMerge(InputCode code) const;
-  void mergeInput(const InputState &input, InputState &merged) const;
-  void applyTransform(const InputState &input, const TransformConfig &transform, InputState &output) const;
-  void applyLayer(const InputState &input, InputState &output) const;
-  void applyLayout(const InputState &input, InputState &output) const;
-
   InputAdapter *inputs_[MaxInputs] = {};
-  size_t inputConfigIndexes_[MaxInputs] = {};
   size_t inputCount_ = 0;
-  OutputAdapter *outputs_[MaxOutputs] = {};
-  size_t outputCount_ = 0;
-  ESP32KeyBridgeConfig config_;
-  InputState mergedState_;
-  InputState outputState_;
+  KeySet merged_;
+  bool mergedOverflow_ = false;
 };
 
 } // namespace esp32keybridge

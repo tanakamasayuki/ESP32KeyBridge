@@ -1,20 +1,18 @@
 # Examples
 
-Examples for `ESP32KeyBridge`.
+The old examples were removed together with the pre-spec implementation (reference: commit `4d2d48151c62`). New examples will be recreated to match the use cases in [../docs/USE_CASES.ja.md](../docs/USE_CASES.ja.md) as the implementation steps in [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) land.
 
-Early examples use virtual inputs and serial output to demonstrate the core API without depending on USB, BLE, GPIO, storage, or WebSerial.
+## Core Examples
 
-- `Basic`: minimal `begin()` / `update()` sketch.
-- `EventInput`: feed `esp32keybridge::InputEvent` values into `esp32keybridge::EventInputAdapter`.
-- `HardcodedRemap`: hardcoded C++ remap / disable configuration.
-- `MultiKeyboardMerge`: merge multiple virtual keyboard inputs into one keyboard state.
-- `PerInputRemap`: apply a remap to only one input, then apply a global remap after merge.
-- `MomentaryLayer`: apply a layer remap while `Fn1` is pressed.
-- `SimpleMacro`: expand a trigger key into multiple keys.
-- `LayoutConversion`: apply a key mapping table for layout conversion.
-- `NonKeyboardReports`: build Consumer Control, Pointer, and 32-code rollover keyboard reports without USB dependencies.
-- `RuntimeConfigApply`: apply a runtime configuration object produced outside the core.
-- `RuntimeAdapterReconfigure`: replace input/output adapter registrations at runtime.
-- `UsbHostKeyboardInput`: wrap `EspUsbHost` keyboard events as an `esp32keybridge::InputAdapter`.
+(to be added after implementation steps 1-2)
 
-Planned examples include USB keyboard remap/bridge, WebSerial configuration, and GPIO matrix input.
+## Planned
+
+- Swap Ctrl and CapsLock (UC1)
+- Multi-input merge (UC2)
+- Single GPIO key / foot switch (UC7)
+- Media key remap (UC9)
+- Layers (Fn-like virtual keys)
+- Text macros (UC10)
+- Layout conversion (UC5)
+- Hardware setups using USB Host / USB Device adapters
