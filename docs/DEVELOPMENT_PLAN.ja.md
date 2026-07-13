@@ -4,73 +4,42 @@
 
 ## 基本方針
 
-`ESP32KeyBridge` は、個別デバイス制御を直接束ねるライブラリではなく、入力 adapter、入力ごとの処理、入力統合、全体変換、出力 adapter を分離した汎用キーボード変換ライブラリとして実装します。
+仕様はユースケース駆動のゼロベース検証で確定しました。データモデルは [DATA_MODEL.ja.md](DATA_MODEL.ja.md)、モジュール境界は [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md)、決定の台帳は [DECISIONS.ja.md](DECISIONS.ja.md) を参照してください。
 
-中心に置くのは、入力ごとの状態と統合後の状態です。GPIO matrix、USB HID keyboard、BLE keyboard、UART などの入力 adapter は共通 event / state を生成し、per-input pipeline が入力ごとの処理を行い、merge layer が複数入力を統合し、global pipeline が keymap、layer、macro などを処理します。出力 adapter は変換済み state / action を USB HID、BLE HID、UART、ネットワークなどへ送信します。
+core は特定のトランスポート、保存先、設定 UI に依存しません。USB / BLE / GPIO などの依存はアダプタ側に閉じ込めます(アダプタ層 = HAL)。
 
-core は特定の transport、保存先、設定 UI に依存しません。USB Host / USB Device adapter では `EspUsbHost` / `EspUsbDevice` を利用できますが、依存は adapter 側に閉じ込めます。USB HID + CDC 複合デバイスや WebSerial 設定画面のような複雑な構成は、まず examples 側のリファレンス実装として検討します。
+## 現在のマイルストーン: 確定仕様の実装
 
-## 現在のマイルストーン
+現在の `src/` はゼロベース検討前の暫定実装であり、確定仕様へ書き換えます。
 
-最初の core MVP は、実ハードウェア依存を増やす前に host unit test と build-only example で固定します。
+実装順:
 
-完了済み:
+1. **キー表現と状態系の基盤**: 種別 + 値のキー、入力ごとの押下集合、和集合統合、切断クリア、modifier 正規化。host unit test で固定。
+2. **キー変換**: remap(1 段・種別またぎ)、無効化、virtual キー、レイヤー(press 時確定)。
+3. **Lock / LED**: 内部シャドウ、正本の連鎖(lock 報告出力 → 終端ホストモード)、全入力への通知。
+4. **単発系**: 文字ストリーム、アクション列キュー(アトミック性・修飾退避/復元・あふれ)、相対値(合算・繰り越し・反転/倍率)、ホストレイアウト記述(`en_us` / `ja_jp`)と制御文字。
+5. **レイアウト変換**: (キー,Shift)→(キー,Shift) 表、Shift 抑制・合成、on/off 切替、修飾コンボ素通し。
+6. **マウス**: mouse_button 種別、相対軸、マウス report builder。
+7. **アダプタと example**: USB Host keyboard/mouse 入力、USB device(単体 / 複合)出力、GPIO マトリクス、BLE、文字列デバイス(シリアル)。既存の examples / tests を新 API へ移行。
 
-- [API_SKETCHES.ja.md](API_SKETCHES.ja.md) でユーザー側 API の初期案を整理する。
-- [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) で data flow、state、adapter、configuration boundary を整理する。
-- `esp32keybridge::InputCode` / `esp32keybridge::InputState` と press / release の基本表現を実装する。
-- `esp32keybridge::InputValueEvent` で pointer axis のような値付き入力を表現する。
-- input adapter / output adapter の最小 interface を実装する。
-- virtual input / recording output を使った unit test と example で merge、remap、disable を固定する。
-- hardcoded config と外部設定 object の両方で使える設定適用 API を実装する。
-- per-input remap、明示 config index、layer、macro、layout conversion を core test で固定する。
-- keyboard / consumer / pointer の最小 HID report builder を実装する。
+各段階で unit test(host 実行)を先に固定し、実機依存は build-only → single → peer の順で追加します([../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md))。
 
-次に検討するもの:
+## 対応予定の入出力
 
-- USB HID keyboard の Host input helper adapter と example。
-- USB HID keyboard / consumer / pointer の Device output adapter example。
-- 32 code までの rollover keyboard report を扱う Host / Device adapter example。
-- GPIO matrix input adapter example。
-- WebSerial 設定画面 reference example。
-- pointer axis の event queue / output adapter 連携方式。
+- 入力: USB Host(keyboard / mouse / barcode)、GPIO(単独キー・マトリクス・エンコーダ・フットスイッチ)、BLE keyboard / mouse、UART / シリアル(イベント・文字列)、I2C / SPI エキスパンダ、IR。
+- 出力: USB Device(keyboard / mouse / consumer、複合)、BLE HID、UART(イベント・ログ・文字)、GPIO。
+- 将来メモ(v1 対象外): 無線ペア / TCP トランスポート、出力切替(KVM 的)、絶対座標。詳細は [DECISIONS.ja.md](DECISIONS.ja.md)。
 
-## 対応予定の入力
+## 設計判断(要約)
 
-- GPIO: 単体スイッチ、行列キーボード、キーパッド、ロータリーエンコーダ、フットスイッチ、抵抗ラダー式キー。
-- USB Host: HID keyboard、numeric keypad、barcode scanner、consumer control、gamepad。
-- Bluetooth: BLE HID keyboard / consumer device / remote、対応 SoC で Bluetooth Classic HID。
-- UART / Serial: 外部マイコンからのキーイベント、独自プロトコル、デバッグ入力。
-- I2C / SPI: GPIO expander、キーパッドユニット、キーボードコントローラ。
-- Network: ESP-NOW、TCP、UDP、WebSocket。
-- IR: remote、学習リモコン、consumer control。
-
-## 対応予定の出力
-
-- USB Device: HID keyboard、consumer control、mouse。
-- Bluetooth: BLE HID keyboard / consumer control、Bluetooth Classic HID keyboard。
-- UART: シリアルイベント出力、デバッグ。
-- Network: ESP-NOW、TCP、UDP、MQTT。
-- GPIO: LED、ブザー、リレー、外部マイコン制御。
-
-## 設計判断
-
-- 入力元の scan / receive 処理と、キー変換処理を混ぜない。
-- 入力ごとの処理、入力統合、統合後の全体処理を分ける。
-- 出力 adapter は複数同時利用できる前提で設計する。
-- core の `esp32keybridge::InputState` は 6KRO に限定しない。ただし full NKRO ではなく `esp32keybridge::InputState::MaxCodes` 個までで、現状は 32 code を上限にする。6KRO boot report は output adapter 向けの変換結果であり、32 code までの rollover report は adapter 固有 report として追加できるようにする。
-- キーマップ、レイヤー、マクロは C++ コードで決め打ちする使い方と、外部設定を適用する使い方の両方を許容する。
-- core は設定転送手段と永続化先を固定しない。NVS、LittleFS、SPIFFS、SD card、USB CDC、BLE、UART、TCP などは examples / adapter 側の選択肢として扱う。
-- SoC ごとの USB / Bluetooth / peripheral 差は adapter 層に閉じ込める。
-- keyboard / consumer control を主対象にしつつ、mouse、trackpad、pointer 系の event domain を追加しても pipeline が破綻しない設計にする。pointer button は state として扱い、pointer axis は値付き event として扱う。
-
-設定と WebSerial の詳細は [CONFIGURATION.ja.md](CONFIGURATION.ja.md) を参照してください。
+- ブリッジは解釈しない / 正本は解釈者が持つ / core は時間を持たない / 移植可能な純粋 C++(依存境界は [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md))。
+- トラフィックは継続(状態系)と単発(イベント系)の 2 大分類で扱う。
+- 中間の押下集合に出力形式の制限(6KRO 等)を持ち込まない。
+- 原理的な不可能性([DATA_MODEL.ja.md](DATA_MODEL.ja.md) 末尾)は隠さず明記する。
 
 ## テスト方針
 
-core の変換処理は host 上の unit test で固定します。ハードウェア adapter は、build-only smoke test、実機自動テスト、manual test を分けて管理します。
-
-詳細は [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) を参照してください。
+core の変換処理は host 上の unit test で固定します。ハードウェアアダプタは build-only smoke、実機自動テスト、manual test を分けて管理します。詳細は [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) を参照してください。
 
 ## リリース運用
 

@@ -12,11 +12,11 @@ The library is intended to separate:
 - transformation logic, such as keycode mapping, layers, macros, disabled keys, swapped keys, and Consumer Key handling;
 - output adapters, such as USB Device, Bluetooth, UART, network, and GPIO.
 
-The core does not depend on a specific transport, storage backend, configuration format, or UI. USB adapters may use `EspUsbHost` and `EspUsbDevice`, and WebSerial configuration is planned as a reference example rather than a core requirement.
+The core does not depend on a specific transport, storage backend, configuration format, or UI. It is written as portable C++ with no dependency on Arduino, ESP-IDF, or other platform APIs; all hardware-specific code lives in the adapter layer, which acts as the HAL. USB adapters may use `EspUsbHost` and `EspUsbDevice`, and WebSerial configuration is planned as a reference example rather than a core requirement.
 
 Initial development should start with small core APIs that can be tested without hardware, then add hardware-backed adapters incrementally.
 
-Core design and API sketches are in [docs/CORE_DESIGN.ja.md](docs/CORE_DESIGN.ja.md) and [docs/API_SKETCHES.ja.md](docs/API_SKETCHES.ja.md). Configuration design notes are in [docs/CONFIGURATION.ja.md](docs/CONFIGURATION.ja.md).
+The intermediate data model (key identity as kind + value, held-state vs one-shot traffic classes, lock state, layout conversion) is defined in [docs/DATA_MODEL.ja.md](docs/DATA_MODEL.ja.md). Representative use cases are validated in [docs/USE_CASES.ja.md](docs/USE_CASES.ja.md), and design decisions are recorded in [docs/DECISIONS.ja.md](docs/DECISIONS.ja.md). Core design and API sketches are in [docs/CORE_DESIGN.ja.md](docs/CORE_DESIGN.ja.md) and [docs/API_SKETCHES.ja.md](docs/API_SKETCHES.ja.md). Configuration design notes are in [docs/CONFIGURATION.ja.md](docs/CONFIGURATION.ja.md).
 
 ## Tests
 

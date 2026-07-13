@@ -21,12 +21,13 @@ Reference example
 
 ## 設定で変更できるもの
 
-- キーマップ
-- レイヤー
-- ワンショット、モーメンタリ、トグルなどの layer 動作
+- キーマップ(remap、種別またぎ可)
+- モーメンタリレイヤー
 - キー無効化、キー入れ替え
-- マクロ
+- マクロ(キーシーケンス、文字列タイプ)
+- レイアウト変換の有効化・on/off 切替キー・layout 選択(入力ごとの刻印 layout、出力ごとの host layout)
 - Consumer Control 割り当て
+- マウス軸の反転・倍率
 - USB device 情報
 - Bluetooth device 情報
 - 有効にする入力 adapter / 出力 adapter
