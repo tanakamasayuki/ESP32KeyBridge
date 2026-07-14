@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Implement `EspUsbHostMouseInputAdapter`: all mice on the stack merged
+  (button union, deltas summed) with per-address tracking so a disconnect
+  releases only that mouse's buttons; movement and wheel accumulate as
+  relative axis deltas behind a critical section (EspUsbHost callbacks fire
+  from the library task). Because EspUsbHost callbacks are single-slot, the
+  USB Host adapters now share subscriptions through an internal per-stack
+  hub — sketches must not set onMouse / onDeviceDisconnected themselves.
+  A mouse counts as present from its first report (the library has no
+  enumeration query). The keyboard input adapter stays a mock, waiting on
+  an EspUsbHost change (modifier-only presses produce no onKeyboard
+  events).
 - Unify the USB Device output into a single always-composite HID adapter:
   `EspUsbDeviceHidOutputAdapter` (keyboard + consumer + mouse) replaces the
   keyboard-only `EspUsbDeviceKeyboardOutputAdapter`. Unused interfaces are
