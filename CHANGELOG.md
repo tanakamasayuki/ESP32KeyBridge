@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add the NumPad (GPIO key matrix, 4x3 numeric keypad) and VolumeKnob
+  (rotary encoder volume control with a scroll-dial variation) examples,
+  backed by new build-only mock adapters that fix the sketch-facing API:
+  `GpioMatrixInputAdapter` (wiring via setRowPins/setColPins, keymap via
+  setKeys in row-major order so the code layout mirrors the physical
+  layout — no coordinates or indices; optional diodes with ghost blocking
+  otherwise) and `RotaryEncoderInputAdapter` (PCNT hardware counting; one
+  detent taps a key pair or feeds a relative axis). Implementations follow
+  after the API review.
 - Move BLE out of this library: BLE support will come from a dedicated
   sibling library (a single library hosting both the central and
   peripheral HID roles, NimBLE-based, no Bluetooth Classic — the S3-era

@@ -30,6 +30,8 @@ EspUsbHostKeyboardInputAdapter	KEYWORD1
 EspUsbHostMouseInputAdapter	KEYWORD1
 EspUsbDeviceHidOutputAdapter	KEYWORD1
 GpioKeyInputAdapter	KEYWORD1
+GpioMatrixInputAdapter	KEYWORD1
+RotaryEncoderInputAdapter	KEYWORD1
 
 keyboardKey	KEYWORD2
 consumerKey	KEYWORD2
@@ -102,6 +104,13 @@ takeAxisDelta	KEYWORD2
 addKey	KEYWORD2
 keyCount	KEYWORD2
 setDebounceMillis	KEYWORD2
+setRowPins	KEYWORD2
+setColPins	KEYWORD2
+setKeys	KEYWORD2
+setHasDiodes	KEYWORD2
+mapToKeys	KEYWORD2
+mapToAxis	KEYWORD2
+setPulsesPerDetent	KEYWORD2
 writeAxisDelta	KEYWORD2
 axisTotal	KEYWORD2
 setAxisScale	KEYWORD2
