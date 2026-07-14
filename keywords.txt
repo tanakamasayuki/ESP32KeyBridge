@@ -3,6 +3,7 @@ Key	KEYWORD1
 KeyKind	KEYWORD1
 KeyboardUsage	KEYWORD1
 ConsumerUsage	KEYWORD1
+MouseUsage	KEYWORD1
 VirtualUsage	KEYWORD1
 KeySet	KEYWORD1
 KeyRemap	KEYWORD1

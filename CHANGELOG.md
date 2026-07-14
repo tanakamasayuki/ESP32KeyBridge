@@ -12,7 +12,12 @@
   A mouse counts as present from its first report (the library has no
   enumeration query). The keyboard input adapter stays a mock, waiting on
   an EspUsbHost change (modifier-only presses produce no onKeyboard
-  events).
+  events). Added the `NaturalScroll` example (ESP32-P4): invert the mouse
+  wheel direction in hardware via a negative axis scale, with the
+  left-handed button swap as a README variation. Added the `MouseUsage`
+  enum (Left/Right/Middle/Back/Forward, Button6-8) so mouse buttons follow
+  the no-magic-number rule like the other key kinds; `mouseButtonKey(n)`
+  still accepts any button number.
 - Unify the USB Device output into a single always-composite HID adapter:
   `EspUsbDeviceHidOutputAdapter` (keyboard + consumer + mouse) replaces the
   keyboard-only `EspUsbDeviceKeyboardOutputAdapter`. Unused interfaces are

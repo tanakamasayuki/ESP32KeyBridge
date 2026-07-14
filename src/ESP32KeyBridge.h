@@ -228,6 +228,22 @@ enum class VirtualUsage : uint16_t
   V16 = 16,
 };
 
+// HID button page usage IDs as mouse buttons (1-origin, matching the
+// MouseButton key kind). mouseButtonKey(n) accepts any button number when
+// a name is not defined here.
+enum class MouseUsage : uint16_t
+{
+  None = 0,
+  Left = 1,
+  Right = 2,
+  Middle = 3,
+  Back = 4,
+  Forward = 5,
+  Button6 = 6,
+  Button7 = 7,
+  Button8 = 8,
+};
+
 struct Key
 {
   KeyKind kind = KeyKind::None;
@@ -237,8 +253,8 @@ struct Key
   constexpr Key(KeyKind keyKind, uint16_t keyCode) : kind(keyKind), code(keyCode) {}
 
   // The usage enums determine the kind, so they convert to Key directly.
-  // Mouse buttons and virtual keys are plain numbers and use
-  // mouseButtonKey() / virtualKey() instead.
+  // Raw numbers beyond the named values use mouseButtonKey() /
+  // virtualKey() instead.
   constexpr Key(KeyboardUsage usage)
       : kind(KeyKind::Keyboard), code(static_cast<uint16_t>(usage))
   {
@@ -246,6 +262,11 @@ struct Key
 
   constexpr Key(ConsumerUsage usage)
       : kind(KeyKind::Consumer), code(static_cast<uint16_t>(usage))
+  {
+  }
+
+  constexpr Key(MouseUsage usage)
+      : kind(KeyKind::MouseButton), code(static_cast<uint16_t>(usage))
   {
   }
 
@@ -283,6 +304,11 @@ constexpr Key consumerKey(ConsumerUsage usage)
 constexpr Key consumerKey(uint16_t usage)
 {
   return Key(KeyKind::Consumer, usage);
+}
+
+constexpr Key mouseButtonKey(MouseUsage usage)
+{
+  return Key(KeyKind::MouseButton, static_cast<uint16_t>(usage));
 }
 
 constexpr Key mouseButtonKey(uint16_t button)

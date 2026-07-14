@@ -34,6 +34,10 @@ static void test_key_converts_implicitly_from_usage_enums()
   esp32keybridge::Key volumeUp = esp32keybridge::ConsumerUsage::VolumeIncrement;
   assert(volumeUp == esp32keybridge::consumerKey(esp32keybridge::ConsumerUsage::VolumeIncrement));
 
+  esp32keybridge::Key leftButton = esp32keybridge::MouseUsage::Left;
+  assert(leftButton == esp32keybridge::mouseButtonKey(1));
+  assert(leftButton == esp32keybridge::mouseButtonKey(esp32keybridge::MouseUsage::Left));
+
   esp32keybridge::Key layerKey = esp32keybridge::VirtualUsage::V1;
   assert(layerKey == esp32keybridge::virtualKey(1));
 
