@@ -44,6 +44,20 @@ USB Device 出力は 1 種類で、常に**複合 HID デバイス**として PC
 - **LED output report を受信**し、接続中は lock 状態の正本(の連鎖の候補)になります([DATA_MODEL.ja.md](DATA_MODEL.ja.md) の Lock 状態)。
 - rollover(32 キー)report builder は core にありますが、v1 の USB Device 出力は boot keyboard を基本とします(NKRO descriptor は将来のアダプタ拡張)。
 
+## update() 頻度と取りこぼし耐性
+
+サンプリングの時間精度はアダプタが担保するのが原則です([CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) の「時間・並行性の境界」)。`update()` の呼び出し間隔が影響するのは「反映(変換・出力)の遅れ」だけで、入力自体の取りこぼしは起きません — 例外は `GpioKeyInputAdapter` です。
+
+| アダプタ | サンプリング機構 | loop が長時間ブロックしたとき |
+|---|---|---|
+| `GpioKeyInputAdapter` | `update()` 内で読む(**loop レート依存**) | **ブロック中より短い押下は取りこぼす**。ペダル・ボタンのような押下の長い入力専用の割り切り |
+| `GpioMatrixInputAdapter` | 専用タスク 1kHz(スキャン・デバウンス・ゴースト判定込み。初回 `update()` で起動) | 取りこぼさない(押下状態はタスク側で確定済み。反映が遅れるだけ) |
+| `RotaryEncoderInputAdapter` | PCNT ペリフェラルのハードウェア計数 | 取りこぼさない(カウンタが溜めている。反映が遅れるだけ) |
+| `EspUsbHostKeyboardInputAdapter` / `EspUsbHostMouseInputAdapter` | EspUsbHost のタスクからコールバック受け(critical section 越しの共有状態) | 取りこぼさない(キーボードは状態スナップショット保持。マウスの移動量は合算して保持) |
+| `ManualInputAdapter` | スケッチが直接 `press()`/`release()` | スケッチ次第(呼んだものはそのまま残る) |
+
+出力側(`EspUsbDeviceHidOutputAdapter` 等)は状態スナップショット方式なので、`update()` が遅れても「最後の状態」が送られるだけで壊れません(タイピング・マクロの打鍵速度は update 間隔に比例して遅くなります)。
+
 ## 追加依存ライブラリ
 
 core(`ESP32KeyBridge.h`)は依存ゼロ(純粋 C++)です。アダプタヘッダは**ヘッダのみ**なので、include したアダプタの分だけ依存ライブラリが必要になります(include しなければ不要)。

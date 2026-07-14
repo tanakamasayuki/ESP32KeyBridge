@@ -11,6 +11,7 @@
 | GPIO6 | PageDown | プレゼンのページ送り |
 
 - スイッチは `addKey(pin, key, activeLow, pullUp)` で登録します(極性・プルアップはピンごとに指定)。上限はチップの GPIO 数(`SOC_GPIO_PIN_COUNT`)そのものです。デバウンスはアダプタ内で行います。
+- GPIO キーのサンプリングは `update()` 内(= loop レート)です。loop を長時間ブロックするスケッチでは、ブロック中より短い押下を取りこぼします — ペダル・ボタンのような押下の長い入力向けの割り切りです(短いタップを確実に拾いたいマトリクスは専用タスクの `GpioMatrixInputAdapter`。一覧: [ADAPTERS.ja.md](../../../docs/ADAPTERS.ja.md))。
 - ペダルはどの種別のキーでも直接押せます。Consumer キーを割り当てればそのままメディアペダルです。
 - virtual キーはブリッジ内専用で PC には届きません。事前定義スロット `VirtualUsage::V1`〜`V16`(足りなければ `virtualKey(n)` で 1〜65535 の任意番号)にスケッチ内で名前を付けて使います(この例では `kEmailPedal = VirtualUsage::V1`)。
 - 文字は `config.hostLayout`(既定 en_us)で打鍵に展開されます。PC 側のレイアウト設定に合わせてください。
