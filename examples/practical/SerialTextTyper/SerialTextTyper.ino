@@ -18,7 +18,7 @@
 EspUsbDevice usbDevice; // PC side
 
 esp32keybridge::ESP32KeyBridge bridge;
-esp32keybridge::EspUsbDeviceKeyboardOutputAdapter pc(usbDevice);
+esp32keybridge::EspUsbDeviceHidOutputAdapter pc(usbDevice);
 
 // Characters are typed as soon as they arrive; only an incomplete UTF-8
 // sequence waits for its remaining bytes.

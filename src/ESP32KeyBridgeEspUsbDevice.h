@@ -5,25 +5,27 @@
 
 #include <string.h>
 
-// USB Device output adapters backed by the EspUsbDevice library.
+// USB Device output adapter backed by the EspUsbDevice library.
 //
 // Ownership model: the sketch owns the EspUsbDevice stack and starts it with
-// the library's own configuration (VID/PID, product name). Adapters take a
-// reference; they register their HID interfaces at construction time, so
-// construct them before calling usbDevice.begin() (the descriptor is fixed
-// there). They have no begin().
+// the library's own configuration (VID/PID, product name). The adapter takes
+// a reference; it registers its HID interfaces at construction time, so
+// construct it before calling usbDevice.begin() (the descriptor is fixed
+// there). It has no begin().
 
 namespace esp32keybridge
 {
 
-// USB keyboard device output. Packs the output key set into boot keyboard
-// reports (6KRO) and receives LED output reports from the host, which makes
-// the host the lock state authority.
-class EspUsbDeviceKeyboardOutputAdapter : public OutputAdapter
+// Composite HID device output: keyboard + consumer + mouse in one device.
+// The full composition is always registered — an interface that never sends
+// a report is harmless on the USB side, so there is no keyboard-only
+// variant to choose from. The keyboard interface still speaks the boot
+// protocol, which covers BIOS/UEFI use.
+class EspUsbDeviceHidOutputAdapter : public OutputAdapter
 {
 public:
-  explicit EspUsbDeviceKeyboardOutputAdapter(EspUsbDevice &usb)
-      : usb_(usb), keyboard_(usb)
+  explicit EspUsbDeviceHidOutputAdapter(EspUsbDevice &usb)
+      : usb_(usb), keyboard_(usb), consumer_(usb), mouse_(usb)
   {
     // Fires from the TinyUSB task: publish the raw LED byte for the
     // update() context to decode in getLockState().
@@ -35,26 +37,14 @@ public:
         });
   }
 
-  // Sends a boot report when the key state changed (or when the previous
-  // send could not go out because the endpoint was busy).
+  // Packs the key set into keyboard, consumer, and mouse-button reports.
+  // Each report is sent when its state changed (or when the previous send
+  // could not go out because the endpoint was busy).
   void write(const KeySet &keys) override
   {
-    const HidKeyboardReport report = buildHidKeyboardReport(keys);
-    EspUsbDeviceBootKeyboardReport bootReport;
-    bootReport.modifiers = report.modifiers;
-    for (size_t i = 0; i < HidKeyboardReport::MaxKeys; ++i)
-    {
-      bootReport.keys[i] = i < report.keyCount ? report.keys[i] : 0;
-    }
-
-    if (!sendPending_ && memcmp(&bootReport, &lastReport_, sizeof(bootReport)) == 0)
-    {
-      return;
-    }
-    lastReport_ = bootReport;
-    // sendReport is non-blocking; when it fails (endpoint busy), retry on
-    // the next update instead of dropping the state change.
-    sendPending_ = !keyboard_.sendReport(bootReport, 0);
+    writeKeyboard(keys);
+    writeConsumer(keys);
+    writeMouse(keys);
   }
 
   // True while a host has mounted the device.
@@ -77,51 +67,96 @@ public:
     return true;
   }
 
-private:
-  EspUsbDevice &usb_;
-  EspUsbDeviceHidKeyboard keyboard_;
-  EspUsbDeviceBootKeyboardReport lastReport_;
-  bool sendPending_ = false;
-  volatile uint8_t hostLeds_ = 0;
-  volatile bool ledSeen_ = false;
-};
-
-// Composite HID device output: keyboard + consumer + mouse in one device.
-// USB interfaces are fixed when usbDevice.begin() runs and stay visible to
-// the host even while unused (adding or removing one would require
-// re-enumeration); choosing this adapter over the keyboard-only one is
-// what decides that consumer/mouse reports exist on the host.
-//
-// MOCK: build-only skeleton fixing the sketch-facing API. The real
-// implementation lands with implementation step 7.
-class EspUsbDeviceHidOutputAdapter : public OutputAdapter
-{
-public:
-  explicit EspUsbDeviceHidOutputAdapter(EspUsbDevice &usb) : usb_(usb) {}
-
-  // Keyboard and consumer keys are packed into their reports; other kinds
-  // are skipped.
-  void write(const KeySet &keys) override { (void)keys; }
-
-  bool connected() const override { return false; }
-
-  bool reportsLockState() const override { return true; }
-  bool getLockState(LockState &out) const override
-  {
-    (void)out;
-    return false;
-  }
-
-  // Relative axis totals become mouse report deltas (saturation and carry
-  // handled inside).
+  // Relative axis totals accumulate here; the bridge delivers them before
+  // write() in the same update, so they ride the mouse report of the same
+  // cycle (int8 saturation with the remainder carried to the next update).
+  // The boot mouse report has no pan field, so Pan is dropped.
   void writeAxisDelta(Axis axis, int32_t delta) override
   {
-    (void)axis;
-    (void)delta;
+    if (axis == Axis::Pan)
+    {
+      return;
+    }
+    pendingAxis_[static_cast<size_t>(axis)] += delta;
   }
 
 private:
+  void writeKeyboard(const KeySet &keys)
+  {
+    const HidKeyboardReport report = buildHidKeyboardReport(keys);
+    EspUsbDeviceBootKeyboardReport bootReport;
+    bootReport.modifiers = report.modifiers;
+    for (size_t i = 0; i < HidKeyboardReport::MaxKeys; ++i)
+    {
+      bootReport.keys[i] = i < report.keyCount ? report.keys[i] : 0;
+    }
+
+    if (!keyboardPending_ && memcmp(&bootReport, &lastKeyboardReport_, sizeof(bootReport)) == 0)
+    {
+      return;
+    }
+    lastKeyboardReport_ = bootReport;
+    // sendReport is non-blocking; when it fails (endpoint busy), retry on
+    // the next update instead of dropping the state change.
+    keyboardPending_ = !keyboard_.sendReport(bootReport, 0);
+  }
+
+  void writeConsumer(const KeySet &keys)
+  {
+    const HidConsumerReport report = buildHidConsumerReport(keys);
+    if (!consumerPending_ && report.usage == lastConsumerUsage_)
+    {
+      return;
+    }
+    lastConsumerUsage_ = report.usage;
+    consumerPending_ = !consumer_.sendUsage(report.usage, 0);
+  }
+
+  void writeMouse(const KeySet &keys)
+  {
+    HidMouseReport report = buildHidMouseReport(keys);
+    for (size_t axis = 0; axis < kAxisCount; ++axis)
+    {
+      pendingAxis_[axis] = report.applyAxisDelta(static_cast<Axis>(axis), pendingAxis_[axis]);
+    }
+    const bool moved = report.x != 0 || report.y != 0 || report.wheel != 0;
+    // lastMouseButtons_ tracks the last successful send, so a failed
+    // button change keeps mismatching and retries on the next update.
+    if (!moved && report.buttons == lastMouseButtons_)
+    {
+      return;
+    }
+
+    EspUsbDeviceBootMouseReport bootReport;
+    bootReport.buttons = report.buttons;
+    bootReport.x = report.x;
+    bootReport.y = report.y;
+    bootReport.wheel = report.wheel;
+    if (mouse_.sendReport(bootReport, 0))
+    {
+      lastMouseButtons_ = report.buttons;
+    }
+    else
+    {
+      // Endpoint busy: put the movement back so nothing is lost.
+      pendingAxis_[static_cast<size_t>(Axis::X)] += report.x;
+      pendingAxis_[static_cast<size_t>(Axis::Y)] += report.y;
+      pendingAxis_[static_cast<size_t>(Axis::Wheel)] += report.wheel;
+    }
+  }
+
   EspUsbDevice &usb_;
+  EspUsbDeviceHidKeyboard keyboard_;
+  EspUsbDeviceHidConsumerControl consumer_;
+  EspUsbDeviceHidMouse mouse_;
+  EspUsbDeviceBootKeyboardReport lastKeyboardReport_;
+  bool keyboardPending_ = false;
+  uint16_t lastConsumerUsage_ = 0;
+  bool consumerPending_ = false;
+  uint8_t lastMouseButtons_ = 0;
+  int32_t pendingAxis_[kAxisCount] = {};
+  volatile uint8_t hostLeds_ = 0;
+  volatile bool ledSeen_ = false;
 };
 
 } // namespace esp32keybridge

@@ -27,7 +27,6 @@ ManualOutputAdapter	KEYWORD1
 InputConfig	KEYWORD1
 EspUsbHostKeyboardInputAdapter	KEYWORD1
 EspUsbHostMouseInputAdapter	KEYWORD1
-EspUsbDeviceKeyboardOutputAdapter	KEYWORD1
 EspUsbDeviceHidOutputAdapter	KEYWORD1
 GpioKeyInputAdapter	KEYWORD1
 BleKeyboardInputAdapter	KEYWORD1

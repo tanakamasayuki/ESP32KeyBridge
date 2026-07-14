@@ -25,8 +25,8 @@ EspUsbDevice usbDevice; // PC side (HS)
 
 esp32keybridge::ESP32KeyBridge bridge;
 esp32keybridge::EspUsbHostKeyboardInputAdapter keyboard(usbHost);
-// Composite HID output: consumer (and mouse) reports exist on the PC side
-// because this output is registered.
+// The USB Device output is a composite HID device (keyboard + consumer +
+// mouse); interfaces this sketch does not use simply never send reports.
 esp32keybridge::EspUsbDeviceHidOutputAdapter pc(usbDevice);
 
 void setup()

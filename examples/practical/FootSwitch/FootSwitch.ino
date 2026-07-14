@@ -18,7 +18,7 @@ EspUsbDevice usbDevice; // PC side
 
 esp32keybridge::ESP32KeyBridge bridge;
 esp32keybridge::GpioKeyInputAdapter pedals;
-esp32keybridge::EspUsbDeviceKeyboardOutputAdapter pc(usbDevice);
+esp32keybridge::EspUsbDeviceHidOutputAdapter pc(usbDevice);
 
 // Virtual keys exist only inside the bridge (never sent to the PC) and
 // carry no meaning of their own: alias a predefined slot (VirtualUsage::V1

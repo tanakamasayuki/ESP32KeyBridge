@@ -27,7 +27,7 @@ EspUsbDevice usbDevice; // PC side (HS)
 
 esp32keybridge::ESP32KeyBridge bridge;
 esp32keybridge::EspUsbHostKeyboardInputAdapter keyboard(usbHost);
-esp32keybridge::EspUsbDeviceKeyboardOutputAdapter pc(usbDevice);
+esp32keybridge::EspUsbDeviceHidOutputAdapter pc(usbDevice);
 
 void setup()
 {

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Unify the USB Device output into a single always-composite HID adapter:
+  `EspUsbDeviceHidOutputAdapter` (keyboard + consumer + mouse) replaces the
+  keyboard-only `EspUsbDeviceKeyboardOutputAdapter`. Unused interfaces are
+  harmless on the USB side (they simply never send reports), the keyboard
+  interface still speaks the boot protocol for BIOS/UEFI, and adding mouse
+  or media keys to a configuration later never requires re-enumeration.
+  The consumer report (16-bit usage) and mouse report (buttons plus
+  X/Y/Wheel from the relative axes, int8 saturation with carry; Pan is not
+  in the boot mouse report and is dropped) follow the same
+  send-on-change-with-busy-retry pattern as the keyboard report. Interface
+  disable options are deferred until a real need appears (they would be
+  non-breaking constructor arguments).
 - Remove the pre-spec prototype implementation, examples, and their tests
   (reference: commit `4d2d48151c62`). New examples and hardware tests will
   be recreated as the implementation steps land.

@@ -24,26 +24,24 @@
 | クラス | ヘッダ | 依存 | 状況 | lock 報告 | 機能 |
 |---|---|---|---|---|---|
 | `ManualOutputAdapter` | `ESP32KeyBridge.h`(core) | なし | **実装済み** | 模擬可 | 受け取った押下集合・文字・相対値を記録。ホストの LED report を模擬できる(テスト・自作出力のリファレンス) |
-| `EspUsbDeviceKeyboardOutputAdapter` | `ESP32KeyBridgeEspUsbDevice.h` | EspUsbDevice | **実装済み(実機検証待ち)** | あり | USB キーボードデバイス(boot 6KRO、変化時のみ送信 + busy 時は次 update で再送)。LED output report 受信 = lock 正本になれる(kana 含む)。`connected()` = ホストに mount 中 |
-| `EspUsbDeviceHidOutputAdapter` | `ESP32KeyBridgeEspUsbDevice.h` | EspUsbDevice | **モック** | あり | 複合 HID(keyboard + consumer + mouse)。相対軸 → mouse report(飽和 + 繰り越し) |
+| `EspUsbDeviceHidOutputAdapter` | `ESP32KeyBridgeEspUsbDevice.h` | EspUsbDevice | **実装済み(実機検証待ち)** | あり | 複合 HID デバイス(keyboard + consumer + mouse)。keyboard = boot 6KRO、consumer = 16bit usage × 1、相対軸 → mouse report(int8 飽和 + 繰り越し、Pan は非対応で破棄)。各 report は変化時のみ送信 + busy 時は次 update で再送。LED output report 受信 = lock 正本になれる(kana 含む)。`connected()` = ホストに mount 中 |
 | BLE HID 出力 | - | BLE ライブラリ未定 | **構想** | あり(予定) | |
 | UART 出力(イベント・ログ・文字) | - | なし | **構想** | なし | `writeText()` を直接受ける文字対応出力 |
 
 ## PC からどう見えるか(USB デバイス構成)
 
-どの出力アダプタを選ぶかで、PC に見える USB デバイスの構成が決まります。
+USB Device 出力は 1 種類で、常に**複合 HID デバイス**として PC に見えます。
 
 | 出力アダプタ | PC から見える構成 | 送る report |
 |---|---|---|
-| `EspUsbDeviceKeyboardOutputAdapter` | HID キーボード単体 | keyboard(boot 6KRO) |
-| `EspUsbDeviceHidOutputAdapter` | 複合 HID デバイス(keyboard + consumer + mouse) | keyboard(boot 6KRO)/ consumer(16bit usage × 1)/ mouse(ボタン 8 + X/Y/Wheel/Pan、int8 飽和 + 繰り越し) |
+| `EspUsbDeviceHidOutputAdapter` | 複合 HID デバイス(keyboard + consumer + mouse) | keyboard(boot 6KRO)/ consumer(16bit usage × 1)/ mouse(ボタン 8 + X/Y/Wheel、int8 飽和 + 繰り越し。Pan は boot mouse report に無く破棄) |
 
 規則:
 
-- **interface 構成は `usbDevice.begin()` 時に確定**し、以後変更できません(追加・削除には再 enumerate = 抜き挿し相当が必要)。未使用の interface も PC からは見え続けます(report が飛ばないだけで実害なし)。
-- consumer / mouse の report が PC に存在するのは、複合出力を**登録した場合のみ**です(仕様: マウス report はマウス対応出力を登録した場合のみ)。
+- **常に全部入りで見せる**方針です。使わない interface は report を送らないだけで USB 的に無害なので、キーボード単体版は用意しません(古い BIOS 向けの最小構成が必要なら実キーボードを直結すればよい、という割り切り)。keyboard interface は boot protocol 対応なので BIOS/UEFI でも動作します。将来 interface の無効化オプションが要る場合はコンストラクタ引数(既定値付き)で非破壊に追加できます。
+- **interface 構成は `usbDevice.begin()` 時に確定**し、以後変更できません(追加・削除には再 enumerate = 抜き挿し相当が必要)。設定にマウスやメディアキーを後から足しても、descriptor は最初から揃っているので再列挙は起きません。
 - VID / PID / 製品名などのデバイス素性は `EspUsbDeviceConfig` で(スタックはスケッチ所有)。
-- どちらの USB Device 出力も **LED output report を受信**し、接続中は lock 状態の正本(の連鎖の候補)になります([DATA_MODEL.ja.md](DATA_MODEL.ja.md) の Lock 状態)。
+- **LED output report を受信**し、接続中は lock 状態の正本(の連鎖の候補)になります([DATA_MODEL.ja.md](DATA_MODEL.ja.md) の Lock 状態)。
 - rollover(32 キー)report builder は core にありますが、v1 の USB Device 出力は boot keyboard を基本とします(NKRO descriptor は将来のアダプタ拡張)。
 
 ## 追加依存ライブラリ

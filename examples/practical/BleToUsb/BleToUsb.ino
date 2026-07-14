@@ -20,7 +20,7 @@ esp32keybridge::ESP32KeyBridge bridge;
 // keyboard's battery dies mid-press, the disconnect releases all of its
 // keys — nothing gets stuck.
 esp32keybridge::BleKeyboardInputAdapter keyboard;
-esp32keybridge::EspUsbDeviceKeyboardOutputAdapter pc(usbDevice);
+esp32keybridge::EspUsbDeviceHidOutputAdapter pc(usbDevice);
 
 void setup()
 {

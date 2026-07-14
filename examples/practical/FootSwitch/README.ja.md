@@ -31,7 +31,7 @@ nav.remap(esp32keybridge::KeyboardUsage::K, esp32keybridge::KeyboardUsage::Up);
 
 ## ハードウェア構成(ESP32-S3)
 
-- ESP32-S3 の USB OTG ポートを PC へ挿します(キーボードデバイスとして見えます)。
+- ESP32-S3 の USB OTG ポートを PC へ挿します(キーボードを含む複合 HID デバイスとして見えます)。
 - スイッチは各ピンと GND の間に接続します(閉で押下)。ピンは配線に合わせて変更してください。
 
-> **注意**: 使用するアダプタ(GPIO 入力 / USB Device keyboard 出力)は実装済みです(実機検証はこれから)。デバウンスは既定 5ms で、バウンドの大きいスイッチは `pedals.setDebounceMillis()` で延ばせます。
+> **注意**: 使用するアダプタ(GPIO 入力 / USB Device 複合 HID 出力)は実装済みです(実機検証はこれから)。デバウンスは既定 5ms で、バウンドの大きいスイッチは `pedals.setDebounceMillis()` で延ばせます。

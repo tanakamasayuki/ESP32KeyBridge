@@ -182,10 +182,10 @@
 
 ## 出力の規則
 
-- 出力アダプタは**自分が表現できるものだけを出し、他は黙って捨てます**。HID キーボード出力は keyboard/consumer(descriptor 次第)、マウス report はマウス対応出力を登録した場合のみ、ログ系出力は virtual キーや文字も出力可。
+- 出力アダプタは**自分が表現できるものだけを出し、他は黙って捨てます**。マウス report はマウス対応出力を登録した場合のみ(USB Device 出力は常に複合 = 常にマウス対応)、ログ系出力は virtual キーや文字も出力可。
 - virtual キーはパイプライン内で消費されるのが原則で、出力アダプタへは出ません(ログ系の診断出力を除く)。
 - 出力は**状態スナップショット方式**です(USB HID report と同じ考え方)。boot keyboard の 6KRO 制限は出力アダプタ側の制約で、中間の押下集合には及びません。
-- USB device の構成(キーボードのみか、マウス・Consumer を含む複合か)は descriptor で enumerate 時に確定します。実行中の構成変更は再接続を要します。
+- USB device の構成は descriptor で enumerate 時に確定します(USB Device 出力は常に keyboard + consumer + mouse の複合。未使用 interface は report を送らないだけで無害)。実行中の構成変更は再接続を要します。
 
 ## 原理的な不可能性(仕様で解決しないこと)
 
