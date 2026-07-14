@@ -2,7 +2,7 @@
 
 Every example is a **practical** one: a sketch for a real hardware setup, ready to flash as-is. They all share the same structure: 1) start the hardware, 2) wire the bridge, 3) build and apply the configuration.
 
-> **Note**: the hardware adapters (USB / GPIO / BLE) are currently build-only mocks. They are implemented in implementation step 7 ([../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md)), starting with SwapCtrlCapsLock.
+> **Note**: the hardware adapters are being implemented in step 7. See [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) for the current status (the USB Device keyboard output is implemented; the rest are build-only mocks).
 
 ## Practical Examples
 

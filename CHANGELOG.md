@@ -82,6 +82,12 @@
   documents the ESP32-P4 USB port layout (Device fixed to HS on
   arduino-esp32 3.3.10, Host on FS, CDC/OTG PHY swap, label-vs-wiring
   caveats, M5Stack Tab5 case, HS-host hub restriction).
+- Implement `EspUsbDeviceKeyboardOutputAdapter` (the first real hardware
+  adapter, EspUsbDevice-backed): boot keyboard reports sent on change with
+  a retry when the endpoint is busy, host LED output reports (including
+  kana) published thread-safely as the lock state authority, and
+  connected() reflecting the USB mount state. SerialTextTyper is the first
+  example whose adapters are all real.
 - Add `docs/ADAPTERS.ja.md`: the adapter roster with implementation status,
   what each output adapter makes the PC see (USB device classes /
   interfaces), and the extra library dependencies per adapter header.

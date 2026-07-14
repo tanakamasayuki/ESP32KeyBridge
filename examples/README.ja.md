@@ -2,7 +2,7 @@
 
 examples はすべて**実用例**です。実ハードウェア構成でそのまま書き込んで使うスケッチで、中身は「1) ハードウェア起動 → 2) ブリッジ配線 → 3) 設定を組んで適用」の 3 段構成に統一しています。
 
-> **注意**: 実機アダプタ(USB / GPIO / BLE)は現在ビルド確認用のモックです。実装順 7([../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md))で SwapCtrlCapsLock から順に実装します。
+> **注意**: 実機アダプタは実装順 7 で順次実装中です。実装状況は [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) を参照(USB Device keyboard 出力は実装済み、他はモック)。
 
 ## Practical Examples
 

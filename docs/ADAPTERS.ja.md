@@ -11,7 +11,7 @@
 | `ManualInputAdapter` | `ESP32KeyBridge.h`(core) | なし | **実装済み** | `press()` / `release()` で論理押下を注入。相対値(`addAxisDelta`)、切断模擬、LockState 受信の記録。自作入力の最小リファレンス |
 | `EspUsbHostKeyboardInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost | **モック** | USB キーボード(同一デバイスの consumer キー含む)。LockState をキーボード LED へ転送(`setKeyboardLeds`)。切断で全 release |
 | `EspUsbHostMouseInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost | **モック** | USB マウス。ボタン = MouseButton キー、移動・ホイール = 相対軸 |
-| `GpioKeyInputAdapter` | `ESP32KeyBridgeGpio.h` | Arduino GPIO のみ | **モック** | `addKey(pin, key, activeLow, pullUp)` で最大 `SOC_GPIO_PIN_COUNT` キー。デバウンス内蔵。ピン設定は初回 `update()` |
+| `GpioKeyInputAdapter` | `ESP32KeyBridgeGpio.h` | Arduino GPIO のみ | **モック(次の実装対象)** | `addKey(pin, key, activeLow, pullUp)` で最大 `SOC_GPIO_PIN_COUNT` キー。デバウンス内蔵。ピン設定は初回 `update()` |
 | `BleKeyboardInputAdapter` | `ESP32KeyBridgeBle.h` | BLE ライブラリ未定 | **モック** | BLE キーボード(HID over GATT)。ペアリング・再接続はアダプタ内。切断で全 release |
 | GPIO マトリクス | - | Arduino GPIO のみ | **構想** | スキャン(専用 task / 周期タイマ ≈1kHz)・ゴースト対策・座標→キー割り当て |
 | ロータリーエンコーダ | - | PCNT | **構想** | ハードウェア計数、`update()` でカウンタ差分 → 相対軸 or タップ合成 |
@@ -24,7 +24,7 @@
 | クラス | ヘッダ | 依存 | 状況 | lock 報告 | 機能 |
 |---|---|---|---|---|---|
 | `ManualOutputAdapter` | `ESP32KeyBridge.h`(core) | なし | **実装済み** | 模擬可 | 受け取った押下集合・文字・相対値を記録。ホストの LED report を模擬できる(テスト・自作出力のリファレンス) |
-| `EspUsbDeviceKeyboardOutputAdapter` | `ESP32KeyBridgeEspUsbDevice.h` | EspUsbDevice | **モック(次の実装対象)** | あり | USB キーボードデバイス。LED output report 受信 = lock 正本になれる |
+| `EspUsbDeviceKeyboardOutputAdapter` | `ESP32KeyBridgeEspUsbDevice.h` | EspUsbDevice | **実装済み(実機検証待ち)** | あり | USB キーボードデバイス(boot 6KRO、変化時のみ送信 + busy 時は次 update で再送)。LED output report 受信 = lock 正本になれる(kana 含む)。`connected()` = ホストに mount 中 |
 | `EspUsbDeviceHidOutputAdapter` | `ESP32KeyBridgeEspUsbDevice.h` | EspUsbDevice | **モック** | あり | 複合 HID(keyboard + consumer + mouse)。相対軸 → mouse report(飽和 + 繰り越し) |
 | BLE HID 出力 | - | BLE ライブラリ未定 | **構想** | あり(予定) | |
 | UART 出力(イベント・ログ・文字) | - | なし | **構想** | なし | `writeText()` を直接受ける文字対応出力 |
