@@ -102,6 +102,7 @@ addAxisDelta	KEYWORD2
 takeAxisDelta	KEYWORD2
 addKey	KEYWORD2
 keyCount	KEYWORD2
+setDebounceMillis	KEYWORD2
 writeAxisDelta	KEYWORD2
 axisTotal	KEYWORD2
 setAxisScale	KEYWORD2

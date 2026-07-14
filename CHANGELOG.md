@@ -82,6 +82,10 @@
   documents the ESP32-P4 USB port layout (Device fixed to HS on
   arduino-esp32 3.3.10, Host on FS, CDC/OTG PHY swap, label-vs-wiring
   caveats, M5Stack Tab5 case, HS-host hub restriction).
+- Implement `GpioKeyInputAdapter`: per-pin configuration (pull-up,
+  active-low) on the first update() after registration, deferred debouncing
+  (default 5 ms, `setDebounceMillis()`), and logical presses into the key
+  set. FootSwitch now runs on real adapters end to end.
 - Implement `EspUsbDeviceKeyboardOutputAdapter` (the first real hardware
   adapter, EspUsbDevice-backed): boot keyboard reports sent on change with
   a retry when the endpoint is busy, host LED output reports (including

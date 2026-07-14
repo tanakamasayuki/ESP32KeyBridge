@@ -9,9 +9,9 @@
 | クラス | ヘッダ | 依存 | 状況 | 機能 |
 |---|---|---|---|---|
 | `ManualInputAdapter` | `ESP32KeyBridge.h`(core) | なし | **実装済み** | `press()` / `release()` で論理押下を注入。相対値(`addAxisDelta`)、切断模擬、LockState 受信の記録。自作入力の最小リファレンス |
-| `EspUsbHostKeyboardInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost | **モック** | USB キーボード(同一デバイスの consumer キー含む)。LockState をキーボード LED へ転送(`setKeyboardLeds`)。切断で全 release |
+| `EspUsbHostKeyboardInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost | **モック(次の実装対象)** | USB キーボード(同一デバイスの consumer キー含む)。LockState をキーボード LED へ転送(`setKeyboardLeds`)。切断で全 release |
 | `EspUsbHostMouseInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost | **モック** | USB マウス。ボタン = MouseButton キー、移動・ホイール = 相対軸 |
-| `GpioKeyInputAdapter` | `ESP32KeyBridgeGpio.h` | Arduino GPIO のみ | **モック(次の実装対象)** | `addKey(pin, key, activeLow, pullUp)` で最大 `SOC_GPIO_PIN_COUNT` キー。デバウンス内蔵。ピン設定は初回 `update()` |
+| `GpioKeyInputAdapter` | `ESP32KeyBridgeGpio.h` | Arduino GPIO のみ | **実装済み(実機検証待ち)** | `addKey(pin, key, activeLow, pullUp)` で最大 `SOC_GPIO_PIN_COUNT` キー。デバウンス内蔵(既定 5ms、`setDebounceMillis()` で調整)。ピン設定は登録後最初の `update()`。loop レート(≈1kHz)のポーリングで足りる |
 | `BleKeyboardInputAdapter` | `ESP32KeyBridgeBle.h` | BLE ライブラリ未定 | **モック** | BLE キーボード(HID over GATT)。ペアリング・再接続はアダプタ内。切断で全 release |
 | GPIO マトリクス | - | Arduino GPIO のみ | **構想** | スキャン(専用 task / 周期タイマ ≈1kHz)・ゴースト対策・座標→キー割り当て |
 | ロータリーエンコーダ | - | PCNT | **構想** | ハードウェア計数、`update()` でカウンタ差分 → 相対軸 or タップ合成 |

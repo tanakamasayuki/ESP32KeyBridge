@@ -34,4 +34,4 @@ nav.remap(esp32keybridge::KeyboardUsage::K, esp32keybridge::KeyboardUsage::Up);
 - ESP32-S3 の USB OTG ポートを PC へ挿します(キーボードデバイスとして見えます)。
 - スイッチは各ピンと GND の間に接続します(閉で押下)。ピンは配線に合わせて変更してください。
 
-> **注意**: USB Device keyboard 出力アダプタは実装済み(実機検証はこれから)、GPIO 入力アダプタはビルド確認用のモックです(実装順 7 で実装されます)。
+> **注意**: 使用するアダプタ(GPIO 入力 / USB Device keyboard 出力)は実装済みです(実機検証はこれから)。デバウンスは既定 5ms で、バウンドの大きいスイッチは `pedals.setDebounceMillis()` で延ばせます。
