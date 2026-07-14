@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Move BLE out of this library: BLE support will come from a dedicated
+  sibling library (a single library hosting both the central and
+  peripheral HID roles, NimBLE-based, no Bluetooth Classic — the S3-era
+  chips have no BR/EDR), mirroring the sketch-owned-stack model of the USB
+  adapters. Until it exists this library ships no BLE surface: the
+  build-only `ESP32KeyBridgeBle.h` mock and the `BleToUsb` example are
+  removed rather than left guessing an API the new library will define.
 - Implement `EspUsbHostKeyboardInputAdapter` on EspUsbHost 2.2.0's new
   `onKeyboardState()`: one format-independent 256-bit snapshot per changed
   report (boot / report-ID boot / NKRO alike, modifier-only changes
@@ -15,8 +22,8 @@
   has no kana LED path). The sketch-facing rule tightens: onKeyboardState /
   onConsumerControl / onMouse / onDeviceDisconnected belong to the
   adapters' shared hub, while the per-event onKeyboard stays free for
-  sketches. Every adapter in the examples is now real except the BLE input
-  (library choice pending); the P4 example profiles pin EspUsbHost 2.2.0.
+  sketches. Every adapter used by the examples is now real; the P4 example
+  profiles pin EspUsbHost 2.2.0.
 - Implement `EspUsbHostMouseInputAdapter`: all mice on the stack merged
   (button union, deltas summed) with per-address tracking so a disconnect
   releases only that mouse's buttons; movement and wheel accumulate as

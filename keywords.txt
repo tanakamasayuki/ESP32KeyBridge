@@ -30,7 +30,6 @@ EspUsbHostKeyboardInputAdapter	KEYWORD1
 EspUsbHostMouseInputAdapter	KEYWORD1
 EspUsbDeviceHidOutputAdapter	KEYWORD1
 GpioKeyInputAdapter	KEYWORD1
-BleKeyboardInputAdapter	KEYWORD1
 
 keyboardKey	KEYWORD2
 consumerKey	KEYWORD2

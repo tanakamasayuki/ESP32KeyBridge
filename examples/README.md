@@ -2,11 +2,10 @@
 
 Every example is a **practical** one: a sketch for a real hardware setup, ready to flash as-is. They all share the same structure: 1) start the hardware, 2) wire the bridge, 3) build and apply the configuration.
 
-> **Note**: see [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) for the implementation status (the USB Host keyboard and mouse inputs, the GPIO input, and the USB Device composite HID output are implemented; only the BLE input remains a build-only mock, waiting on the library choice).
+> **Note**: every adapter used by the examples is implemented (hardware verification in progress). See [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) for the roster.
 
 ## Practical Examples
 
-- `BleToUsb`: use a BLE keyboard as a wired USB keyboard (PCs without Bluetooth, BIOS, KVM). ESP32-S3.
 - `FootSwitch`: type canned text, control media, or turn pages with foot switches or homemade buttons. ESP32-S3 + GPIO.
 - `MediaKeys`: turn unused keys (F13...) into volume and play/pause keys. ESP32-P4.
 - `NaturalScroll`: invert the mouse wheel direction without touching the PC's settings (swapping buttons for left-handed use, too). ESP32-P4.
@@ -25,4 +24,4 @@ Start from these instead of an example:
 ## Candidates
 
 - Multi-keyboard merge (MergeKeyboards): waiting on the design decision between one adapter merging all keyboards and per-keyboard adapters.
-- BLE mouse to USB (waiting on the BLE library choice).
+- BLE-to-USB (BleToUsb, BLE mouse): BLE will live in a dedicated library (both central and peripheral roles, NimBLE-based, no Bluetooth Classic); this library stays BLE-free until it exists.

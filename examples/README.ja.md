@@ -2,11 +2,10 @@
 
 examples はすべて**実用例**です。実ハードウェア構成でそのまま書き込んで使うスケッチで、中身は「1) ハードウェア起動 → 2) ブリッジ配線 → 3) 設定を組んで適用」の 3 段構成に統一しています。
 
-> **注意**: 実装状況は [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) を参照(USB Host キーボード・マウス入力、GPIO 入力、USB Device 複合 HID 出力は実装済み。BLE 入力のみモック = ライブラリ選定待ち)。
+> **注意**: examples が使うアダプタはすべて実装済みです(実機検証は進行中)。実装状況の一覧は [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) を参照。
 
 ## Practical Examples
 
-- `BleToUsb`: BLE キーボードを USB 有線キーボードとして使いたいとき(Bluetooth の無い PC・BIOS・KVM)。ESP32-S3。
 - `FootSwitch`: フットスイッチや自作ボタンで定型文入力・メディア操作・ページ送りをしたいとき。ESP32-S3 + GPIO。
 - `MediaKeys`: 使っていないキー(F13 など)を音量・再生/停止キーにしたいとき。ESP32-P4。
 - `NaturalScroll`: マウスのホイール方向を PC の設定に手を入れずに反転したいとき(左利き用のボタン入れ替えも)。ESP32-P4。
@@ -25,4 +24,4 @@ example ではなく、次を入口にしてください。
 ## 追加候補
 
 - 複数キーボードの統合(MergeKeyboards): 1 アダプタで全キーボードを統合するか、キーボード個別に分けるかの設計決定待ち。
-- BLE マウス⇄USB 変換(BLE ライブラリ選定待ち)。
+- BLE⇄USB 変換(BleToUsb・BLE マウス): BLE は専用ライブラリ(central + peripheral 両役、NimBLE ベース、クラシック非対応)を別途作成し、完成までこのライブラリでは対応しない方針。
