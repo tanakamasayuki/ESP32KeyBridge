@@ -22,4 +22,4 @@ knob.mapToAxis(esp32keybridge::Axis::Wheel);
 - ESP32-S3 の USB OTG ポートを PC へ挿します(キーボードを含む複合 HID デバイスとして見えます)。
 - EC11 系エンコーダ: A 相 = GPIO5、B 相 = GPIO6、コモン = GND、押し込みスイッチ = GPIO7 と GND(配線に合わせて変更してください)。
 
-> **注意**: `RotaryEncoderInputAdapter` は現在ビルド確認用のモックです(API 確認中。実装はこれから)。
+> **注意**: 使用するアダプタ(ロータリーエンコーダ入力 / GPIO 入力 / USB Device 複合 HID 出力)は実装済みです(実機検証はこれから)。

@@ -2,15 +2,22 @@
 
 ## Unreleased
 
-- Add the NumPad (GPIO key matrix, 4x3 numeric keypad) and VolumeKnob
-  (rotary encoder volume control with a scroll-dial variation) examples,
-  backed by new build-only mock adapters that fix the sketch-facing API:
-  `GpioMatrixInputAdapter` (wiring via setRowPins/setColPins, keymap via
-  setKeys in row-major order so the code layout mirrors the physical
-  layout — no coordinates or indices; optional diodes with ghost blocking
-  otherwise) and `RotaryEncoderInputAdapter` (PCNT hardware counting; one
-  detent taps a key pair or feeds a relative axis). Implementations follow
-  after the API review.
+- Implement `GpioMatrixInputAdapter` and `RotaryEncoderInputAdapter` with
+  the NumPad (GPIO key matrix, 4x3 numeric keypad) and VolumeKnob (rotary
+  encoder volume control with a scroll-dial variation) examples. The
+  matrix separates wiring from keymap: setRowPins/setColPins describe the
+  lines, setKeys takes the keys in row-major order so the code layout
+  mirrors the physical layout (no coordinates or indices; the example
+  annotates the pins in comments). Scanning, per-key debouncing, and —
+  without diodes — the ghost blocking that holds back the ambiguous
+  fourth corner of a 2x2 rectangle (setHasDiodes(true) lifts the limit)
+  run in a dedicated 1 kHz task started on the first update(), so short
+  taps survive a blocked loop; update() only snapshots the debounced
+  state, and idle rows stay high-Z. The encoder counts on the PCNT
+  peripheral (x4 quadrature decoding with a glitch filter, no
+  interrupts); each detent either taps a key pair (mapToKeys) or feeds a
+  relative axis (mapToAxis), with setPulsesPerDetent defaulting to the
+  EC11's 4.
 - Move BLE out of this library: BLE support will come from a dedicated
   sibling library (a single library hosting both the central and
   peripheral HID roles, NimBLE-based, no Bluetooth Classic — the S3-era

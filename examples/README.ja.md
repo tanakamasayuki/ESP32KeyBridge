@@ -2,7 +2,7 @@
 
 examples はすべて**実用例**です。実ハードウェア構成でそのまま書き込んで使うスケッチで、中身は「1) ハードウェア起動 → 2) ブリッジ配線 → 3) 設定を組んで適用」の 3 段構成に統一しています。
 
-> **注意**: NumPad(マトリクス)と VolumeKnob(エンコーダ)のアダプタは API 確認用のモックです(実装はこれから)。他の examples のアダプタは実装済み(実機検証は進行中)。一覧は [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) を参照。
+> **注意**: examples が使うアダプタはすべて実装済みです(実機検証は進行中)。一覧は [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) を参照。
 
 ## Practical Examples
 

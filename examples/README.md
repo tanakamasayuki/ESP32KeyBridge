@@ -2,7 +2,7 @@
 
 Every example is a **practical** one: a sketch for a real hardware setup, ready to flash as-is. They all share the same structure: 1) start the hardware, 2) wire the bridge, 3) build and apply the configuration.
 
-> **Note**: the adapters used by NumPad (matrix) and VolumeKnob (encoder) are build-only mocks while their API settles; every other example runs on implemented adapters (hardware verification in progress). See [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) for the roster.
+> **Note**: every adapter used by the examples is implemented (hardware verification in progress). See [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) for the roster.
 
 ## Practical Examples
 
