@@ -44,7 +44,10 @@ private:
 };
 
 // Composite HID device output: keyboard + consumer + mouse in one device.
-// Registering this output is what makes mouse reports appear on the host.
+// USB interfaces are fixed when usbDevice.begin() runs and stay visible to
+// the host even while unused (adding or removing one would require
+// re-enumeration); choosing this adapter over the keyboard-only one is
+// what decides that consumer/mouse reports exist on the host.
 class EspUsbDeviceHidOutputAdapter : public OutputAdapter
 {
 public:

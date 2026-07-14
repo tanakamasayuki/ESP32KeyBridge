@@ -36,8 +36,10 @@ def test_example_compile(example_dir):
     if shutil.which("arduino-cli") is None:
         pytest.skip("arduino-cli is not available")
 
+    # Each sketch.yaml sets default_profile to its target board (esp32s3 or
+    # esp32p4), so no --profile is passed here.
     result = subprocess.run(
-        ["arduino-cli", "compile", "--profile", "esp32s3", str(example_dir)],
+        ["arduino-cli", "compile", str(example_dir)],
         cwd=REPO_ROOT,
         text=True,
         stdout=subprocess.PIPE,

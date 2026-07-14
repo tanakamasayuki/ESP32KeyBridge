@@ -49,11 +49,12 @@ void setup()
   deviceConfig.product = "SwapCtrlCapsLock";
   usbDevice.begin(deviceConfig);
 
-  // 2) Wire the bridge. A single-step remap never chains, so two entries
-  //    swap the keys.
+  // 2) Wire the bridge.
   bridge.addInput(keyboard);
   bridge.addOutput(pc);
 
+  // 3) Build and apply the configuration. A single-step remap never
+  //    chains, so two entries swap the keys.
   esp32keybridge::ESP32KeyBridgeConfig config;
   config.global.remap(esp32keybridge::KeyboardUsage::CapsLock,
                       esp32keybridge::KeyboardUsage::LeftCtrl);

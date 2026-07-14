@@ -202,6 +202,32 @@ enum class ConsumerUsage : uint16_t
   BrowserBookmarks = 0x022a,
 };
 
+// Predefined virtual key slots. Virtual keys exist only inside the bridge
+// (layer triggers, macro triggers, mode toggles) and carry no meaning of
+// their own — alias a slot with a name in the sketch. virtualKey(n)
+// accepts any code from 1 to 65535 when the predefined slots are not
+// enough.
+enum class VirtualUsage : uint16_t
+{
+  None = 0,
+  V1 = 1,
+  V2 = 2,
+  V3 = 3,
+  V4 = 4,
+  V5 = 5,
+  V6 = 6,
+  V7 = 7,
+  V8 = 8,
+  V9 = 9,
+  V10 = 10,
+  V11 = 11,
+  V12 = 12,
+  V13 = 13,
+  V14 = 14,
+  V15 = 15,
+  V16 = 16,
+};
+
 struct Key
 {
   KeyKind kind = KeyKind::None;
@@ -220,6 +246,11 @@ struct Key
 
   constexpr Key(ConsumerUsage usage)
       : kind(KeyKind::Consumer), code(static_cast<uint16_t>(usage))
+  {
+  }
+
+  constexpr Key(VirtualUsage usage)
+      : kind(KeyKind::Virtual), code(static_cast<uint16_t>(usage))
   {
   }
 
@@ -337,7 +368,9 @@ enum class Axis : uint8_t
 constexpr size_t kAxisCount = 4;
 
 // ---------------------------------------------------------------------------
-// Host layout (character <-> key + shift table of the host's layout setting)
+// Keyboard layout (character <-> key + shift table). Role-neutral: the same
+// description serves as an input device's engraving (InputConfig) and as
+// the declaration of how a host interprets keys (config.hostLayout).
 // ---------------------------------------------------------------------------
 //
 // Used to synthesize keystrokes from characters (text macros, serial text).
@@ -350,7 +383,7 @@ struct KeyStroke
   bool shift = false;
 };
 
-struct HostLayoutEntry
+struct KeyboardLayoutEntry
 {
   uint16_t usage; // KeyboardUsage value
   uint16_t base;  // codepoint without shift (0 = none)
@@ -358,16 +391,16 @@ struct HostLayoutEntry
   bool capsAffects;
 };
 
-class HostLayout
+class KeyboardLayout
 {
 public:
-  HostLayout(); // defaults to en_us
+  KeyboardLayout(); // defaults to en_us
 
-  static HostLayout enUs();
-  static HostLayout jaJp();
+  static KeyboardLayout enUs();
+  static KeyboardLayout jaJp();
   // Lookup by locale name ("en_us", "ja_jp"). Returns en_us when unknown and
   // sets *found to false if provided.
-  static HostLayout byName(const char *name, bool *found = nullptr);
+  static KeyboardLayout byName(const char *name, bool *found = nullptr);
 
   // Encodes a printable character. Returns false when this layout cannot
   // type the character. Control characters are handled by the typing engine.
@@ -384,9 +417,9 @@ public:
   const char *name() const;
 
 private:
-  HostLayout(const HostLayoutEntry *entries, size_t count, const char *layoutName);
+  KeyboardLayout(const KeyboardLayoutEntry *entries, size_t count, const char *layoutName);
 
-  const HostLayoutEntry *entries_;
+  const KeyboardLayoutEntry *entries_;
   size_t count_;
   const char *name_;
 };
@@ -758,6 +791,53 @@ struct TextMacro
   size_t length = 0;
 };
 
+// Settings for one input: transforms and keyboard layout conversion.
+// Created by ESP32KeyBridgeConfig::addInputConfig() (numbering is
+// automatic) and bound to an input with ESP32KeyBridge::addInput(input,
+// inputConfig). Binding the same InputConfig to several inputs shares the
+// settings.
+class InputConfig
+{
+public:
+  // Single-step remap / disable applied to keys of the bound inputs only,
+  // before the global transform.
+  bool remap(Key from, Key to) { return transform_.remap(from, to); }
+  bool disable(Key key) { return transform_.disable(key); }
+
+  // Enables keyboard layout conversion for the bound inputs: printable
+  // keys are decoded with the engraving layout (using the input's own
+  // Shift, which is consumed) and re-encoded with
+  // ESP32KeyBridgeConfig::hostLayout, synthesizing Shift as needed.
+  // Non-printable keys and Ctrl/Alt/GUI shortcuts pass through.
+  void convertLayout(const KeyboardLayout &engraving)
+  {
+    engraving_ = engraving;
+    convertsLayout_ = true;
+  }
+
+  const TransformConfig &transform() const { return transform_; }
+  bool convertsLayout() const { return convertsLayout_; }
+  const KeyboardLayout &engraving() const { return engraving_; }
+
+  void clear()
+  {
+    transform_.clear();
+    engraving_ = KeyboardLayout();
+    convertsLayout_ = false;
+  }
+
+private:
+  friend class ESP32KeyBridgeConfig;
+  friend class ESP32KeyBridge;
+
+  static constexpr uint8_t kUnboundSlot = 0xff;
+
+  TransformConfig transform_;
+  KeyboardLayout engraving_;
+  bool convertsLayout_ = false;
+  uint8_t slot_ = kUnboundSlot; // assigned by addInputConfig()
+};
+
 class ESP32KeyBridgeConfig
 {
 public:
@@ -765,11 +845,18 @@ public:
   static constexpr size_t MaxLayers = 4;
   static constexpr size_t MaxTextMacros = 4;
 
-  // Per-input transform, addressed by config slot (see addInput()). An
-  // out-of-range index returns a writable dummy that is never applied.
-  TransformConfig &input(size_t index);
-  const TransformConfig &input(size_t index) const;
+  // Creates per-input settings; numbering is automatic. Bind the result
+  // with ESP32KeyBridge::addInput(input, inputConfig). When all
+  // MaxInputConfigs slots are in use, returns a writable dummy that is
+  // never applied.
+  InputConfig &addInputConfig();
 
+  // Adds a momentary layer triggered by the given key and returns it for
+  // remap registration. Returns a writable dummy that is never applied
+  // when all layer slots (MaxLayers) are in use.
+  LayerConfig &addLayer(Key trigger);
+
+  // Slot access, mainly for inspection; addLayer() is the usual entry.
   LayerConfig &layer(size_t index = 0);
   const LayerConfig &layer(size_t index = 0) const;
 
@@ -783,23 +870,11 @@ public:
   void setAxisScale(Axis axis, int16_t scale);
   int16_t axisScale(Axis axis) const;
 
-  // --- Keyboard layout conversion (per input, opt-in) ---------------------
-  //
-  // For a keyboard whose engraving differs from the host's layout setting
-  // (e.g. a US-engraved keyboard on a ja_jp host). Printable keys of the
-  // input are decoded with the engraving layout (using that input's own
-  // Shift) and re-encoded with hostLayout; the input's Shift keys are
-  // consumed and the required Shift is synthesized while the key is held.
-  // Non-printable keys, and keys pressed while Ctrl/Alt/GUI is held on the
-  // same input (shortcuts), pass through unconverted.
-
-  void convertLayout(size_t inputIndex, const HostLayout &engraving);
-  bool inputLayoutEnabled(size_t index) const;
-  const HostLayout &inputLayout(size_t index) const;
-
-  // Pressing this key (after remap) toggles layout conversion on/off at
-  // runtime and is consumed. Required in practice: environments that
-  // interpret keys differently (BIOS, recovery) need a bypass.
+  // Keyboard layout conversion is a per-input setting: see
+  // InputConfig::convertLayout(). Pressing this key (after remap) toggles
+  // the conversion on/off at runtime and is consumed. Required in
+  // practice: environments that interpret keys differently (BIOS,
+  // recovery) need a bypass.
   Key layoutConversionToggle;
 
   void clear();
@@ -809,21 +884,22 @@ public:
   // Layout of the host the output is connected to; used to synthesize
   // keystrokes from characters and as the target of layout conversion.
   // Default: en_us.
-  HostLayout hostLayout;
+  KeyboardLayout hostLayout;
 
   // When true, text typing waits until no keyboard modifier held by any
   // input is present, instead of temporarily releasing them per character.
   bool deferTypingWhileModifiersHeld = false;
 
 private:
-  TransformConfig inputs_[MaxInputConfigs];
+  friend class ESP32KeyBridge;
+
+  InputConfig inputConfigs_[MaxInputConfigs];
+  size_t inputConfigCount_ = 0;
   LayerConfig layers_[MaxLayers];
   TextMacro textMacros_[MaxTextMacros];
   size_t textMacroCount_ = 0;
   int16_t axisScales_[kAxisCount] = {1, 1, 1, 1};
-  HostLayout inputLayouts_[MaxInputConfigs];
-  bool inputLayoutEnabled_[MaxInputConfigs] = {};
-  TransformConfig dummyInput_;
+  InputConfig dummyInputConfig_;
   LayerConfig dummyLayer_;
 };
 
@@ -852,11 +928,17 @@ public:
   static constexpr size_t MaxInputs = 8;
   static constexpr size_t MaxOutputs = 4;
   static constexpr size_t MaxHeldKeys = 64;
+  static constexpr size_t MaxTextQueue = 64;
 
-  // Registers an input. The config slot defaults to the registration order;
-  // the second form binds an explicit slot of ESP32KeyBridgeConfig::input().
+  // Registers an input. The second form binds the input to per-input
+  // settings created with ESP32KeyBridgeConfig::addInputConfig(); binding
+  // the same InputConfig to several inputs shares the settings. Only the
+  // handle's identity is taken here — the settings' contents take effect
+  // when applyConfig() copies the configuration, so they may be written
+  // before or after this call. The first form registers the input with no
+  // per-input settings.
   bool addInput(InputAdapter &input);
-  bool addInput(InputAdapter &input, size_t configIndex);
+  bool addInput(InputAdapter &input, const InputConfig &inputConfig);
   void clearInputs();
   size_t inputCount() const;
 
@@ -894,12 +976,25 @@ public:
   // atomic, temporarily parks user-held keyboard modifiers, and applies Caps
   // Lock compensation from the lock state shadow.
 
-  // Enqueues one character / a UTF-8 string. Returns false when characters
-  // were dropped because the queue was full.
+  // Enqueues one character. Returns false when the queue was full (the
+  // character is dropped and counted).
   bool typeChar(char32_t codepoint);
-  bool typeText(const char *utf8);
+
+  // Enqueues a UTF-8 string and returns the number of bytes consumed.
+  // When the queue fills up it stops without dropping anything; resume
+  // later from utf8 + the returned offset. Nothing ever blocks — to "send
+  // it all", pump update() between calls:
+  //   const char *p = text;
+  //   while (*p != '\0') { p += bridge.typeText(p); bridge.update(); }
+  // Invalid UTF-8 bytes are the exception: they are consumed and counted
+  // so a resume loop always makes progress.
+  size_t typeText(const char *utf8);
 
   size_t textQueueLength() const;
+  // Free space in the text queue: how many characters typeChar/typeText
+  // can accept right now without dropping (Serial-style backpressure:
+  // while (Serial.available() && bridge.typeAvailable()) ...).
+  size_t typeAvailable() const;
   bool typingActive() const;
   // Characters dropped because the queue was full.
   uint32_t textOverflowCount() const;
@@ -948,13 +1043,13 @@ private:
     bool requiresShift = false; // synthesized Shift while held (converted only)
   };
 
-  static constexpr size_t MaxTextQueue = 64;
-
   size_t findHeld(uint8_t inputIndex, Key source) const;
   void removeHeld(size_t index);
   uint8_t layerTriggerMaskFor(Key key) const;
   Key applyLayerOverlay(Key key) const;
   void resolvePress(uint8_t inputIndex, Key source, bool triggersOnly);
+  // Returns the bound per-input settings, or nullptr when the input has none.
+  const InputConfig *perInputConfig(size_t inputIndex) const;
   void updateLockState();
   bool enqueueChar(char32_t codepoint);
   void enqueueMacro(const TextMacro &macro);
@@ -963,7 +1058,7 @@ private:
   void updateAxes();
 
   InputAdapter *inputs_[MaxInputs] = {};
-  size_t inputConfigIndexes_[MaxInputs] = {};
+  uint8_t inputConfigSlots_[MaxInputs] = {}; // InputConfig::kUnboundSlot = none
   bool inputWasConnected_[MaxInputs] = {};
   size_t inputCount_ = 0;
   OutputAdapter *outputs_[MaxOutputs] = {};

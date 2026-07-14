@@ -39,6 +39,53 @@
   (Shift+Arrow), untypable characters are dropped and counted, and a
   configurable toggle key (`layoutConversionToggle`) switches conversion
   off for BIOS-like environments.
+- Rename `HostLayout` to `KeyboardLayout` (and `HostLayoutEntry` to
+  `KeyboardLayoutEntry`): the type is a role-neutral layout description
+  used both as an input device's engraving and as the declaration of a
+  host's layout setting; the role is expressed at the usage site
+  (`config.hostLayout`, `convertLayout(engraving)`), not in the type.
+- API refinements from the example review: `Key` converts implicitly from
+  `KeyboardUsage` / `ConsumerUsage` / `VirtualUsage` (the enum determines
+  the kind, so `remap(KeyboardUsage::CapsLock, KeyboardUsage::LeftCtrl)`
+  works without `keyboardKey()` wrappers); added the `VirtualUsage`
+  predefined virtual key slots (V1-V16; `virtualKey(n)` still accepts any
+  code); added `config.addLayer(trigger)` so layers are created by their
+  trigger key instead of a slot index; per-input settings became the
+  handle-based `InputConfig` (`config.addInputConfig()` auto-numbers a
+  slot, `bridge.addInput(input, inputConfig)` binds it, the same handle on
+  several inputs shares the settings), replacing the index-based
+  `config.input(i)` / `config.convertLayout(i, ...)` — project-wide rule:
+  no public API takes a caller-managed number with a range check
+  (auto-numbered handles or enums instead); text input got Serial-style
+  backpressure — `typeAvailable()` reports the queue space and
+  `typeText()` now returns the number of consumed bytes and stops without
+  dropping when the queue fills (only unresumable paths — `typeChar` and
+  macro playback — still drop and count on overflow); removed the empty
+  `ESP32KeyBridge::begin()` —
+  there is no ordering between addInput/addOutput, applyConfig, and adapter
+  startup, everything starts working once `update()` runs.
+- Adapter ownership model: communication stacks (EspUsbHost / EspUsbDevice)
+  are owned by the sketch and started with their own configs (port
+  selection, VID/PID); adapters take a reference and have no `begin()`.
+  Added build-only mock adapter headers fixing the sketch-facing API
+  (`ESP32KeyBridgeEspUsbHost.h`, `ESP32KeyBridgeEspUsbDevice.h`,
+  `ESP32KeyBridgeGpio.h`, `ESP32KeyBridgeBle.h`); real implementations land
+  with implementation step 7.
+- Rebuild the examples as practical, flash-as-is sketches only (a shared
+  three-step structure: start the hardware, wire the bridge, build and
+  apply the configuration): SwapCtrlCapsLock, UsKeyboardOnJapanesePc,
+  MediaKeys (ESP32-P4, USB Host + USB Device), FootSwitch, BleToUsb,
+  SerialTextTyper (ESP32-S3). Hardware-free API demos were dropped —
+  custom adapters start from ManualInputAdapter / ManualOutputAdapter and
+  the adapter header comments instead. Example READMEs lead with the
+  intended situation instead of use-case numbers; the SwapCtrlCapsLock README
+  documents the ESP32-P4 USB port layout (Device fixed to HS on
+  arduino-esp32 3.3.10, Host on FS, CDC/OTG PHY swap, label-vs-wiring
+  caveats, M5Stack Tab5 case, HS-host hub restriction).
+- Document the time/concurrency boundary: sampling accuracy lives inside
+  adapters (tasks / ISRs / peripherals such as PCNT for encoders) with a
+  thread-safe handoff into the single update() context; the bridge itself
+  is never driven by an internal task.
 - Implement core step 6, HID report builders: pure functions that pack the
   output key set into a boot keyboard report (6KRO), a 32-key rollover
   report, a minimal consumer report, and a relative mouse report (button

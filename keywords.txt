@@ -3,6 +3,7 @@ Key	KEYWORD1
 KeyKind	KEYWORD1
 KeyboardUsage	KEYWORD1
 ConsumerUsage	KEYWORD1
+VirtualUsage	KEYWORD1
 KeySet	KEYWORD1
 KeyRemap	KEYWORD1
 TransformConfig	KEYWORD1
@@ -11,8 +12,8 @@ ESP32KeyBridgeConfig	KEYWORD1
 ESP32KeyBridgeConfigError	KEYWORD1
 LockState	KEYWORD1
 Axis	KEYWORD1
-HostLayout	KEYWORD1
-HostLayoutEntry	KEYWORD1
+KeyboardLayout	KEYWORD1
+KeyboardLayoutEntry	KEYWORD1
 KeyStroke	KEYWORD1
 TextMacro	KEYWORD1
 HidKeyboardReport	KEYWORD1
@@ -23,6 +24,13 @@ InputAdapter	KEYWORD1
 ManualInputAdapter	KEYWORD1
 OutputAdapter	KEYWORD1
 ManualOutputAdapter	KEYWORD1
+InputConfig	KEYWORD1
+EspUsbHostKeyboardInputAdapter	KEYWORD1
+EspUsbHostMouseInputAdapter	KEYWORD1
+EspUsbDeviceKeyboardOutputAdapter	KEYWORD1
+EspUsbDeviceHidOutputAdapter	KEYWORD1
+GpioKeyInputAdapter	KEYWORD1
+BleKeyboardInputAdapter	KEYWORD1
 
 keyboardKey	KEYWORD2
 consumerKey	KEYWORD2
@@ -47,7 +55,6 @@ keys	KEYWORD2
 addInput	KEYWORD2
 clearInputs	KEYWORD2
 inputCount	KEYWORD2
-begin	KEYWORD2
 update	KEYWORD2
 mergedKeys	KEYWORD2
 outputKeys	KEYWORD2
@@ -62,8 +69,8 @@ setTrigger	KEYWORD2
 trigger	KEYWORD2
 hasMapping	KEYWORD2
 enabled	KEYWORD2
-input	KEYWORD2
 layer	KEYWORD2
+addLayer	KEYWORD2
 validateConfig	KEYWORD2
 applyConfig	KEYWORD2
 addOutput	KEYWORD2
@@ -81,6 +88,7 @@ setHostLockState	KEYWORD2
 typeChar	KEYWORD2
 typeText	KEYWORD2
 textQueueLength	KEYWORD2
+typeAvailable	KEYWORD2
 typingActive	KEYWORD2
 textOverflowCount	KEYWORD2
 textEncodeFailCount	KEYWORD2
@@ -92,6 +100,8 @@ textCount	KEYWORD2
 axisDelta	KEYWORD2
 addAxisDelta	KEYWORD2
 takeAxisDelta	KEYWORD2
+addKey	KEYWORD2
+keyCount	KEYWORD2
 writeAxisDelta	KEYWORD2
 axisTotal	KEYWORD2
 setAxisScale	KEYWORD2
@@ -110,8 +120,9 @@ writeBootReport	KEYWORD2
 writeReport	KEYWORD2
 applyAxisDelta	KEYWORD2
 convertLayout	KEYWORD2
-inputLayout	KEYWORD2
-inputLayoutEnabled	KEYWORD2
+convertsLayout	KEYWORD2
+engraving	KEYWORD2
+addInputConfig	KEYWORD2
 setLayoutConversionEnabled	KEYWORD2
 layoutConversionEnabled	KEYWORD2
 layoutConvertFailCount	KEYWORD2
@@ -125,3 +136,4 @@ MaxDisabledKeys	LITERAL1
 MaxLayers	LITERAL1
 MaxInputConfigs	LITERAL1
 MaxHeldKeys	LITERAL1
+MaxTextQueue	LITERAL1

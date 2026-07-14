@@ -34,6 +34,9 @@ static void test_key_converts_implicitly_from_usage_enums()
   esp32keybridge::Key volumeUp = esp32keybridge::ConsumerUsage::VolumeIncrement;
   assert(volumeUp == esp32keybridge::consumerKey(esp32keybridge::ConsumerUsage::VolumeIncrement));
 
+  esp32keybridge::Key layerKey = esp32keybridge::VirtualUsage::V1;
+  assert(layerKey == esp32keybridge::virtualKey(1));
+
   esp32keybridge::TransformConfig transform;
   assert(transform.remap(esp32keybridge::KeyboardUsage::F13,
                          esp32keybridge::ConsumerUsage::VolumeIncrement));
@@ -312,14 +315,16 @@ static void test_per_input_remap_applies_to_one_input()
   esp32keybridge::ESP32KeyBridge bridge;
   esp32keybridge::ManualInputAdapter keyboard;
   esp32keybridge::ManualInputAdapter scanner;
-  assert(bridge.addInput(keyboard)); // config slot 0
-  assert(bridge.addInput(scanner));  // config slot 1
 
   esp32keybridge::Key enter = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Enter);
   esp32keybridge::Key tab = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Tab);
 
+  // Per-input settings bind by handle: only the scanner gets the remap.
   esp32keybridge::ESP32KeyBridgeConfig config;
-  assert(config.input(1).remap(enter, tab));
+  esp32keybridge::InputConfig &scannerConfig = config.addInputConfig();
+  assert(scannerConfig.remap(enter, tab));
+  assert(bridge.addInput(keyboard));
+  assert(bridge.addInput(scanner, scannerConfig));
   bridge.applyConfig(config);
 
   assert(keyboard.press(enter));
@@ -334,22 +339,33 @@ static void test_per_input_remap_applies_to_one_input()
   assert(!bridge.outputKeys().contains(enter));
 }
 
-static void test_explicit_config_index_binding()
+static void test_input_config_shared_between_inputs()
 {
   esp32keybridge::ESP32KeyBridge bridge;
-  esp32keybridge::ManualInputAdapter scanner;
-  assert(bridge.addInput(scanner, 3));
+  esp32keybridge::ManualInputAdapter left;
+  esp32keybridge::ManualInputAdapter right;
 
   esp32keybridge::Key enter = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Enter);
   esp32keybridge::Key tab = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Tab);
 
+  // Binding the same InputConfig to two inputs shares the settings.
   esp32keybridge::ESP32KeyBridgeConfig config;
-  assert(config.input(3).remap(enter, tab));
+  esp32keybridge::InputConfig &shared = config.addInputConfig();
+  assert(shared.remap(enter, tab));
+  assert(bridge.addInput(left, shared));
+  assert(bridge.addInput(right, shared));
   bridge.applyConfig(config);
 
-  assert(scanner.press(enter));
+  assert(left.press(enter));
   bridge.update();
   assert(bridge.outputKeys().contains(tab));
+  assert(left.release(enter));
+  bridge.update();
+
+  assert(right.press(enter));
+  bridge.update();
+  assert(bridge.outputKeys().contains(tab));
+  assert(!bridge.outputKeys().contains(enter));
 }
 
 static void test_momentary_layer_with_press_time_resolution()
@@ -436,6 +452,41 @@ static void test_layer_trigger_and_key_in_same_update()
   bridge.update();
   assert(bridge.outputKeys().contains(h));
   assert(!bridge.outputKeys().contains(left));
+}
+
+static void test_add_layer_by_trigger()
+{
+  esp32keybridge::ESP32KeyBridgeConfig config;
+
+  esp32keybridge::LayerConfig &nav = config.addLayer(esp32keybridge::VirtualUsage::V1);
+  assert(nav.remap(esp32keybridge::KeyboardUsage::J, esp32keybridge::KeyboardUsage::Down));
+  assert(config.layer(0).trigger() == esp32keybridge::virtualKey(1));
+  assert(config.layer(0).hasMapping(esp32keybridge::KeyboardUsage::J));
+
+  // Slots fill in registration order; when all MaxLayers are in use,
+  // addLayer returns a writable dummy that is never applied.
+  config.addLayer(esp32keybridge::VirtualUsage::V2);
+  config.addLayer(esp32keybridge::VirtualUsage::V3);
+  config.addLayer(esp32keybridge::VirtualUsage::V4);
+  esp32keybridge::LayerConfig &overflow = config.addLayer(esp32keybridge::VirtualUsage::V5);
+  assert(overflow.remap(esp32keybridge::KeyboardUsage::A, esp32keybridge::KeyboardUsage::B));
+  for (size_t i = 0; i < esp32keybridge::ESP32KeyBridgeConfig::MaxLayers; ++i)
+  {
+    assert(config.layer(i).trigger() != esp32keybridge::virtualKey(5));
+  }
+
+  // The added layer works end to end through the bridge.
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter input;
+  bridge.addInput(input);
+  bridge.applyConfig(config);
+
+  input.press(esp32keybridge::VirtualUsage::V1);
+  input.press(esp32keybridge::KeyboardUsage::J);
+  bridge.update();
+  assert(bridge.outputKeys().contains(esp32keybridge::KeyboardUsage::Down));
+  assert(!bridge.outputKeys().contains(esp32keybridge::KeyboardUsage::J));
+  assert(!bridge.outputKeys().contains(esp32keybridge::VirtualUsage::V1));
 }
 
 static void test_layer_works_across_inputs()
@@ -731,7 +782,7 @@ static void test_host_layout_encode()
 {
   esp32keybridge::KeyStroke stroke;
 
-  esp32keybridge::HostLayout enUs = esp32keybridge::HostLayout::enUs();
+  esp32keybridge::KeyboardLayout enUs = esp32keybridge::KeyboardLayout::enUs();
   assert(enUs.encode(U'a', stroke) && stroke.key.code == 0x04 && !stroke.shift);
   assert(enUs.encode(U'A', stroke) && stroke.key.code == 0x04 && stroke.shift);
   assert(enUs.encode(U'@', stroke) &&
@@ -742,7 +793,7 @@ static void test_host_layout_encode()
          stroke.shift);
   assert(!enUs.encode(U'¥', stroke)); // Yen is not typable on en_us
 
-  esp32keybridge::HostLayout jaJp = esp32keybridge::HostLayout::jaJp();
+  esp32keybridge::KeyboardLayout jaJp = esp32keybridge::KeyboardLayout::jaJp();
   assert(jaJp.encode(U'@', stroke) &&
          stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftBracket) &&
          !stroke.shift);
@@ -754,10 +805,10 @@ static void test_host_layout_encode()
          !stroke.shift);
 
   bool found = false;
-  assert(esp32keybridge::HostLayout::byName("ja_jp", &found).encode(U'@', stroke));
+  assert(esp32keybridge::KeyboardLayout::byName("ja_jp", &found).encode(U'@', stroke));
   assert(found);
   assert(stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftBracket));
-  esp32keybridge::HostLayout::byName("xx_xx", &found);
+  esp32keybridge::KeyboardLayout::byName("xx_xx", &found);
   assert(!found);
 }
 
@@ -883,7 +934,7 @@ static void test_typing_control_chars_and_crlf()
   assert(bridge.addOutput(usb));
 
   // CRLF collapses to one Enter at the enqueue edge.
-  assert(bridge.typeText("a\r\nb"));
+  assert(bridge.typeText("a\r\nb") == 4);
   assert(bridge.textQueueLength() == 3); // 'a', CR, 'b'
 
   bool sawEnter = false;
@@ -914,6 +965,49 @@ static void test_typing_unencodable_chars_are_counted()
   assert(bridge.textEncodeFailCount() == 1);
   assert(log.textCount() == 1);
   assert(log.lastText() == U'¥');
+}
+
+static void test_type_available_reports_queue_space()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  assert(bridge.typeAvailable() == esp32keybridge::ESP32KeyBridge::MaxTextQueue);
+
+  assert(bridge.typeChar(U'a'));
+  assert(bridge.typeAvailable() == esp32keybridge::ESP32KeyBridge::MaxTextQueue - 1);
+
+  // Fill the queue: typeAvailable reaches 0 and further characters drop.
+  while (bridge.typeAvailable() > 0)
+  {
+    assert(bridge.typeChar(U'b'));
+  }
+  assert(!bridge.typeChar(U'c'));
+  assert(bridge.textOverflowCount() == 1);
+}
+
+static void test_type_text_stops_without_dropping_when_full()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+
+  // Leave two free slots, then send a longer string: exactly two
+  // characters are consumed, the rest is neither consumed nor dropped.
+  while (bridge.typeAvailable() > 2)
+  {
+    assert(bridge.typeChar(U'x'));
+  }
+  assert(bridge.typeText("abcd") == 2);
+  assert(bridge.typeAvailable() == 0);
+  assert(bridge.textOverflowCount() == 0);
+
+  // Multi-byte characters are consumed whole or not at all: with one free
+  // slot, one 2-byte yen sign fits (2 bytes consumed), the second waits.
+  esp32keybridge::ESP32KeyBridge bridge2;
+  while (bridge2.typeAvailable() > 1)
+  {
+    assert(bridge2.typeChar(U'x'));
+  }
+  assert(bridge2.typeText("\xc2\xa5\xc2\xa5") == 2);
+  assert(bridge2.typeAvailable() == 0);
+  assert(bridge2.textOverflowCount() == 0);
 }
 
 static void test_text_macro_types_on_trigger()
@@ -988,21 +1082,24 @@ static void test_relative_axes_scale_and_drain()
   assert(usb.axisTotal(esp32keybridge::Axis::X) == 5);
 }
 
-// UC5 setup: US-engraved keyboard on a ja_jp host.
-static void configureUsOnJa(esp32keybridge::ESP32KeyBridgeConfig &config)
+// UC5 setup: registers a US-engraved keyboard, bound to layout conversion
+// toward a ja_jp host.
+static void addUsKeyboardOnJa(esp32keybridge::ESP32KeyBridge &bridge,
+                              esp32keybridge::ManualInputAdapter &keyboard,
+                              esp32keybridge::ESP32KeyBridgeConfig &config)
 {
-  config.convertLayout(0, esp32keybridge::HostLayout::enUs());
-  config.hostLayout = esp32keybridge::HostLayout::jaJp();
+  esp32keybridge::InputConfig &keyboardConfig = config.addInputConfig();
+  keyboardConfig.convertLayout(esp32keybridge::KeyboardLayout::enUs());
+  config.hostLayout = esp32keybridge::KeyboardLayout::jaJp();
+  assert(bridge.addInput(keyboard, keyboardConfig));
 }
 
 static void test_layout_conversion_suppresses_shift()
 {
   esp32keybridge::ESP32KeyBridge bridge;
   esp32keybridge::ManualInputAdapter keyboard;
-  assert(bridge.addInput(keyboard));
-
   esp32keybridge::ESP32KeyBridgeConfig config;
-  configureUsOnJa(config);
+  addUsKeyboardOnJa(bridge, keyboard, config);
   bridge.applyConfig(config);
 
   esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
@@ -1031,10 +1128,8 @@ static void test_layout_conversion_synthesizes_shift()
 {
   esp32keybridge::ESP32KeyBridge bridge;
   esp32keybridge::ManualInputAdapter keyboard;
-  assert(bridge.addInput(keyboard));
-
   esp32keybridge::ESP32KeyBridgeConfig config;
-  configureUsOnJa(config);
+  addUsKeyboardOnJa(bridge, keyboard, config);
   bridge.applyConfig(config);
 
   esp32keybridge::Key equal = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Equal);
@@ -1060,10 +1155,8 @@ static void test_layout_conversion_letters_stay_identity()
 {
   esp32keybridge::ESP32KeyBridge bridge;
   esp32keybridge::ManualInputAdapter keyboard;
-  assert(bridge.addInput(keyboard));
-
   esp32keybridge::ESP32KeyBridgeConfig config;
-  configureUsOnJa(config);
+  addUsKeyboardOnJa(bridge, keyboard, config);
   bridge.applyConfig(config);
 
   esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
@@ -1088,10 +1181,8 @@ static void test_layout_conversion_shortcut_passthrough()
 {
   esp32keybridge::ESP32KeyBridge bridge;
   esp32keybridge::ManualInputAdapter keyboard;
-  assert(bridge.addInput(keyboard));
-
   esp32keybridge::ESP32KeyBridgeConfig config;
-  configureUsOnJa(config);
+  addUsKeyboardOnJa(bridge, keyboard, config);
   bridge.applyConfig(config);
 
   esp32keybridge::Key leftCtrl = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftCtrl);
@@ -1111,10 +1202,8 @@ static void test_layout_conversion_shift_passes_for_nonprintable()
 {
   esp32keybridge::ESP32KeyBridge bridge;
   esp32keybridge::ManualInputAdapter keyboard;
-  assert(bridge.addInput(keyboard));
-
   esp32keybridge::ESP32KeyBridgeConfig config;
-  configureUsOnJa(config);
+  addUsKeyboardOnJa(bridge, keyboard, config);
   bridge.applyConfig(config);
 
   esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
@@ -1140,13 +1229,14 @@ static void test_layout_conversion_untypable_is_dropped()
 {
   esp32keybridge::ESP32KeyBridge bridge;
   esp32keybridge::ManualInputAdapter keyboard;
-  assert(bridge.addInput(keyboard));
 
   // Reverse direction: JIS-engraved keyboard on an en_us host. Yen cannot
   // be typed on en_us: the press is dropped and counted.
   esp32keybridge::ESP32KeyBridgeConfig config;
-  config.convertLayout(0, esp32keybridge::HostLayout::jaJp());
-  config.hostLayout = esp32keybridge::HostLayout::enUs();
+  esp32keybridge::InputConfig &keyboardConfig = config.addInputConfig();
+  keyboardConfig.convertLayout(esp32keybridge::KeyboardLayout::jaJp());
+  config.hostLayout = esp32keybridge::KeyboardLayout::enUs();
+  assert(bridge.addInput(keyboard, keyboardConfig));
   bridge.applyConfig(config);
 
   assert(keyboard.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::International3)));
@@ -1159,10 +1249,8 @@ static void test_layout_conversion_toggle_key()
 {
   esp32keybridge::ESP32KeyBridge bridge;
   esp32keybridge::ManualInputAdapter keyboard;
-  assert(bridge.addInput(keyboard));
-
   esp32keybridge::ESP32KeyBridgeConfig config;
-  configureUsOnJa(config);
+  addUsKeyboardOnJa(bridge, keyboard, config);
   config.layoutConversionToggle = esp32keybridge::virtualKey(5);
   assert(config.global.remap(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::F14),
                              esp32keybridge::virtualKey(5)));
@@ -1329,9 +1417,10 @@ void setup()
   run("remap_crosses_key_kinds", test_remap_crosses_key_kinds);
   run("global_disable_drops_key", test_global_disable_drops_key);
   run("per_input_remap_applies_to_one_input", test_per_input_remap_applies_to_one_input);
-  run("explicit_config_index_binding", test_explicit_config_index_binding);
+  run("input_config_shared_between_inputs", test_input_config_shared_between_inputs);
   run("momentary_layer_with_press_time_resolution", test_momentary_layer_with_press_time_resolution);
   run("layer_trigger_and_key_in_same_update", test_layer_trigger_and_key_in_same_update);
+  run("add_layer_by_trigger", test_add_layer_by_trigger);
   run("layer_works_across_inputs", test_layer_works_across_inputs);
   run("apply_config_keeps_held_resolution", test_apply_config_keeps_held_resolution);
   run("unconsumed_virtual_key_stays_in_output", test_unconsumed_virtual_key_stays_in_output);
@@ -1349,6 +1438,8 @@ void setup()
   run("typing_caps_lock_compensation", test_typing_caps_lock_compensation);
   run("typing_control_chars_and_crlf", test_typing_control_chars_and_crlf);
   run("typing_unencodable_chars_are_counted", test_typing_unencodable_chars_are_counted);
+  run("type_available_reports_queue_space", test_type_available_reports_queue_space);
+  run("type_text_stops_without_dropping_when_full", test_type_text_stops_without_dropping_when_full);
   run("text_macro_types_on_trigger", test_text_macro_types_on_trigger);
   run("relative_axes_scale_and_drain", test_relative_axes_scale_and_drain);
   run("layout_conversion_suppresses_shift", test_layout_conversion_suppresses_shift);

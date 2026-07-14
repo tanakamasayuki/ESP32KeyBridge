@@ -14,7 +14,7 @@ constexpr uint16_t U(KeyboardUsage usage)
 }
 
 // clang-format off
-const HostLayoutEntry kEnUsEntries[] = {
+const KeyboardLayoutEntry kEnUsEntries[] = {
     {U(KeyboardUsage::A), 'a', 'A', true}, {U(KeyboardUsage::B), 'b', 'B', true},
     {U(KeyboardUsage::C), 'c', 'C', true}, {U(KeyboardUsage::D), 'd', 'D', true},
     {U(KeyboardUsage::E), 'e', 'E', true}, {U(KeyboardUsage::F), 'f', 'F', true},
@@ -50,7 +50,7 @@ const HostLayoutEntry kEnUsEntries[] = {
 // JIS layout as interpreted by a ja_jp host (Windows 106/109). The Grave key
 // is Zenkaku/Hankaku (no character) and International2/4/5 are IME keys, so
 // they are not in the table.
-const HostLayoutEntry kJaJpEntries[] = {
+const KeyboardLayoutEntry kJaJpEntries[] = {
     {U(KeyboardUsage::A), 'a', 'A', true}, {U(KeyboardUsage::B), 'b', 'B', true},
     {U(KeyboardUsage::C), 'c', 'C', true}, {U(KeyboardUsage::D), 'd', 'D', true},
     {U(KeyboardUsage::E), 'e', 'E', true}, {U(KeyboardUsage::F), 'f', 'F', true},
@@ -104,28 +104,28 @@ bool nameEquals(const char *a, const char *b)
 }
 } // namespace
 
-HostLayout::HostLayout()
+KeyboardLayout::KeyboardLayout()
     : entries_(kEnUsEntries), count_(sizeof(kEnUsEntries) / sizeof(kEnUsEntries[0])),
       name_("en_us")
 {
 }
 
-HostLayout::HostLayout(const HostLayoutEntry *entries, size_t count, const char *layoutName)
+KeyboardLayout::KeyboardLayout(const KeyboardLayoutEntry *entries, size_t count, const char *layoutName)
     : entries_(entries), count_(count), name_(layoutName)
 {
 }
 
-HostLayout HostLayout::enUs()
+KeyboardLayout KeyboardLayout::enUs()
 {
-  return HostLayout();
+  return KeyboardLayout();
 }
 
-HostLayout HostLayout::jaJp()
+KeyboardLayout KeyboardLayout::jaJp()
 {
-  return HostLayout(kJaJpEntries, sizeof(kJaJpEntries) / sizeof(kJaJpEntries[0]), "ja_jp");
+  return KeyboardLayout(kJaJpEntries, sizeof(kJaJpEntries) / sizeof(kJaJpEntries[0]), "ja_jp");
 }
 
-HostLayout HostLayout::byName(const char *name, bool *found)
+KeyboardLayout KeyboardLayout::byName(const char *name, bool *found)
 {
   if (nameEquals(name, "ja_jp"))
   {
@@ -143,7 +143,7 @@ HostLayout HostLayout::byName(const char *name, bool *found)
   return enUs();
 }
 
-bool HostLayout::encode(char32_t codepoint, KeyStroke &stroke) const
+bool KeyboardLayout::encode(char32_t codepoint, KeyStroke &stroke) const
 {
   if (codepoint == 0)
   {
@@ -170,7 +170,7 @@ bool HostLayout::encode(char32_t codepoint, KeyStroke &stroke) const
   return false;
 }
 
-char32_t HostLayout::decode(Key key, bool shift) const
+char32_t KeyboardLayout::decode(Key key, bool shift) const
 {
   if (key.kind != KeyKind::Keyboard)
   {
@@ -186,7 +186,7 @@ char32_t HostLayout::decode(Key key, bool shift) const
   return 0;
 }
 
-bool HostLayout::capsAffects(Key key) const
+bool KeyboardLayout::capsAffects(Key key) const
 {
   if (key.kind != KeyKind::Keyboard)
   {
@@ -202,7 +202,7 @@ bool HostLayout::capsAffects(Key key) const
   return false;
 }
 
-const char *HostLayout::name() const
+const char *KeyboardLayout::name() const
 {
   return name_;
 }
@@ -513,23 +513,34 @@ bool LayerConfig::hasMapping(Key key) const
   return false;
 }
 
-TransformConfig &ESP32KeyBridgeConfig::input(size_t index)
+InputConfig &ESP32KeyBridgeConfig::addInputConfig()
 {
-  if (index >= MaxInputConfigs)
+  if (inputConfigCount_ >= MaxInputConfigs)
   {
-    dummyInput_.clear();
-    return dummyInput_;
+    dummyInputConfig_.clear();
+    dummyInputConfig_.slot_ = InputConfig::kUnboundSlot;
+    return dummyInputConfig_;
   }
-  return inputs_[index];
+  InputConfig &config = inputConfigs_[inputConfigCount_];
+  config.clear();
+  config.slot_ = static_cast<uint8_t>(inputConfigCount_);
+  ++inputConfigCount_;
+  return config;
 }
 
-const TransformConfig &ESP32KeyBridgeConfig::input(size_t index) const
+LayerConfig &ESP32KeyBridgeConfig::addLayer(Key trigger)
 {
-  if (index >= MaxInputConfigs)
+  for (size_t i = 0; i < MaxLayers; ++i)
   {
-    return dummyInput_;
+    if (!layers_[i].enabled())
+    {
+      layers_[i].clear();
+      layers_[i].setTrigger(trigger);
+      return layers_[i];
+    }
   }
-  return inputs_[index];
+  dummyLayer_.clear();
+  return dummyLayer_;
 }
 
 LayerConfig &ESP32KeyBridgeConfig::layer(size_t index)
@@ -660,34 +671,6 @@ const TextMacro *ESP32KeyBridgeConfig::findTextMacro(Key trigger) const
   return nullptr;
 }
 
-void ESP32KeyBridgeConfig::convertLayout(size_t inputIndex, const HostLayout &engraving)
-{
-  if (inputIndex >= MaxInputConfigs)
-  {
-    return;
-  }
-  inputLayouts_[inputIndex] = engraving;
-  inputLayoutEnabled_[inputIndex] = true;
-}
-
-bool ESP32KeyBridgeConfig::inputLayoutEnabled(size_t index) const
-{
-  if (index >= MaxInputConfigs)
-  {
-    return false;
-  }
-  return inputLayoutEnabled_[index];
-}
-
-const HostLayout &ESP32KeyBridgeConfig::inputLayout(size_t index) const
-{
-  if (index >= MaxInputConfigs)
-  {
-    return inputLayouts_[0];
-  }
-  return inputLayouts_[index];
-}
-
 void ESP32KeyBridgeConfig::setAxisScale(Axis axis, int16_t scale)
 {
   axisScales_[static_cast<size_t>(axis)] = scale;
@@ -703,8 +686,10 @@ void ESP32KeyBridgeConfig::clear()
   global.clear();
   for (size_t i = 0; i < MaxInputConfigs; ++i)
   {
-    inputs_[i].clear();
+    inputConfigs_[i].clear();
+    inputConfigs_[i].slot_ = InputConfig::kUnboundSlot;
   }
+  inputConfigCount_ = 0;
   for (size_t i = 0; i < MaxLayers; ++i)
   {
     layers_[i].clear();
@@ -718,13 +703,8 @@ void ESP32KeyBridgeConfig::clear()
   {
     axisScales_[i] = 1;
   }
-  for (size_t i = 0; i < MaxInputConfigs; ++i)
-  {
-    inputLayouts_[i] = HostLayout::enUs();
-    inputLayoutEnabled_[i] = false;
-  }
   layoutConversionToggle = Key();
-  hostLayout = HostLayout::enUs();
+  hostLayout = KeyboardLayout::enUs();
   deferTypingWhileModifiersHeld = false;
 }
 
@@ -987,20 +967,35 @@ HidMouseReport buildHidMouseReport(const KeySet &keys)
 
 bool ESP32KeyBridge::addInput(InputAdapter &input)
 {
-  return addInput(input, inputCount_);
-}
-
-bool ESP32KeyBridge::addInput(InputAdapter &input, size_t configIndex)
-{
   if (inputCount_ >= MaxInputs)
   {
     return false;
   }
   inputs_[inputCount_] = &input;
-  inputConfigIndexes_[inputCount_] = configIndex;
+  inputConfigSlots_[inputCount_] = InputConfig::kUnboundSlot;
   inputWasConnected_[inputCount_] = false; // first update pushes the lock state
   ++inputCount_;
   return true;
+}
+
+bool ESP32KeyBridge::addInput(InputAdapter &input, const InputConfig &inputConfig)
+{
+  if (!addInput(input))
+  {
+    return false;
+  }
+  inputConfigSlots_[inputCount_ - 1] = inputConfig.slot_;
+  return true;
+}
+
+const InputConfig *ESP32KeyBridge::perInputConfig(size_t inputIndex) const
+{
+  const uint8_t slot = inputConfigSlots_[inputIndex];
+  if (slot >= ESP32KeyBridgeConfig::MaxInputConfigs)
+  {
+    return nullptr;
+  }
+  return &config_.inputConfigs_[slot];
 }
 
 void ESP32KeyBridge::clearInputs()
@@ -1121,8 +1116,7 @@ Key ESP32KeyBridge::applyLayerOverlay(Key key) const
 
 void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersOnly)
 {
-  const size_t configIndex = inputConfigIndexes_[inputIndex];
-  const TransformConfig &perInput = config_.input(configIndex);
+  const InputConfig *perInput = perInputConfig(inputIndex);
 
   Key key = source;
   bool converted = false;
@@ -1131,7 +1125,7 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
   bool shiftConsumed = false; // Shift of a converting input, used for decode
 
   // Layout conversion runs first, on the raw physical key of the engraving.
-  if (layoutConversionEnabled_ && config_.inputLayoutEnabled(configIndex) &&
+  if (layoutConversionEnabled_ && perInput != nullptr && perInput->convertsLayout() &&
       source.kind == KeyKind::Keyboard)
   {
     const KeySet &inputKeys = inputs_[inputIndex]->keys();
@@ -1154,7 +1148,7 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
       if (!shortcut)
       {
         const bool shifted = inputKeys.contains(leftShift) || inputKeys.contains(rightShift);
-        const char32_t codepoint = config_.inputLayout(configIndex).decode(source, shifted);
+        const char32_t codepoint = perInput->engraving().decode(source, shifted);
         if (codepoint != 0)
         {
           KeyStroke stroke;
@@ -1180,10 +1174,10 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
   uint8_t triggerMask = 0;
   if (!shiftConsumed && !dropped)
   {
-    if (!converted)
+    if (!converted && perInput != nullptr)
     {
-      key = perInput.map(key);
-      disabled = perInput.isDisabled(key);
+      key = perInput->transform().map(key);
+      disabled = perInput->transform().isDisabled(key);
     }
     if (!disabled)
     {
@@ -1346,8 +1340,9 @@ void ESP32KeyBridge::update()
   // Shift passes through so Shift+Arrow selection works.
   for (size_t i = 0; i < inputCount_; ++i)
   {
+    const InputConfig *perInput = perInputConfig(i);
     if (!inputs_[i]->connected() || !layoutConversionEnabled_ ||
-        !config_.inputLayoutEnabled(inputConfigIndexes_[i]))
+        perInput == nullptr || !perInput->convertsLayout())
     {
       continue;
     }
@@ -1415,13 +1410,12 @@ bool ESP32KeyBridge::typeChar(char32_t codepoint)
   return enqueueChar(codepoint);
 }
 
-bool ESP32KeyBridge::typeText(const char *utf8)
+size_t ESP32KeyBridge::typeText(const char *utf8)
 {
   if (utf8 == nullptr)
   {
-    return false;
+    return 0;
   }
-  bool ok = true;
   size_t pos = 0;
   while (utf8[pos] != '\0')
   {
@@ -1429,18 +1423,23 @@ bool ESP32KeyBridge::typeText(const char *utf8)
     const size_t consumed = decodeUtf8(utf8 + pos, codepoint);
     if (consumed == 0)
     {
+      // Invalid byte: consume and count it so a resume loop always makes
+      // progress.
       ++textEncodeFailCount_;
       ++pos;
-      ok = false;
       continue;
     }
-    if (!enqueueChar(codepoint))
+    if (textCount_ >= MaxTextQueue)
     {
-      ok = false;
+      // Full: stop without dropping. The caller resumes at utf8 + pos.
+      // (A CRLF-collapsed LF pending here is still handled correctly on
+      // resume because lastEnqueuedCR_ is untouched until then.)
+      break;
     }
+    enqueueChar(codepoint);
     pos += consumed;
   }
-  return ok;
+  return pos;
 }
 
 void ESP32KeyBridge::enqueueMacro(const TextMacro &macro)
@@ -1603,6 +1602,11 @@ void ESP32KeyBridge::updateAxes()
 size_t ESP32KeyBridge::textQueueLength() const
 {
   return textCount_;
+}
+
+size_t ESP32KeyBridge::typeAvailable() const
+{
+  return MaxTextQueue - textCount_;
 }
 
 bool ESP32KeyBridge::typingActive() const
