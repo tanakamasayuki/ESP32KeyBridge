@@ -38,6 +38,16 @@ USB Host / USB Device、GPIO、BLE、UART、WebSerial、NVS、JSON などは cor
 - USB device / BLE HID アダプタは、ホストからの LED output report を受信して core へ lock 状態を報告する(lock 報告出力)。
 - USB descriptor(複合構成を含む)、プロトコル(boot/report)、送信タイミングはアダプタの領分。構成は enumerate 時に確定する。
 
+## 時間・並行性の境界
+
+時間・割り込み・タスクは**アダプタの内側に閉じ込め**、core と `update()` の呼び出しコンテキストは単一のまま保ちます。
+
+- サンプリングの時間精度(マトリクスのスキャン周期、デバウンス、エンコーダのエッジ取りこぼし防止)は、アダプタ内部の task / ISR / ペリフェラルが担保する。想定実装: GPIO マトリクスは専用 task か周期タイマで約 1kHz スキャン、ロータリーエンコーダは PCNT(パルスカウンタ)ペリフェラルでハードウェア計数し `update()` でカウンタ差分を読む(ISR 不要)。
+- USB Host / USB Device / BLE はスタック側の task が既に存在する。アダプタはコールバックで受けたイベントを内部キューへ積む。
+- アダプタの責務は「内部の並行処理から `update()` 呼び出しコンテキストへのスレッドセーフな引き渡し」まで。押下集合への反映・変換・出力はすべて `update()` の単一コンテキストで行う。
+- この分担により、スケッチの loop が他処理で詰まっても入力の取りこぼしは起きない(アダプタ内で確定済み)。遅れるのは変換と出力だけ。
+- ブリッジ自身を task で自動駆動する仕組みは core には入れない(排他が `applyConfig()` / `typeText()` へ波及するため)。必要になれば Arduino 層の opt-in ラッパーとして追加する([DECISIONS.ja.md](DECISIONS.ja.md) 将来メモ)。
+
 ## 制御プレーン
 
 ブリッジはデータの流路とは別に、少数の**モード状態**を持ちます。
@@ -84,4 +94,4 @@ core が持つもの:
 
 ## 実装状況
 
-現在の `src/` はゼロベース検討前の暫定実装であり、この仕様へ書き換えます。実装の順序は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) を参照してください。
+`src/` はこの仕様の実装です(core = 実装順 1〜6 実装済み、アダプタ = 実装順 7 で実装中)。順序と進捗は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) を参照してください。

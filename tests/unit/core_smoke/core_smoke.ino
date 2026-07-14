@@ -24,6 +24,22 @@ static void test_key_identity_is_kind_plus_code()
   assert(!esp32keybridge::isValid(esp32keybridge::keyboardKey(static_cast<uint16_t>(0))));
 }
 
+static void test_key_converts_implicitly_from_usage_enums()
+{
+  // The usage enums carry their kind, so they convert to Key directly and
+  // can be passed to any Key parameter without keyboardKey()/consumerKey().
+  esp32keybridge::Key caps = esp32keybridge::KeyboardUsage::CapsLock;
+  assert(caps == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::CapsLock));
+
+  esp32keybridge::Key volumeUp = esp32keybridge::ConsumerUsage::VolumeIncrement;
+  assert(volumeUp == esp32keybridge::consumerKey(esp32keybridge::ConsumerUsage::VolumeIncrement));
+
+  esp32keybridge::TransformConfig transform;
+  assert(transform.remap(esp32keybridge::KeyboardUsage::F13,
+                         esp32keybridge::ConsumerUsage::VolumeIncrement));
+  assert(transform.map(esp32keybridge::KeyboardUsage::F13) == volumeUp);
+}
+
 static void test_key_kind_names()
 {
   assert(esp32keybridge::keyKindName(esp32keybridge::KeyKind::Keyboard)[0] == 'k');
@@ -122,7 +138,6 @@ static void test_bridge_merges_inputs_as_union()
   assert(bridge.addInput(left));
   assert(bridge.addInput(right));
   assert(bridge.inputCount() == 2);
-  bridge.begin();
 
   esp32keybridge::Key shift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
   esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
@@ -1299,6 +1314,7 @@ void setup()
 {
   Serial.begin(115200);
   run("key_identity_is_kind_plus_code", test_key_identity_is_kind_plus_code);
+  run("key_converts_implicitly_from_usage_enums", test_key_converts_implicitly_from_usage_enums);
   run("key_kind_names", test_key_kind_names);
   run("key_set_press_release", test_key_set_press_release);
   run("key_set_holds_mixed_kinds", test_key_set_holds_mixed_kinds);

@@ -1,17 +1,21 @@
 # Examples
 
-The old examples were removed together with the pre-spec implementation (reference: commit `4d2d48151c62`). New examples will be recreated to match the use cases in [../docs/USE_CASES.ja.md](../docs/USE_CASES.ja.md) as the implementation steps in [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) land.
+The examples are explicitly split into practical examples and usage examples.
 
-## Core Examples
+- `practical/`: practical sketches for real hardware setups, ready to flash as-is. They contain nothing but the intended configuration plus `update()` — no Serial dumps, no injected presses.
+- `usage/`: API demos. They inject presses through `ManualInputAdapter` / `ManualOutputAdapter` and print the core's behavior (transformed keys, report bytes) over Serial.
 
+## Practical Examples
+
+Added once the hardware adapters of implementation step 7 (USB Host / USB Device, ...) land. The first candidate is the practical SwapCtrlCapsLock (USB Host keyboard input + USB Device keyboard output + two remap entries, nothing else).
+
+## Usage Examples
+
+- `FootSwitchLayer`: remap a foot switch to a virtual key and use it as a momentary layer turning J/K into Down/Up (UC7).
+- `LayoutConversion`: type as engraved on a US keyboard connected to a ja_jp host (Shift consumption/synthesis, shortcut passthrough, on/off toggle) (UC5).
+- `MediaKeyRemap`: kind-crossing remap turning F13/F14 into Volume Up / Play-Pause, and the consumer report bytes (UC9).
+- `MergeKeyboards`: union merge of multiple inputs — Shift on one half applies to the other, and disconnect releases everything (UC2).
 - `SwapCtrlCapsLock`: swap Ctrl and CapsLock with two global remap entries (UC1).
+- `TextMacroTyping`: text macros and `typeText()` expanded into keystrokes, one phase per update (UC10).
 
-## Planned
-
-- Multi-input merge (UC2)
-- Single GPIO key / foot switch (UC7)
-- Media key remap (UC9)
-- Layers (Fn-like virtual keys)
-- Text macros (UC10)
-- Layout conversion (UC5)
-- Hardware setups using USB Host / USB Device adapters
+A usage example for relative mouse axes (UC11) will follow.

@@ -49,19 +49,31 @@ def test_library_properties_names_public_header():
     assert "includes=ESP32KeyBridge.h" in library_properties
 
 
-def test_examples_readme_lists_current_examples():
-    example_dirs = sorted(path.parent.name for path in (ROOT / "examples").glob("*/*.ino"))
-    readme = (ROOT / "examples" / "README.ja.md").read_text(encoding="utf-8")
-    core_section = readme.split("## Core Examples", 1)[1].split("## 追加予定", 1)[0]
-    listed = sorted(re.findall(r"- `([^`]+)`:", core_section))
-
-    assert listed == example_dirs
+def readme_section(readme, title):
+    return readme.split(f"## {title}", 1)[1].split("\n## ", 1)[0]
 
 
-def test_examples_have_docs_and_compile_profiles():
+def test_examples_readmes_list_current_examples():
+    groups = {
+        "Practical Examples": "practical",
+        "Usage Examples": "usage",
+    }
+    for readme_name in ["README.ja.md", "README.md"]:
+        readme = (ROOT / "examples" / readme_name).read_text(encoding="utf-8")
+        for title, group in groups.items():
+            example_dirs = sorted(
+                path.parent.name for path in (ROOT / "examples" / group).glob("*/*.ino")
+            )
+            listed = sorted(re.findall(r"- `([^`]+)`:", readme_section(readme, title)))
+
+            assert listed == example_dirs, (readme_name, group)
+
+
+def test_examples_are_grouped_with_docs_and_compile_profiles():
     missing = []
-    for ino in sorted((ROOT / "examples").glob("*/*.ino")):
+    for ino in sorted((ROOT / "examples").rglob("*.ino")):
         example_dir = ino.parent
+        assert example_dir.parent.name in {"practical", "usage"}, str(example_dir)
         for required in ["README.ja.md", "sketch.yaml"]:
             if not (example_dir / required).exists():
                 missing.append(str((example_dir / required).relative_to(ROOT)))

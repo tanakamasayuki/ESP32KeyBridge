@@ -12,7 +12,7 @@ EXAMPLES_DIR = REPO_ROOT / "examples"
 
 def example_dirs():
     selected = os.environ.get("ESP32KEYBRIDGE_EXAMPLES")
-    examples = sorted(path.parent for path in EXAMPLES_DIR.glob("*/*.ino"))
+    examples = sorted(path.parent for path in EXAMPLES_DIR.rglob("*.ino"))
     if not selected:
         return examples
 
@@ -26,7 +26,7 @@ def test_selected_examples_exist():
         return
 
     names = {name.strip() for name in selected.split(",") if name.strip()}
-    available = {path.parent.name for path in EXAMPLES_DIR.glob("*/*.ino")}
+    available = {path.parent.name for path in EXAMPLES_DIR.rglob("*.ino")}
     missing = sorted(names - available)
     assert missing == []
 
@@ -37,7 +37,7 @@ def test_example_compile(example_dir):
         pytest.skip("arduino-cli is not available")
 
     result = subprocess.run(
-        ["arduino-cli", "compile", "--profile", "s3", str(example_dir)],
+        ["arduino-cli", "compile", "--profile", "esp32s3", str(example_dir)],
         cwd=REPO_ROOT,
         text=True,
         stdout=subprocess.PIPE,

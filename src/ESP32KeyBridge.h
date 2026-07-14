@@ -26,25 +26,6 @@ enum class KeyKind : uint8_t
   Virtual = 4,     // Bridge internal keys. Never emitted to outputs.
 };
 
-struct Key
-{
-  KeyKind kind = KeyKind::None;
-  uint16_t code = 0;
-
-  constexpr Key() = default;
-  constexpr Key(KeyKind keyKind, uint16_t keyCode) : kind(keyKind), code(keyCode) {}
-
-  constexpr bool operator==(const Key &other) const
-  {
-    return kind == other.kind && code == other.code;
-  }
-
-  constexpr bool operator!=(const Key &other) const
-  {
-    return !(*this == other);
-  }
-};
-
 // HID keyboard page usage IDs. Names follow the US legends used by the HID
 // usage table, but a value always identifies the physical key position and
 // never a character.
@@ -219,6 +200,38 @@ enum class ConsumerUsage : uint16_t
   BrowserForward = 0x0225,
   BrowserRefresh = 0x0227,
   BrowserBookmarks = 0x022a,
+};
+
+struct Key
+{
+  KeyKind kind = KeyKind::None;
+  uint16_t code = 0;
+
+  constexpr Key() = default;
+  constexpr Key(KeyKind keyKind, uint16_t keyCode) : kind(keyKind), code(keyCode) {}
+
+  // The usage enums determine the kind, so they convert to Key directly.
+  // Mouse buttons and virtual keys are plain numbers and use
+  // mouseButtonKey() / virtualKey() instead.
+  constexpr Key(KeyboardUsage usage)
+      : kind(KeyKind::Keyboard), code(static_cast<uint16_t>(usage))
+  {
+  }
+
+  constexpr Key(ConsumerUsage usage)
+      : kind(KeyKind::Consumer), code(static_cast<uint16_t>(usage))
+  {
+  }
+
+  constexpr bool operator==(const Key &other) const
+  {
+    return kind == other.kind && code == other.code;
+  }
+
+  constexpr bool operator!=(const Key &other) const
+  {
+    return !(*this == other);
+  }
 };
 
 constexpr Key keyboardKey(KeyboardUsage usage)
@@ -854,7 +867,9 @@ public:
   bool validateConfig(const ESP32KeyBridgeConfig &config, ESP32KeyBridgeConfigError &error) const;
   void applyConfig(const ESP32KeyBridgeConfig &config);
 
-  void begin();
+  // There is no begin() and no ordering between addInput/addOutput,
+  // applyConfig, and adapter startup: registration and configuration only
+  // store state, and everything starts working once update() is called.
 
   // Updates all inputs, tracks press/release transitions, rebuilds both key
   // sets, maintains the lock state, and writes the result to all connected

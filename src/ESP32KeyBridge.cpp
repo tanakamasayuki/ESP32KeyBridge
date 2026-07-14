@@ -1063,10 +1063,6 @@ void ESP32KeyBridge::applyConfig(const ESP32KeyBridgeConfig &config)
   config_ = config;
 }
 
-void ESP32KeyBridge::begin()
-{
-}
-
 size_t ESP32KeyBridge::findHeld(uint8_t inputIndex, Key source) const
 {
   for (size_t i = 0; i < heldCount_; ++i)
