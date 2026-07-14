@@ -5,9 +5,6 @@
 // Hardware: one ESP32-S3 (its single USB OTG port is the keyboard device
 // plugged into the PC) and switches between the pins below and GND. The
 // pins use the internal pull-up; closed = pressed.
-//
-// NOTE: the GPIO and USB adapters are build-only mocks until
-// implementation step 7.
 
 #include <ESP32KeyBridge.h>
 #include <ESP32KeyBridgeGpio.h>

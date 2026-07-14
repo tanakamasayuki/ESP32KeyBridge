@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Implement `EspUsbHostKeyboardInputAdapter` on EspUsbHost 2.2.0's new
+  `onKeyboardState()`: one format-independent 256-bit snapshot per changed
+  report (boot / report-ID boot / NKRO alike, modifier-only changes
+  included — this replaces the earlier change request about missing
+  modifier events) maps directly onto the key set. All keyboards on the
+  stack are merged with per-device tracking (up to 4, so a disconnect
+  releases only that device's keys), boot rollover error codes (usages
+  0x01-0x03) are filtered, consumer press/release events (media keys,
+  remotes; up to 8 held usages) join the same key set, and the bridge lock
+  state is forwarded to every keyboard's LEDs (num/caps/scroll; EspUsbHost
+  has no kana LED path). The sketch-facing rule tightens: onKeyboardState /
+  onConsumerControl / onMouse / onDeviceDisconnected belong to the
+  adapters' shared hub, while the per-event onKeyboard stays free for
+  sketches. Every adapter in the examples is now real except the BLE input
+  (library choice pending); the P4 example profiles pin EspUsbHost 2.2.0.
 - Implement `EspUsbHostMouseInputAdapter`: all mice on the stack merged
   (button union, deltas summed) with per-address tracking so a disconnect
   releases only that mouse's buttons; movement and wheel accumulate as

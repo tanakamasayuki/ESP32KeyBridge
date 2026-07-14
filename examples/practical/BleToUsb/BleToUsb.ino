@@ -5,8 +5,8 @@
 // Hardware: one ESP32-S3. Its single USB OTG port is the keyboard device
 // plugged into the PC; the BLE keyboard pairs with the ESP32.
 //
-// NOTE: the BLE and USB adapters are build-only mocks until implementation
-// step 7 (the BLE library is not decided yet).
+// NOTE: the BLE input adapter is a build-only mock (the BLE library is
+// not decided yet).
 
 #include <ESP32KeyBridge.h>
 #include <ESP32KeyBridgeBle.h>

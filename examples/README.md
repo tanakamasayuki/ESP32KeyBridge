@@ -2,7 +2,7 @@
 
 Every example is a **practical** one: a sketch for a real hardware setup, ready to flash as-is. They all share the same structure: 1) start the hardware, 2) wire the bridge, 3) build and apply the configuration.
 
-> **Note**: the hardware adapters are being implemented in step 7. See [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) for the current status (the USB Device composite HID output, the GPIO input, and the USB Host mouse input are implemented; the rest are build-only mocks).
+> **Note**: see [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) for the implementation status (the USB Host keyboard and mouse inputs, the GPIO input, and the USB Device composite HID output are implemented; only the BLE input remains a build-only mock, waiting on the library choice).
 
 ## Practical Examples
 

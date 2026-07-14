@@ -2,7 +2,7 @@
 
 examples はすべて**実用例**です。実ハードウェア構成でそのまま書き込んで使うスケッチで、中身は「1) ハードウェア起動 → 2) ブリッジ配線 → 3) 設定を組んで適用」の 3 段構成に統一しています。
 
-> **注意**: 実機アダプタは実装順 7 で順次実装中です。実装状況は [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) を参照(USB Device 複合 HID 出力・GPIO 入力・USB Host マウス入力は実装済み、他はモック)。
+> **注意**: 実装状況は [../docs/ADAPTERS.ja.md](../docs/ADAPTERS.ja.md) を参照(USB Host キーボード・マウス入力、GPIO 入力、USB Device 複合 HID 出力は実装済み。BLE 入力のみモック = ライブラリ選定待ち)。
 
 ## Practical Examples
 

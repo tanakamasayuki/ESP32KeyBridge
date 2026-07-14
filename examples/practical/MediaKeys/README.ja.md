@@ -15,4 +15,4 @@ USB を 2 系統(Host + Device)使うため ESP32-P4 が必要です。
 
 P4 の USB ポートの詳細、表記と実配線が違うボードの注意(M5Stack Tab5 の事例)、HS を Host に使う場合の制約は [SwapCtrlCapsLock/README.ja.md](../SwapCtrlCapsLock/README.ja.md) を参照してください。
 
-> **注意**: 複合 HID 出力アダプタは実装済み(実機検証はこれから)です。USB Host 入力アダプタはビルド確認用のモックです(実装順 7 で実装されます)。
+> **注意**: 使用するアダプタ(USB Host キーボード入力 / USB Device 複合 HID 出力)は実装済みです(実機検証はこれから)。USB Host 入力には EspUsbHost 2.2.0 以上が必要です(`onKeyboardState`)。

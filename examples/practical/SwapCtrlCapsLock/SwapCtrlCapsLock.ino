@@ -9,8 +9,6 @@
 //   - USB Host = FS port: plug the keyboard in here. Which connector the
 //     FS PHY reaches (OTG pins GPIO26/27 or CDC pins GPIO24/25) depends on
 //     the board; see README.ja.md and the swap line in setup().
-//
-// NOTE: the USB adapters are build-only mocks until implementation step 7.
 
 #include <ESP32KeyBridge.h>
 #include <ESP32KeyBridgeEspUsbHost.h>

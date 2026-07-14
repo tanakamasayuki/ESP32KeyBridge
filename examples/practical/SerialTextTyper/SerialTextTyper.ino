@@ -8,8 +8,6 @@
 //
 // There is no input adapter here: the text stream is a first-class input
 // of the bridge (typeText / typeChar).
-//
-// NOTE: the USB adapter is a build-only mock until implementation step 7.
 
 #include <ESP32KeyBridge.h>
 #include <ESP32KeyBridgeEspUsbDevice.h>

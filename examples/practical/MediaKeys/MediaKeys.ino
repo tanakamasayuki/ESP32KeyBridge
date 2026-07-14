@@ -7,8 +7,6 @@
 //     arduino-esp32 (3.3.10) library.
 //   - USB Host = FS port: plug the keyboard in here. Port details and
 //     board caveats: see SwapCtrlCapsLock/README.ja.md.
-//
-// NOTE: the USB adapters are build-only mocks until implementation step 7.
 
 #include <ESP32KeyBridge.h>
 #include <ESP32KeyBridgeEspUsbHost.h>
