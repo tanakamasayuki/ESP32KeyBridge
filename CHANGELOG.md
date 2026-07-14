@@ -82,6 +82,9 @@
   documents the ESP32-P4 USB port layout (Device fixed to HS on
   arduino-esp32 3.3.10, Host on FS, CDC/OTG PHY swap, label-vs-wiring
   caveats, M5Stack Tab5 case, HS-host hub restriction).
+- Add `docs/ADAPTERS.ja.md`: the adapter roster with implementation status,
+  what each output adapter makes the PC see (USB device classes /
+  interfaces), and the extra library dependencies per adapter header.
 - Document the time/concurrency boundary: sampling accuracy lives inside
   adapters (tasks / ISRs / peripherals such as PCNT for encoders) with a
   thread-safe handoff into the single update() context; the bridge itself

@@ -18,6 +18,7 @@ def test_required_project_files_exist():
         "examples/README.md",
         "docs/REQUIREMENTS.ja.md",
         "docs/CORE_DESIGN.ja.md",
+        "docs/ADAPTERS.ja.md",
         "docs/DATA_MODEL.ja.md",
         "docs/USE_CASES.ja.md",
         "docs/DECISIONS.ja.md",
