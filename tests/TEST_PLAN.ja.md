@@ -48,7 +48,7 @@ ESP32-P4 は常時接続の自動テスト環境には含めません。P4 は U
 | 6 | マウス(ボタン / 相対軸)と HID report builder(6KRO / rollover / consumer / mouse) | 実装済み | | | | |
 | 7 | Arduino runtime core smoke | | | 予定 | | |
 | 7 | USB Host keyboard / consumer input adapter | | 実装済み | | 実装済み(単キー / 修飾 / 多キー / キー+修飾 / consumer / LED) | 実 keyboard 確認 |
-| 7 | USB Host mouse input adapter | | | | **未(新規スケッチ要)** | 実マウス確認 |
+| 7 | USB Host mouse input adapter | | | | 実装済み(X/Y 移動 / ホイール / 左右ボタン) | 実マウス確認 |
 | 7 | USB Device 複合 output adapter | | 実装済み | | 実装済み(単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY。LED→正本のみ skip) | Host OS 認識 / LED report |
 | 7 | GPIO matrix / 単独キー input | 予定 | 予定 | | | 配線確認 |
 | 7 | BLE HID input / output | 予定 | 予定 | | | pairing 確認 |
