@@ -1114,6 +1114,17 @@ Key ESP32KeyBridge::applyLayerOverlay(Key key) const
   return key;
 }
 
+void ESP32KeyBridge::emitText(char32_t codepoint)
+{
+  for (size_t i = 0; i < outputCount_; ++i)
+  {
+    if (outputs_[i]->connected())
+    {
+      outputs_[i]->writeText(codepoint);
+    }
+  }
+}
+
 void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersOnly)
 {
   const InputConfig *perInput = perInputConfig(inputIndex);
@@ -1123,6 +1134,7 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
   bool requiresShift = false;
   bool dropped = false;       // conversion produced an untypable character
   bool shiftConsumed = false; // Shift of a converting input, used for decode
+  char32_t textChar = 0;      // decoded character delivered to text outputs
 
   // Layout conversion runs first, on the raw physical key of the engraving.
   if (layoutConversionEnabled_ && perInput != nullptr && perInput->convertsLayout() &&
@@ -1149,6 +1161,24 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
       {
         const bool shifted = inputKeys.contains(leftShift) || inputKeys.contains(rightShift);
         const char32_t codepoint = perInput->engraving().decode(source, shifted);
+        // Text-native outputs take the decoded character regardless of
+        // whether the host layout can re-encode it (e.g. Yen on an en_us
+        // host is dropped for HID but is still valid text). Enter and Tab
+        // carry no printable codepoint but map to the usual control
+        // characters for the text stream.
+        if (codepoint != 0)
+        {
+          textChar = codepoint;
+        }
+        else if (source == keyboardKey(KeyboardUsage::Enter) ||
+                 source == keyboardKey(KeyboardUsage::KeypadEnter))
+        {
+          textChar = U'\n';
+        }
+        else if (source == keyboardKey(KeyboardUsage::Tab))
+        {
+          textChar = U'\t';
+        }
         if (codepoint != 0)
         {
           KeyStroke stroke;
@@ -1210,6 +1240,15 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
   if (dropped)
   {
     ++layoutConvertFailCount_;
+  }
+
+  // A converting input's decoded character is delivered to text-native
+  // outputs at the press edge (resolvePress runs once per new press).
+  // HID outputs ignore writeText(); this is what feeds a text output
+  // (e.g. a USB HID barcode reader becoming a stream of text).
+  if (textChar != 0)
+  {
+    emitText(textChar);
   }
 
   if (triggerMask != 0)
@@ -1513,13 +1552,7 @@ void ESP32KeyBridge::stepTyping()
       const char32_t codepoint = textQueue_[textHead_];
       textHead_ = (textHead_ + 1) % MaxTextQueue;
       --textCount_;
-      for (size_t i = 0; i < outputCount_; ++i)
-      {
-        if (outputs_[i]->connected())
-        {
-          outputs_[i]->writeText(codepoint);
-        }
-      }
+      emitText(codepoint);
       KeyStroke stroke;
       if (encodeCharForTyping(codepoint, stroke))
       {

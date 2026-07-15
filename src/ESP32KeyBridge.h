@@ -1080,6 +1080,7 @@ private:
   bool enqueueChar(char32_t codepoint);
   void enqueueMacro(const TextMacro &macro);
   bool encodeCharForTyping(char32_t codepoint, KeyStroke &stroke) const;
+  void emitText(char32_t codepoint);
   void stepTyping();
   void updateAxes();
 

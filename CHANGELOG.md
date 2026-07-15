@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Add two Print-based output adapters (new `ESP32KeyBridgeSerial.h`, no
+  external dependency): `TextOutputAdapter` writes the text stream to an
+  Arduino `Print` (USB CDC Serial, a UART, ...) as UTF-8, and
+  `LogOutputAdapter` writes a human-readable line on key-set changes,
+  typed characters, and axis moves (a bring-up / monitoring tool).
+  Examples: `BarcodeToText` (a USB HID barcode reader becomes a stream of
+  text) and `KeyMonitor` (watch the bridge output on the console). Both
+  ESP32-S3.
+- Route decoded characters from `convertLayout()` inputs into the text
+  stream: when a converting input's key is pressed, the bridge decodes it
+  with that input's engraving layout and delivers the character to
+  text-native outputs via writeText() (Enter/Tab become newline/tab),
+  in addition to the existing re-encode to hostLayout for HID outputs.
+  The layout stays a single input-side setting; text outputs carry none.
+  Additive and scoped to converting inputs — HID outputs ignore
+  writeText(), so existing behavior (e.g. UsKeyboardOnJapanesePc) is
+  unchanged.
+
 - The core_smoke unit sketch (~60 assertions over the whole core) can now
   also run on a real ESP32-S3: the same sketch gained an `esp32s3`
   profile (`pytest unit/core_smoke --profile esp32s3` with the optional

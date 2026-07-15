@@ -1289,6 +1289,59 @@ static void test_layout_conversion_toggle_key()
   assert(bridge.layoutConversionEnabled());
 }
 
+static void test_convert_layout_emits_text_to_outputs()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  esp32keybridge::ManualOutputAdapter out;
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  esp32keybridge::InputConfig &kb = config.addInputConfig();
+  kb.convertLayout(esp32keybridge::KeyboardLayout::enUs());
+  assert(bridge.addInput(keyboard, kb));
+  assert(bridge.addOutput(out));
+  bridge.applyConfig(config);
+
+  const esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+  const esp32keybridge::Key enter = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Enter);
+
+  // The press edge decodes to 'a' and reaches the text output once.
+  assert(keyboard.press(a));
+  bridge.update();
+  assert(out.textCount() == 1);
+  assert(out.lastText() == U'a');
+  // Held: no repeat while the key stays down.
+  bridge.update();
+  assert(out.textCount() == 1);
+  assert(keyboard.release(a));
+  bridge.update();
+  assert(out.textCount() == 1);
+
+  // Enter carries no printable codepoint but maps to a newline.
+  assert(keyboard.press(enter));
+  bridge.update();
+  assert(out.textCount() == 2);
+  assert(out.lastText() == U'\n');
+}
+
+static void test_no_convert_layout_emits_no_text()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  esp32keybridge::ManualOutputAdapter out;
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  assert(bridge.addInput(keyboard)); // no convertLayout
+  assert(bridge.addOutput(out));
+  bridge.applyConfig(config);
+
+  // Without convertLayout a physical press is not decoded to text; it only
+  // appears in the output key set.
+  const esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+  assert(keyboard.press(a));
+  bridge.update();
+  assert(out.textCount() == 0);
+  assert(out.keys().contains(a));
+}
+
 static void test_hid_keyboard_report_builder()
 {
   esp32keybridge::KeySet keys;
@@ -1452,6 +1505,8 @@ static void runAllTests()
   run("layout_conversion_shift_passes_for_nonprintable", test_layout_conversion_shift_passes_for_nonprintable);
   run("layout_conversion_untypable_is_dropped", test_layout_conversion_untypable_is_dropped);
   run("layout_conversion_toggle_key", test_layout_conversion_toggle_key);
+  run("convert_layout_emits_text_to_outputs", test_convert_layout_emits_text_to_outputs);
+  run("no_convert_layout_emits_no_text", test_no_convert_layout_emits_no_text);
   run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
   run("hid_keyboard_report_overflow", test_hid_keyboard_report_overflow);
   run("hid_consumer_report_builder", test_hid_consumer_report_builder);

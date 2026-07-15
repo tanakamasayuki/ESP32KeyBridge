@@ -32,6 +32,8 @@ EspUsbDeviceHidOutputAdapter	KEYWORD1
 GpioKeyInputAdapter	KEYWORD1
 GpioMatrixInputAdapter	KEYWORD1
 RotaryEncoderInputAdapter	KEYWORD1
+TextOutputAdapter	KEYWORD1
+LogOutputAdapter	KEYWORD1
 
 keyboardKey	KEYWORD2
 consumerKey	KEYWORD2

@@ -6,7 +6,9 @@ Every example is a **practical** one: a sketch for a real hardware setup, ready 
 
 ## Practical Examples
 
+- `BarcodeToText`: turn a USB HID barcode reader into a stream of text on the serial port. ESP32-S3 + USB Host.
 - `FootSwitch`: type canned text, control media, or turn pages with foot switches or homemade buttons. ESP32-S3 + GPIO.
+- `KeyMonitor`: print the bridge output to the serial console to bring up or monitor input hardware. ESP32-S3 + GPIO.
 - `MediaKeys`: turn unused keys (F13...) into volume and play/pause keys. ESP32-P4.
 - `NumPad`: build a numeric keypad, macro pad, or custom keyboard from a GPIO-wired switch matrix. ESP32-S3 + GPIO.
 - `NaturalScroll`: invert the mouse wheel direction without touching the PC's settings (swapping buttons for left-handed use, too). ESP32-P4.
