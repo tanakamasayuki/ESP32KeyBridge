@@ -20,8 +20,11 @@ void setup()
   usb.onKeyboardState(
       [](const EspUsbHostKeyboardState &state)
       {
-        Serial.printf("KEY_STATE modifiers=%02x a=%u b=%u\n", state.modifiers,
-                      state.isDown(0x04) ? 1 : 0, state.isDown(0x05) ? 1 : 0);
+        // Probe A..F (0x04..0x09) so multi-key rollover can be observed.
+        Serial.printf("KEY_STATE modifiers=%02x a=%u b=%u c=%u d=%u e=%u f=%u\n",
+                      state.modifiers, state.isDown(0x04) ? 1 : 0, state.isDown(0x05) ? 1 : 0,
+                      state.isDown(0x06) ? 1 : 0, state.isDown(0x07) ? 1 : 0,
+                      state.isDown(0x08) ? 1 : 0, state.isDown(0x09) ? 1 : 0);
       });
   usb.onConsumerControl(
       [](const EspUsbHostConsumerControlEvent &event)

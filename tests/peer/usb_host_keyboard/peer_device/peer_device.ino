@@ -6,7 +6,8 @@
 // host are printed.
 //
 // Commands: p=ping (reports the mount state), a=press A, r=release all
-// keys, c/C=LeftCtrl down/up, l=CapsLock tap.
+// keys, c/C=LeftCtrl down/up, l=CapsLock tap, k=press A+C+E at once
+// (multi-key rollover), b=press LeftShift+A together (key with modifier).
 
 #include <EspUsbDevice.h>
 
@@ -77,6 +78,17 @@ void loop()
       sendKeyboard("CAPS_DOWN");
       report.keys[0] = 0;
       sendKeyboard("CAPS_UP");
+      break;
+    case 'k':
+      report.keys[0] = 0x04; // A
+      report.keys[1] = 0x06; // C
+      report.keys[2] = 0x08; // E
+      sendKeyboard("CHORD_ACE");
+      break;
+    case 'b':
+      report.modifiers |= 0x02; // LeftShift
+      report.keys[0] = 0x04;    // A
+      sendKeyboard("SHIFT_A");
       break;
     default:
       break;

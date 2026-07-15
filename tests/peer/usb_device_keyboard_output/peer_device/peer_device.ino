@@ -5,7 +5,8 @@
 //
 // Commands: p=ping (reports the mount state), a/r=key A down/up,
 // s/S=LeftShift down/up, v/V=consumer VolumeUp down/up, m/M=mouse left
-// button down/up, w=wheel +3, q=print the lock state seen by the input.
+// button down/up, w=wheel +3, x=mouse X +10, y=mouse Y +7, 6/R=keys
+// A..F down/up (6-key rollover), q=print the lock state seen by the input.
 
 #include <ESP32KeyBridge.h>
 #include <ESP32KeyBridgeEspUsbDevice.h>
@@ -76,6 +77,32 @@ void loop()
     case 'w':
       input.addAxisDelta(esp32keybridge::Axis::Wheel, 3);
       Serial.println("CMD WHEEL_3");
+      break;
+    case 'x':
+      input.addAxisDelta(esp32keybridge::Axis::X, 10);
+      Serial.println("CMD MOVE_X");
+      break;
+    case 'y':
+      input.addAxisDelta(esp32keybridge::Axis::Y, 7);
+      Serial.println("CMD MOVE_Y");
+      break;
+    case '6':
+      input.press(esp32keybridge::KeyboardUsage::A);
+      input.press(esp32keybridge::KeyboardUsage::B);
+      input.press(esp32keybridge::KeyboardUsage::C);
+      input.press(esp32keybridge::KeyboardUsage::D);
+      input.press(esp32keybridge::KeyboardUsage::E);
+      input.press(esp32keybridge::KeyboardUsage::F);
+      Serial.println("CMD SIX_DOWN");
+      break;
+    case 'R':
+      input.release(esp32keybridge::KeyboardUsage::A);
+      input.release(esp32keybridge::KeyboardUsage::B);
+      input.release(esp32keybridge::KeyboardUsage::C);
+      input.release(esp32keybridge::KeyboardUsage::D);
+      input.release(esp32keybridge::KeyboardUsage::E);
+      input.release(esp32keybridge::KeyboardUsage::F);
+      Serial.println("CMD SIX_UP");
       break;
     case 'q':
     {

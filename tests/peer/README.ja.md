@@ -38,16 +38,17 @@ TEST_SERIAL_PORT_PEER_DEVICE_S3_PEER_DEVICE=/dev/ttyUSB1
 
 ## 追加済み
 
-- `usb_host_keyboard`: Device board(EspUsbDevice の keyboard **単体** = boot 宣言 interface)が HID keyboard report を送り、Host board のブリッジ入力パイプラインを検証する。内容: remap(A→B)、修飾キー単独 press/release、終端ホストの CapsLock トグル → キーボード LED 転送。
+- `usb_host_keyboard`: Device board(EspUsbDevice の keyboard **単体** = boot 宣言 interface)が HID keyboard report を送り、Host board のブリッジ入力パイプラインを検証する。内容: remap(A→B)、修飾キー単独 press/release、**多キー同時押し(A+C+E をリマップ込みで)**、**キー+修飾同時(LeftShift+A)**、終端ホストの CapsLock トグル → キーボード LED 転送。
 - `usb_host_consumer`: Device board(consumer control 単体)の press/release がキーボード入力アダプタ経由で押下集合に統合されることを検証する。
-- `usb_device_keyboard_output`: Device board 側でブリッジ出力パイプライン(ManualInput → 複合 HID 出力)から keyboard / consumer / mouse report を出力し、Host board が素の EspUsbHost で観測する。LED → lock 正本のテストは **skip 中**(下記の既知の制限)。
+- `usb_device_keyboard_output`: Device board 側でブリッジ出力パイプライン(ManualInput → 複合 HID 出力)から keyboard / consumer / mouse report を出力し、Host board が素の EspUsbHost で観測する。内容: 単キー、修飾単独、**6キーロールオーバー(A〜F)**、consumer usage、マウスボタン+ホイール、**マウス X/Y 相対移動**。LED → lock 正本のテストは **skip 中**(下記の既知の制限)。
 
 ## 既知の制限(上流依頼中)
 
 EspUsbHost 2.2.0 の `setKeyboardLeds()` は **boot 宣言された keyboard interface にしか送れない**。EspUsbDevice の複合 HID は 1 interface に report ID でマージされ boot 宣言を持たないため、テストホストから複合デバイスへ LED を送れない(入力イベントは report descriptor 解析で届くので非対称)。実世界では report-ID/NKRO 専用キーボードへの LED 転送も同じ制限に当たる。修正依頼済み(report ID 付き SET_REPORT 対応)。実 PC は report ID を扱えるため、複合出力アダプタの lock 正本動作は OS での手動確認でカバーする。
 
-## 初期候補
+## 追加候補
 
+- `usb_host_mouse`: Device board が HID mouse report を送り、Host board の `EspUsbHostMouseInputAdapter` が X/Y・ホイール・ボタンを input pipeline(相対軸・マウスボタン)へ流すことを検証する。**マウス入力アダプタは現状 peer 未カバーで最優先。** 新規スケッチ対が必要(既存スケッチ拡張では対応不可)。
 - `usb_hid_cdc_config`: HID 出力と CDC 設定 reference example の最低限の共存を確認する。
 
 USB-to-USB bridge 全体の完全な end-to-end 自動化は、入力 source、bridge、output observer の 3 役が必要になりやすいため初期必須にしません。2台 peer では adapter 境界を優先します。

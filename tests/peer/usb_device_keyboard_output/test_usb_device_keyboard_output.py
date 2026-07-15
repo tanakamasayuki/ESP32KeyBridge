@@ -41,6 +41,20 @@ def test_modifier_only_report(dut, peers):
     dut.expect_exact("KEY_STATE modifiers=00 a=0 b=0")
 
 
+def test_six_key_rollover(dut, peers):
+    device = peers["device"]
+    _wait_mounted(device)
+
+    # Six keys held at once fill the boot keyboard report; all reach the wire.
+    device.write("6")
+    device.expect_exact("CMD SIX_DOWN")
+    dut.expect_exact("KEY_STATE modifiers=00 a=1 b=1 c=1 d=1 e=1 f=1")
+
+    device.write("R")
+    device.expect_exact("CMD SIX_UP")
+    dut.expect_exact("KEY_STATE modifiers=00 a=0 b=0 c=0 d=0 e=0 f=0")
+
+
 def test_consumer_usage(dut, peers):
     device = peers["device"]
     _wait_mounted(device)
@@ -69,6 +83,21 @@ def test_mouse_button_and_wheel(dut, peers):
     device.write("w")
     device.expect_exact("CMD WHEEL_3")
     dut.expect_exact("MOUSE buttons=00 x=0 y=0 wheel=3")
+
+
+def test_mouse_movement(dut, peers):
+    device = peers["device"]
+    _wait_mounted(device)
+
+    # Relative X/Y motion is a one-shot delta: one report carries it, the
+    # next frame is back to zero.
+    device.write("x")
+    device.expect_exact("CMD MOVE_X")
+    dut.expect_exact("MOUSE buttons=00 x=10 y=0 wheel=0")
+
+    device.write("y")
+    device.expect_exact("CMD MOVE_Y")
+    dut.expect_exact("MOUSE buttons=00 x=0 y=7 wheel=0")
 
 
 def _wait_lock(device, expected, retries=20):

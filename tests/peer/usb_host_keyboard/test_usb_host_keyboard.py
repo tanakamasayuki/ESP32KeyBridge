@@ -40,6 +40,37 @@ def test_modifier_only_press(dut, peers):
     dut.expect_exact("OUT empty")
 
 
+def test_multi_key_rollover(dut, peers):
+    device = peers["device"]
+    _wait_mounted(device)
+
+    # Three keys held in one report; A is remapped to B, so the chord arrives
+    # as B C E. Proves the input adapter forwards a multi-key snapshot and the
+    # remap applies within it.
+    device.write("k")
+    device.expect_exact("SEND CHORD_ACE")
+    dut.expect_exact("OUT keyboard:0005 keyboard:0006 keyboard:0008")
+
+    device.write("r")
+    device.expect_exact("SEND ALL_UP")
+    dut.expect_exact("OUT empty")
+
+
+def test_key_with_modifier(dut, peers):
+    device = peers["device"]
+    _wait_mounted(device)
+
+    # LeftShift held together with A: the modifier and the remapped key both
+    # reach the output set (modifiers are ordinary keys there, 0xe1).
+    device.write("b")
+    device.expect_exact("SEND SHIFT_A")
+    dut.expect_exact("OUT keyboard:0005 keyboard:00e1")
+
+    device.write("r")
+    device.expect_exact("SEND ALL_UP")
+    dut.expect_exact("OUT empty")
+
+
 def test_terminal_host_lock_toggles_keyboard_led(dut, peers):
     device = peers["device"]
     _wait_mounted(device)
