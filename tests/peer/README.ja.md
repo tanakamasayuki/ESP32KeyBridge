@@ -38,10 +38,10 @@ TEST_SERIAL_PORT_PEER_DEVICE_S3_PEER_DEVICE=/dev/ttyUSB1
 
 ## 追加済み
 
-- `usb_host_keyboard`: Device board(EspUsbDevice の keyboard **単体** = boot 宣言 interface)が HID keyboard report を送り、Host board のブリッジ入力パイプラインを検証する。内容: remap(A→B)、修飾キー単独 press/release、**多キー同時押し(A+C+E をリマップ込みで)**、**キー+修飾同時(LeftShift+A)**、終端ホストの CapsLock トグル → キーボード LED 転送。
+- `usb_host_keyboard`: Device board(EspUsbDevice の keyboard **単体** = boot 宣言 interface)が HID keyboard report を送り、Host board のブリッジ入力パイプラインを検証する。内容: remap(A→B)、修飾キー単独 press/release、**多キー同時押し(A+C+E をリマップ込みで)**、**キー+修飾同時(LeftShift+A)**、終端ホストの CapsLock トグル → キーボード LED 転送、**デバイス切断でホールド中のキーが解放される**こと。
 - `usb_host_consumer`: Device board(consumer control 単体)の press/release がキーボード入力アダプタ経由で押下集合に統合されることを検証する。
 - `usb_host_mouse`: Device board(USB マウス)が boot mouse report を送り、Host board の `EspUsbHostMouseInputAdapter` が処理することを検証する。内容: X/Y 相対移動、ホイール、左/右ボタン(押下集合に MouseButton キーとして到達)。
-- `usb_device_keyboard_output`: Device board 側でブリッジ出力パイプライン(ManualInput → 複合 HID 出力)から keyboard / consumer / mouse report を出力し、Host board が素の EspUsbHost で観測する。内容: 単キー、修飾単独、**6キーロールオーバー(A〜F)**、consumer usage、マウスボタン+ホイール、**マウス X/Y 相対移動**。LED → lock 正本のテストは **skip 中**(下記の既知の制限)。
+- `usb_device_keyboard_output`: Device board 側でブリッジ出力パイプライン(ManualInput → 複合 HID 出力)から keyboard / consumer / mouse report を出力し、Host board が素の EspUsbHost で観測する。内容: 単キー、修飾単独、**6キーロールオーバー(A〜F)**、consumer usage、マウスボタン+ホイール、**マウス X/Y 相対移動**、**複合同時(キーボード+consumer+マウスを 1 フレームで出力し KEY_STATE→CONSUMER→MOUSE の順で観測)**。LED → lock 正本のテストは **skip 中**(下記の既知の制限)。
 
 ## 既知の制限(上流依頼中)
 

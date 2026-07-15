@@ -47,9 +47,9 @@ ESP32-P4 は常時接続の自動テスト環境には含めません。P4 は U
 | 5 | レイアウト変換((キー,Shift) 表 / Shift 合成 / on-off 切替) | 実装済み | | | | |
 | 6 | マウス(ボタン / 相対軸)と HID report builder(6KRO / rollover / consumer / mouse) | 実装済み | | | | |
 | 7 | Arduino runtime core smoke | | | 予定 | | |
-| 7 | USB Host keyboard / consumer input adapter | | 実装済み | | 実装済み(単キー / 修飾 / 多キー / キー+修飾 / consumer / LED) | 実 keyboard 確認 |
+| 7 | USB Host keyboard / consumer input adapter | | 実装済み | | 実装済み(単キー / 修飾 / 多キー / キー+修飾 / consumer / LED / 切断解放) | 実 keyboard 確認 |
 | 7 | USB Host mouse input adapter | | | | 実装済み(X/Y 移動 / ホイール / 左右ボタン) | 実マウス確認 |
-| 7 | USB Device 複合 output adapter | | 実装済み | | 実装済み(単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY。LED→正本のみ skip) | Host OS 認識 / LED report |
+| 7 | USB Device 複合 output adapter | | 実装済み | | 実装済み(単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY / 複合同時。LED→正本のみ skip) | Host OS 認識 / LED report |
 | 7 | GPIO matrix / 単独キー input | 予定 | 予定 | | | 配線確認 |
 | 7 | BLE HID input / output | 予定 | 予定 | | | pairing 確認 |
 | - | 設定の保存 / 読み込み・CDC serial 設定 reference example | | 予定 | 予定 | | WebSerial 確認 |
@@ -60,13 +60,13 @@ peer テストは、USB adapter が実 USB 経由で期待どおり event / stat
 
 追加済み:
 
-- `usb_host_keyboard`: Device 役 S3 が HID keyboard report を送信し、Host 役 S3 の USB Host adapter が受け取った key event を input pipeline へ流す。単キー(remap 込み)/ 修飾単独 / 多キー同時 / キー+修飾 / 終端ホストの LED 転送。
+- `usb_host_keyboard`: Device 役 S3 が HID keyboard report を送信し、Host 役 S3 の USB Host adapter が受け取った key event を input pipeline へ流す。単キー(remap 込み)/ 修飾単独 / 多キー同時 / キー+修飾 / 終端ホストの LED 転送 / デバイス切断でホールドキー解放。
 - `usb_host_consumer`: Device 役 S3 の consumer control が押下集合に統合される。
-- `usb_device_keyboard_output`: Device 役 S3 が output pipeline から複合 HID report を出力し、Host 役 S3 が USB Host で観測する。単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY。LED output report の受信(LockState 報告)は skip 中(下記制限)。
+- `usb_host_mouse`: Device 役 S3 が HID mouse report を送信し、Host 役 S3 の `EspUsbHostMouseInputAdapter` が X/Y 移動・ホイール・左右ボタンを input pipeline(相対軸・マウスボタン)へ流す。
+- `usb_device_keyboard_output`: Device 役 S3 が output pipeline から複合 HID report を出力し、Host 役 S3 が USB Host で観測する。単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY / 複合同時(KEY_STATE→CONSUMER→MOUSE)。LED output report の受信(LockState 報告)は skip 中(下記制限)。
 
 追加候補:
 
-- `usb_host_mouse`: Device 役 S3 が HID mouse report を送信し、Host 役 S3 の `EspUsbHostMouseInputAdapter` が X/Y/ホイール/ボタンを input pipeline(相対軸・マウスボタン)へ流す。**マウス入力アダプタは現状 peer 未カバーで、最優先の追加対象。**
 - `usb_hid_cdc_config`: HID 出力と CDC 設定 reference example の最低限の共存を確認する。複雑な WebSerial UI 操作は manual に残す。
 
 旧実装の peer テストは削除済みです(参照点: commit `4d2d48151c62`)。

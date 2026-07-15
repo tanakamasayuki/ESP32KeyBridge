@@ -100,6 +100,25 @@ def test_mouse_movement(dut, peers):
     dut.expect_exact("MOUSE buttons=00 x=0 y=7 wheel=0")
 
 
+def test_composite_reports_in_one_frame(dut, peers):
+    device = peers["device"]
+    _wait_mounted(device)
+
+    # One bridge frame changes all three HID classes; the composite device
+    # emits keyboard, consumer, and mouse reports in that fixed order.
+    device.write("z")
+    device.expect_exact("CMD COMBO_DOWN")
+    dut.expect_exact("KEY_STATE modifiers=00 a=1 b=0 c=0 d=0 e=0 f=0")
+    dut.expect_exact("CONSUMER usage=00e9 pressed=1")
+    dut.expect_exact("MOUSE buttons=01 x=5 y=0 wheel=0")
+
+    device.write("Z")
+    device.expect_exact("CMD COMBO_UP")
+    dut.expect_exact("KEY_STATE modifiers=00 a=0 b=0 c=0 d=0 e=0 f=0")
+    dut.expect_exact("released=1")
+    dut.expect_exact("MOUSE buttons=00 x=0 y=0 wheel=0")
+
+
 def _wait_lock(device, expected, retries=20):
     """The LED report crosses USB and a bridge update before the input sees
     it, so poll instead of expecting the first answer to match."""

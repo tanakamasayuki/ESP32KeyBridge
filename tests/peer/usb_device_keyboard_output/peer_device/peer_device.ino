@@ -6,7 +6,9 @@
 // Commands: p=ping (reports the mount state), a/r=key A down/up,
 // s/S=LeftShift down/up, v/V=consumer VolumeUp down/up, m/M=mouse left
 // button down/up, w=wheel +3, x=mouse X +10, y=mouse Y +7, 6/R=keys
-// A..F down/up (6-key rollover), q=print the lock state seen by the input.
+// A..F down/up (6-key rollover), z/Z=press/release keyboard A + consumer
+// VolumeUp + mouse left + X move in one frame (composite output),
+// q=print the lock state seen by the input.
 
 #include <ESP32KeyBridge.h>
 #include <ESP32KeyBridgeEspUsbDevice.h>
@@ -103,6 +105,21 @@ void loop()
       input.release(esp32keybridge::KeyboardUsage::E);
       input.release(esp32keybridge::KeyboardUsage::F);
       Serial.println("CMD SIX_UP");
+      break;
+    case 'z':
+      // All three HID classes change in one bridge frame: the composite
+      // device emits keyboard, consumer, and mouse reports (in that order).
+      input.press(esp32keybridge::KeyboardUsage::A);
+      input.press(esp32keybridge::ConsumerUsage::VolumeIncrement);
+      input.press(esp32keybridge::MouseUsage::Left);
+      input.addAxisDelta(esp32keybridge::Axis::X, 5);
+      Serial.println("CMD COMBO_DOWN");
+      break;
+    case 'Z':
+      input.release(esp32keybridge::KeyboardUsage::A);
+      input.release(esp32keybridge::ConsumerUsage::VolumeIncrement);
+      input.release(esp32keybridge::MouseUsage::Left);
+      Serial.println("CMD COMBO_UP");
       break;
     case 'q':
     {

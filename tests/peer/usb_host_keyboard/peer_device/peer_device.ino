@@ -7,7 +7,8 @@
 //
 // Commands: p=ping (reports the mount state), a=press A, r=release all
 // keys, c/C=LeftCtrl down/up, l=CapsLock tap, k=press A+C+E at once
-// (multi-key rollover), b=press LeftShift+A together (key with modifier).
+// (multi-key rollover), b=press LeftShift+A together (key with modifier),
+// d=disconnect from the USB bus, u=reconnect.
 
 #include <EspUsbDevice.h>
 
@@ -15,6 +16,7 @@ EspUsbDevice device;
 EspUsbDeviceHidKeyboard keyboard(device);
 
 static EspUsbDeviceBootKeyboardReport report;
+static EspUsbDeviceConfig deviceConfig;
 
 static void sendKeyboard(const char *label)
 {
@@ -43,9 +45,8 @@ void setup()
                       led.numLock ? 1 : 0, led.capsLock ? 1 : 0, led.scrollLock ? 1 : 0);
       });
 
-  EspUsbDeviceConfig config;
-  config.product = "KeyBridge Peer Keyboard";
-  Serial.printf("DEVICE_BEGIN %u\n", device.begin(config) ? 1 : 0);
+  deviceConfig.product = "KeyBridge Peer Keyboard";
+  Serial.printf("DEVICE_BEGIN %u\n", device.begin(deviceConfig) ? 1 : 0);
 }
 
 void loop()
@@ -89,6 +90,16 @@ void loop()
       report.modifiers |= 0x02; // LeftShift
       report.keys[0] = 0x04;    // A
       sendKeyboard("SHIFT_A");
+      break;
+    case 'd':
+      // Drop off the USB bus. Clear the held report so a later reconnect
+      // starts clean (nothing is auto-resent on re-enumeration).
+      device.end();
+      report = EspUsbDeviceBootKeyboardReport{};
+      Serial.println("CMD DISCONNECT");
+      break;
+    case 'u':
+      Serial.printf("CMD RECONNECT %u\n", device.begin(deviceConfig) ? 1 : 0);
       break;
     default:
       break;

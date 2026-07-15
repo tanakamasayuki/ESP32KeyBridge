@@ -85,3 +85,24 @@ def test_terminal_host_lock_toggles_keyboard_led(dut, peers):
     device.write("l")
     device.expect_exact("SEND CAPS_UP")
     device.expect_exact("LED numlock=0 capslock=0 scrolllock=0")
+
+
+def test_disconnect_releases_held_keys(dut, peers):
+    device = peers["device"]
+    _wait_mounted(device)
+
+    # A key is held when the device drops off the bus. The input adapter's
+    # disconnect callback must clear it so nothing stays stuck on the output.
+    # Runs last: it leaves the device disconnected, then reconnects at the end
+    # to restore the shared board state.
+    device.write("a")
+    device.expect_exact("SEND A_DOWN")
+    dut.expect_exact("OUT keyboard:0005")  # A remapped to B, held
+
+    device.write("d")
+    device.expect_exact("CMD DISCONNECT")
+    dut.expect_exact("OUT empty")
+
+    device.write("u")
+    device.expect_exact("CMD RECONNECT")
+    _wait_mounted(device)
