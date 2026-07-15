@@ -6,6 +6,10 @@
 
 `usb_host_mouse`: the device board acts as a USB mouse and the host board's `EspUsbHostMouseInputAdapter` is verified — relative X/Y movement, wheel, and left/right buttons (which arrive as MouseButton keys in the output set).
 
+`usb_host_gamepad`: the device board acts as a USB gamepad and the host board's `EspUsbHostGamepadInputAdapter` maps buttons and the hat to keys (buttons → keys, several at once, hat-up → arrow).
+
+`usb_host_midi`: the device board acts as a USB MIDI device and the host board's `EspUsbHostMidiInputAdapter` maps notes to keys (Note On presses, Note Off releases, two notes at once).
+
 `usb_device_keyboard_output` checks the opposite adapter boundary: the peer device board drives the bridge output pipeline (manual input → composite HID output) and the host DUT observes the reports with `EspUsbHost` — single key, modifier-only, six-key rollover (A–F), consumer usage, mouse button + wheel, relative mouse X/Y movement, a composite frame where keyboard, consumer, and mouse reports are emitted together (observed in KEY_STATE→CONSUMER→MOUSE order), and the LED-to-lock path (the host sends an LED output report, the composite output adapter becomes the lock authority and propagates it to the input). The LED-to-lock test was skipped on EspUsbHost 2.2.0 (`setKeyboardLeds()` reached only boot-declared keyboard interfaces, and the composite device merges its HID classes into one report-ID interface); 2.3.0 detects the LED output report in the report descriptor and sends a report-ID Set_Report, so it is now enabled.
 
 Two-board ESP32-S3 hardware tests.

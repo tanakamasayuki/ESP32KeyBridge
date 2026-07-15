@@ -12,6 +12,8 @@
   merge apply; there is no gamepad/MIDI *output* (that would need the core
   data model to carry those semantics). The shared EspUsbHost hub gained
   gamepad and MIDI sinks. Examples: `GamepadToKeys` and `MidiToKeys` (P4).
+  Peer tests `usb_host_gamepad` and `usb_host_midi` drive a gamepad/MIDI
+  device board and check the mapped keys on the host board.
 - Add four examples that fill the remaining feature gaps. `NavLayer` (P4):
   hold CapsLock to turn H/J/K/L into arrow keys on any USB keyboard — the
   first momentary-layer example (`addLayer`/`setTrigger` with a virtual

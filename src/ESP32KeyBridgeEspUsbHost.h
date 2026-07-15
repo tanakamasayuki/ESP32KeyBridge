@@ -647,10 +647,27 @@ private:
       }
       else if (field.usagePage == 0x01 && field.usage == 0x39) // Hat switch
       {
-        const int32_t dir = field.value - field.logicalMin;
-        if (dir >= 0 && dir <= 7)
+        // Hat encodings differ between controllers. Directions run clockwise
+        // from up. A value outside the logical range is "centered". When the
+        // logical range holds nine values (e.g. TinyUSB's 0..8), the first
+        // one is an explicit "centered" and the eight directions follow;
+        // otherwise the range is the eight directions (first = up).
+        hat = -1;
+        if (field.value >= field.logicalMin && field.value <= field.logicalMax)
         {
-          hat = static_cast<int8_t>(dir);
+          const int32_t count = field.logicalMax - field.logicalMin + 1;
+          const int32_t index = field.value - field.logicalMin;
+          if (count >= 9)
+          {
+            if (index >= 1 && index <= 8)
+            {
+              hat = static_cast<int8_t>(index - 1);
+            }
+          }
+          else if (index >= 0 && index <= 7)
+          {
+            hat = static_cast<int8_t>(index);
+          }
         }
       }
     }
