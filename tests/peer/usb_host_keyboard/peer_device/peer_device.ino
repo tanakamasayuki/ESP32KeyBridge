@@ -8,7 +8,9 @@
 // Commands: p=ping (reports the mount state), a=press A, r=release all
 // keys, c/C=LeftCtrl down/up, l=CapsLock tap, k=press A+C+E at once
 // (multi-key rollover), b=press LeftShift+A together (key with modifier),
-// d=disconnect from the USB bus, u=reconnect.
+// d=disconnect from the USB bus (reboot: EspUsbDevice has no bus-detach
+// API, so a reset is the only way to drop off the bus; it re-enumerates on
+// its own afterwards).
 
 #include <EspUsbDevice.h>
 
@@ -92,14 +94,13 @@ void loop()
       sendKeyboard("SHIFT_A");
       break;
     case 'd':
-      // Drop off the USB bus. Clear the held report so a later reconnect
-      // starts clean (nothing is auto-resent on re-enumeration).
-      device.end();
-      report = EspUsbDeviceBootKeyboardReport{};
+      // device.end() does not detach from the bus (it only flips internal
+      // flags), and tud_disconnect() is not exposed through EspUsbDevice, so
+      // a reset is the only way to make the host see a real disconnect while
+      // a key is held. setup() runs again and the device re-enumerates.
       Serial.println("CMD DISCONNECT");
-      break;
-    case 'u':
-      Serial.printf("CMD RECONNECT %u\n", device.begin(deviceConfig) ? 1 : 0);
+      Serial.flush();
+      ESP.restart();
       break;
     default:
       break;

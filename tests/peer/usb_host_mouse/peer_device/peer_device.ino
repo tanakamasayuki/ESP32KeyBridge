@@ -11,9 +11,23 @@
 EspUsbDevice device;
 EspUsbDeviceHidMouse mouse(device);
 
-static void report(bool ok, const char *label)
+// Retry the send for up to a second: right after enumeration the endpoint
+// can briefly refuse a report even though the device is mounted. The
+// callbacks are non-capturing lambdas, so they decay to a plain function
+// pointer (a template would trip the .ino auto-prototype generator).
+static void sendRetry(bool (*send)(), const char *label)
 {
-  Serial.printf(ok ? "SEND %s\n" : "SEND_FAILED %s\n", label);
+  const uint32_t start = millis();
+  while (millis() - start < 1000)
+  {
+    if (send())
+    {
+      Serial.printf("SEND %s\n", label);
+      return;
+    }
+    delay(5);
+  }
+  Serial.printf("SEND_FAILED %s\n", label);
 }
 
 void setup()
@@ -36,25 +50,25 @@ void loop()
       Serial.printf("PONG ready=%u\n", device.ready() ? 1 : 0);
       break;
     case 'x':
-      report(mouse.move(10, 0, 0, mouse.buttons()), "MOVE_X");
+      sendRetry([] { return mouse.move(10, 0, 0, mouse.buttons()); }, "MOVE_X");
       break;
     case 'y':
-      report(mouse.move(0, 7, 0, mouse.buttons()), "MOVE_Y");
+      sendRetry([] { return mouse.move(0, 7, 0, mouse.buttons()); }, "MOVE_Y");
       break;
     case 'w':
-      report(mouse.move(0, 0, 3, mouse.buttons()), "WHEEL_3");
+      sendRetry([] { return mouse.move(0, 0, 3, mouse.buttons()); }, "WHEEL_3");
       break;
     case 'l':
-      report(mouse.press(ESP_USB_DEVICE_MOUSE_LEFT), "LBTN_DOWN");
+      sendRetry([] { return mouse.press(ESP_USB_DEVICE_MOUSE_LEFT); }, "LBTN_DOWN");
       break;
     case 'L':
-      report(mouse.release(ESP_USB_DEVICE_MOUSE_LEFT), "LBTN_UP");
+      sendRetry([] { return mouse.release(ESP_USB_DEVICE_MOUSE_LEFT); }, "LBTN_UP");
       break;
     case 'r':
-      report(mouse.press(ESP_USB_DEVICE_MOUSE_RIGHT), "RBTN_DOWN");
+      sendRetry([] { return mouse.press(ESP_USB_DEVICE_MOUSE_RIGHT); }, "RBTN_DOWN");
       break;
     case 'R':
-      report(mouse.release(ESP_USB_DEVICE_MOUSE_RIGHT), "RBTN_UP");
+      sendRetry([] { return mouse.release(ESP_USB_DEVICE_MOUSE_RIGHT); }, "RBTN_UP");
       break;
     default:
       break;

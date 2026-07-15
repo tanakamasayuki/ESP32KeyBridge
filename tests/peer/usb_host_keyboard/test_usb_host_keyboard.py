@@ -93,8 +93,9 @@ def test_disconnect_releases_held_keys(dut, peers):
 
     # A key is held when the device drops off the bus. The input adapter's
     # disconnect callback must clear it so nothing stays stuck on the output.
-    # Runs last: it leaves the device disconnected, then reconnects at the end
-    # to restore the shared board state.
+    # The device drops off by resetting (see peer_device: no bus-detach API),
+    # so it re-enumerates on its own; this test runs last and waits for the
+    # device to come back before finishing.
     device.write("a")
     device.expect_exact("SEND A_DOWN")
     dut.expect_exact("OUT keyboard:0005")  # A remapped to B, held
@@ -103,6 +104,5 @@ def test_disconnect_releases_held_keys(dut, peers):
     device.expect_exact("CMD DISCONNECT")
     dut.expect_exact("OUT empty")
 
-    device.write("u")
-    device.expect_exact("CMD RECONNECT")
+    # The reset device boots, runs setup() again, and re-mounts.
     _wait_mounted(device)
