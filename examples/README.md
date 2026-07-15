@@ -20,13 +20,15 @@ Every example is a **practical** one: a sketch for a real hardware setup, ready 
 - `ScrollDial`: a physical scroll dial on your desk (turn to scroll the wheel, press for a middle click; also works as a jog dial). ESP32-S3 + GPIO (rotary encoder).
 - `SerialTextTyper`: type text received over serial into the PC (test automation, kiosks). ESP32-S3.
 - `SwapCtrlCapsLock`: sit between a keyboard and a PC and swap CapsLock and Ctrl without changing either. ESP32-P4. **The P4 USB port details live in this example's README.**
+- `TouchButtons`: learn how to write your own input adapter (worked example: the ESP32-S3's built-in capacitive touch pads as buttons). ESP32-S3.
 - `UsKeyboardOnJapanesePc`: type as engraved on a US keyboard or barcode reader connected to a PC that stays on the ja_jp layout. ESP32-P4.
 - `VolumeKnob`: a physical volume knob on your desk (rotary encoder; works as a scroll dial too). ESP32-S3 + GPIO.
 
 ## Connecting your own inputs and outputs
 
-Start from these instead of an example:
+Start here:
 
+- **A worked custom input adapter: `TouchButtons`** (subclass `InputAdapter`, read hardware in `update()`, return the pressed keys from `keys()` — the minimal template; an I2C expander, a sensor, or a network source follows the same shape).
 - Minimal reference implementations: `ManualInputAdapter` / `ManualOutputAdapter` (press()/release() calls become an input; writes and text are recorded).
 - Adapter responsibilities and API: the header comments of `InputAdapter` / `OutputAdapter` and the adapter headers (`ESP32KeyBridgeEspUsbHost.h`, ...).
 - Report packing: the `buildHidKeyboardReport()` family of builders.

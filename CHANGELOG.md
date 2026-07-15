@@ -14,6 +14,12 @@
   gamepad and MIDI sinks. Examples: `GamepadToKeys` and `MidiToKeys` (P4).
   Peer tests `usb_host_gamepad` and `usb_host_midi` drive a gamepad/MIDI
   device board and check the mapped keys on the host board.
+- Add `TouchButtons` (S3): a tutorial example for writing your own input
+  adapter. It defines a `TouchButtons : InputAdapter` in the sketch that
+  reads the ESP32-S3's built-in capacitive touch pads (no external library
+  or parts) and presses a media key per pad, showing the whole contract -
+  `update()` reads the hardware, `keys()` returns the pressed set, the rest
+  is optional. The examples README points custom-input authors here.
 - Add four examples that fill the remaining feature gaps. `NavLayer` (P4):
   hold CapsLock to turn H/J/K/L into arrow keys on any USB keyboard — the
   first momentary-layer example (`addLayer`/`setTrigger` with a virtual
