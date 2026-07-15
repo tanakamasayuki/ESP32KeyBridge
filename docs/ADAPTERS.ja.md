@@ -9,7 +9,7 @@
 | クラス | ヘッダ | 依存 | 状況 | 機能 |
 |---|---|---|---|---|
 | `ManualInputAdapter` | `ESP32KeyBridge.h`(core) | なし | **実装済み** | `press()` / `release()` で論理押下を注入。相対値(`addAxisDelta`)、切断模擬、LockState 受信の記録。自作入力の最小リファレンス |
-| `EspUsbHostKeyboardInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost 2.2.0+ | **実装済み(実機検証待ち)** | USB キーボード(スタック上の全キーボードを合算、最大 4 台。consumer キー = メディアキーやリモコンも合算、同時 8 usage)。`onKeyboardState` の 256-bit スナップショット(boot / report-ID boot / NKRO 共通、修飾キー単独変化含む)を KeySet に写像。boot のロールオーバーエラーコード(usage 0x01〜0x03)は除外。LockState を全キーボードの LED へ転送(num/caps/scroll。kana は EspUsbHost に転送手段なし。**既知の制限**: EspUsbHost 2.2.0 は boot 宣言キーボードにしか LED を送れず、report-ID/NKRO 専用キーボードへは届かない = 上流依頼中)。presence は最初の report から、切断でそのデバイスのキーだけ解放 |
+| `EspUsbHostKeyboardInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost 2.3.0+ | **実装済み(実機検証待ち)** | USB キーボード(スタック上の全キーボードを合算、最大 4 台。consumer キー = メディアキーやリモコンも合算、同時 8 usage)。`onKeyboardState` の 256-bit スナップショット(boot / report-ID boot / NKRO 共通、修飾キー単独変化含む)を KeySet に写像。boot のロールオーバーエラーコード(usage 0x01〜0x03)は除外。LockState を全キーボードの LED へ転送(num/caps/scroll。kana は EspUsbHost に転送手段なし。EspUsbHost 2.3.0 で report-ID/NKRO 専用キーボードへも LED を送れる = boot 宣言キーボードにしか送れなかった 2.2.0 の制限は解消)。presence は最初の report から、切断でそのデバイスのキーだけ解放 |
 | `EspUsbHostMouseInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost | **実装済み(実機検証待ち)** | USB マウス(スタック上の全マウスを合算、最大 4 台)。ボタン = MouseButton キー(union)、移動・ホイール = 相対軸(合算)。presence は最初の report から(列挙照会 API が無いため)、切断でそのマウスのボタンだけ解放 |
 | `GpioKeyInputAdapter` | `ESP32KeyBridgeGpio.h` | Arduino GPIO のみ | **実装済み(実機検証待ち)** | `addKey(pin, key, activeLow, pullUp)` で最大 `SOC_GPIO_PIN_COUNT` キー。デバウンス内蔵(既定 5ms、`setDebounceMillis()` で調整)。ピン設定は登録後最初の `update()`。loop レート(≈1kHz)のポーリングで足りる |
 | BLE キーボード / マウス入力 | - | 専用 BLE ライブラリ(作成予定) | **構想(別ライブラリ完成待ち)** | BLE キーボード / マウス(HID over GATT central)。専用 BLE ライブラリ(central + peripheral 両役を 1 本、NimBLE ベース、クラシック非対応)を別途作成し、完成までこのライブラリでは BLE 非対応 |
@@ -59,13 +59,47 @@ USB Device 出力は 1 種類で、常に**複合 HID デバイス**として PC
 
 出力側(`EspUsbDeviceHidOutputAdapter` 等)は状態スナップショット方式なので、`update()` が遅れても「最後の状態」が送られるだけで壊れません(タイピング・マクロの打鍵速度は update 間隔に比例して遅くなります)。
 
+## ロータリーエンコーダ: 直交デコードとデテント
+
+`RotaryEncoderInputAdapter` は A 相・B 相の**両方**にカウントを設定し、さらに立上り・立下りの**両エッジ**を数える完全な x4 直交デコード(quadrature ×4)です。仕組みと、なぜ「1 ノッチ = 出力 1」になるかを説明します。
+
+### x4 直交デコード(両相・両エッジ)
+
+PCNT を 2 チャンネル使い、互いの相を参照させます。
+
+- チャンネル A: エッジ入力 = A 相、レベル入力 = B 相
+- チャンネル B: エッジ入力 = B 相、レベル入力 = A 相
+
+各チャンネルは**両エッジ**で ±1 し、相手相のレベルで方向(増加/減少)を決めます。結果、A の両エッジ + B の両エッジ = **1 直交周期あたり 4 カウント**。回転方向は A/B どちらの相が先行するかで符号が決まります(片相・片エッジだけだと方向が取れず、分解能も 1/4 になる)。
+
+グリッチフィルタ(1µs)で機械接点のチャタリングを除きます。割り込みは使わず、カウンタはハードウェア(PCNT)が常時進めるので、`update()` を高頻度に呼ばなくても回転は取りこぼしません(反映が遅れるだけ)。
+
+### デテント(ノッチ)への畳み込み
+
+x4 なので生カウントは「回した分 × 4」で増えます。ご指摘のとおり **1 ノッチで複数カウント**出ます。これを `pulsesPerDetent_`(既定 4)で割ってデテント数に正規化します。
+
+- EC11 など一般的なクリック(検知)付きエンコーダは、**1 デテント(ノッチ)= 1 直交周期 = 4 カウント**。→ 4 ÷ 4 = **1 デテント/ノッチ**。`mapToKeys` は 1 タップ、`mapToAxis` は ±1。
+- 割った**余りはアキュムレータに持ち越す**ので、途中で切り捨てられず**累積ズレ(ドリフト)は起きません**。`update()` の間隔が空いて複数ノッチ分溜まっても、まとめて正しいデテント数に畳まれます。
+
+### 他の型・逆回転への調整
+
+「1 ノッチあたりのパルス数」はエンコーダの型で違うので、実機で回して合わせます。
+
+- 1 ノッチで **2 出る** → デテントがハーフ周期に来るタイプ。`setPulsesPerDetent(2)`。
+- 想定より多い/少ない → データシートの detents/revolution と cycles(pulses)/revolution の比を確認して `setPulsesPerDetent(n)`。
+- **逆回転**している → `mapToKeys(cw, ccw)` の引数を入れ替えるか、`mapToAxis` なら `config.setAxisScale(axis, -1)` で反転(NaturalScroll の例と同じ)。
+
+### 台数の上限
+
+1 アダプタ = 1 エンコーダ = 1 PCNT ユニット。チップの PCNT ユニット数まで並べられます(ESP32-S3 は 4 ユニット)。`SOC_PCNT_SUPPORTED` を持たないチップではこのアダプタはコンパイルされません。
+
 ## 追加依存ライブラリ
 
 core(`ESP32KeyBridge.h`)は依存ゼロ(純粋 C++)です。アダプタヘッダは**ヘッダのみ**なので、include したアダプタの分だけ依存ライブラリが必要になります(include しなければ不要)。
 
 | アダプタヘッダ | 依存ライブラリ | 入手 | sketch.yaml での指定例 |
 |---|---|---|---|
-| `ESP32KeyBridgeEspUsbHost.h` | [EspUsbHost](https://github.com/tanakamasayuki/EspUsbHost) 2.2.0 以上(`onKeyboardState`) | Arduino Library Manager | `- EspUsbHost` |
+| `ESP32KeyBridgeEspUsbHost.h` | [EspUsbHost](https://github.com/tanakamasayuki/EspUsbHost) 2.3.0 以上(2.2.0+ の `onKeyboardState` に加え、2.3.0 で report-ID/NKRO キーボードへの LED 送信) | Arduino Library Manager | `- EspUsbHost` |
 | `ESP32KeyBridgeEspUsbDevice.h` | [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) | Arduino Library Manager | `- EspUsbDevice` |
 | `ESP32KeyBridgeGpio.h` | なし(Arduino GPIO のみ) | - | - |
 | `ESP32KeyBridgeSerial.h` | なし(Arduino `Print` のみ) | - | - |
