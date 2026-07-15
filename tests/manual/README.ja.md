@@ -2,9 +2,9 @@
 
 このディレクトリには、自動化しにくい確認手順を置きます。
 
-## 複合 HID 出力の lock 正本(LED output report 受信)
+## 複合 HID 出力の lock 正本(実 PC の OS での確認)
 
-peer テストでは確認できない項目です(EspUsbHost 2.2.0 が boot 宣言キーボードにしか LED を送れないため skip 中。実 PC の OS は report ID を扱えるので手動で確認する)。
+LED output report → lock 正本の loopback は peer テスト(`usb_device_keyboard_output::test_host_leds_become_lock_state`、EspUsbHost 2.3.0 で有効化)で自動確認済み。ここでは **実 PC の OS(Windows / Linux / macOS)** が複合デバイスへ実際に LED output report を送るかを確認する(peer は EspUsbHost がホスト役なので、本物の OS スタックでの挙動は別途見る価値がある)。
 
 - 必要なもの: ESP32-S3 1台、実 PC(Windows / Linux / macOS いずれか)、実キーボード。
 - example: `FootSwitch`(または `SerialTextTyper`)をそのまま書き込み、S3 の USB OTG ポートを PC へ挿す。

@@ -49,7 +49,7 @@ ESP32-P4 は常時接続の自動テスト環境には含めません。P4 は U
 | 7 | Arduino runtime core smoke | | | 予定 | | |
 | 7 | USB Host keyboard / consumer input adapter | | 実装済み | | 実装済み(単キー / 修飾 / 多キー / キー+修飾 / consumer / LED / 切断解放) | 実 keyboard 確認 |
 | 7 | USB Host mouse input adapter | | | | 実装済み(X/Y 移動 / ホイール / 左右ボタン) | 実マウス確認 |
-| 7 | USB Device 複合 output adapter | | 実装済み | | 実装済み(単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY / 複合同時。LED→正本のみ skip) | Host OS 認識 / LED report |
+| 7 | USB Device 複合 output adapter | | 実装済み | | 実装済み(単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY / 複合同時 / LED→正本) | Host OS 認識 |
 | 7 | GPIO matrix / 単独キー input | 予定 | 予定 | | | 配線確認 |
 | 7 | BLE HID input / output | 予定 | 予定 | | | pairing 確認 |
 | - | 設定の保存 / 読み込み・CDC serial 設定 reference example | | 予定 | 予定 | | WebSerial 確認 |
@@ -63,7 +63,7 @@ peer テストは、USB adapter が実 USB 経由で期待どおり event / stat
 - `usb_host_keyboard`: Device 役 S3 が HID keyboard report を送信し、Host 役 S3 の USB Host adapter が受け取った key event を input pipeline へ流す。単キー(remap 込み)/ 修飾単独 / 多キー同時 / キー+修飾 / 終端ホストの LED 転送 / デバイス切断でホールドキー解放。
 - `usb_host_consumer`: Device 役 S3 の consumer control が押下集合に統合される。
 - `usb_host_mouse`: Device 役 S3 が HID mouse report を送信し、Host 役 S3 の `EspUsbHostMouseInputAdapter` が X/Y 移動・ホイール・左右ボタンを input pipeline(相対軸・マウスボタン)へ流す。
-- `usb_device_keyboard_output`: Device 役 S3 が output pipeline から複合 HID report を出力し、Host 役 S3 が USB Host で観測する。単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY / 複合同時(KEY_STATE→CONSUMER→MOUSE)。LED output report の受信(LockState 報告)は skip 中(下記制限)。
+- `usb_device_keyboard_output`: Device 役 S3 が output pipeline から複合 HID report を出力し、Host 役 S3 が USB Host で観測する。単キー / 修飾 / 6KRO / consumer / マウス ボタン・ホイール・XY / 複合同時(KEY_STATE→CONSUMER→MOUSE)/ LED output report 受信 → lock 正本。LED→正本は EspUsbHost 2.3.0 で report ID 付き複合デバイスへ SET_REPORT できるようになり有効化(2.2.0 では skip)。
 
 追加候補:
 

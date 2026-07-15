@@ -20,6 +20,11 @@
   writeText(), so existing behavior (e.g. UsKeyboardOnJapanesePc) is
   unchanged.
 
+- Expand the host unit coverage: KeySet iteration/merge/clear, the full
+  MouseUsage button range mapped to report bits, all four relative axes
+  scaled independently, text-macro lookup and capacity, fan-out to
+  multiple outputs, and the two Serial output adapters checked
+  byte-for-byte through a capturing `Print`.
 - The core_smoke unit sketch (~60 assertions over the whole core) can now
   also run on a real ESP32-S3: the same sketch gained an `esp32s3`
   profile (`pytest unit/core_smoke --profile esp32s3` with the optional
@@ -33,18 +38,23 @@
   loop() because the test runner attaches only after the board has run
   setup(), so a one-shot boot print is lost in that gap. Verified on real
   ESP32-S3 hardware; tests/single/ stays a placeholder pointing there.
-- Add the first hardware peer smoke tests (two directly-wired ESP32-S3
-  boards): `usb_host_keyboard` verifies the bridge input pipeline end to
-  end against a real boot keyboard device (remap, modifier-only
-  press/release, terminal-host CapsLock toggle forwarded to the keyboard
-  LEDs), `usb_host_consumer` verifies consumer events merging into the
-  key set, and `usb_device_keyboard_output` verifies the composite output
-  adapter's keyboard/consumer/mouse reports on the wire. 8 tests pass on
-  hardware; the LED-to-lock-authority test is skipped for now because
-  EspUsbHost 2.2.0 can only send LEDs to boot-declared keyboard
-  interfaces while the composite device merges its HID classes into one
-  report-ID interface — reported upstream, and the same limitation
-  applies to real report-ID/NKRO keyboards (noted in ADAPTERS).
+- Add hardware peer smoke tests (two directly-wired ESP32-S3 boards)
+  covering both USB adapter boundaries. `usb_host_keyboard`: the bridge
+  input pipeline against a real boot keyboard — remap, modifier-only,
+  multi-key rollover (remap applied inside the chord), key-with-modifier,
+  terminal-host CapsLock toggle forwarded to the LEDs, and a held key
+  released when the device drops off the bus (the device resets, since
+  EspUsbDevice has no bus-detach API). `usb_host_consumer`: consumer
+  events merging into the key set. `usb_host_mouse`: the mouse input
+  adapter — relative X/Y, wheel, and left/right buttons.
+  `usb_device_keyboard_output`: the composite output adapter — single key,
+  modifier, six-key rollover, consumer, mouse button/wheel/XY, a
+  composite frame emitting keyboard+consumer+mouse together (observed in
+  KEY_STATE→CONSUMER→MOUSE order), and the host LED output report becoming
+  the bridge lock authority. The LED-to-lock test needs EspUsbHost 2.3.0,
+  which sends a report-ID Set_Report to composite/NKRO keyboards that
+  declare no boot interface (2.2.0 reached only boot-declared keyboard
+  interfaces); the peer and example profiles pin 2.3.0.
 - Implement `GpioMatrixInputAdapter` and `RotaryEncoderInputAdapter` with
   the NumPad (GPIO key matrix, 4x3 numeric keypad) and VolumeKnob (rotary
   encoder volume control with a scroll-dial variation) examples. The
@@ -81,8 +91,8 @@
   has no kana LED path). The sketch-facing rule tightens: onKeyboardState /
   onConsumerControl / onMouse / onDeviceDisconnected belong to the
   adapters' shared hub, while the per-event onKeyboard stays free for
-  sketches. Every adapter used by the examples is now real; the P4 example
-  profiles pin EspUsbHost 2.2.0.
+  sketches. Every adapter used by the examples is now real; the example
+  profiles pin EspUsbHost 2.3.0.
 - Implement `EspUsbHostMouseInputAdapter`: all mice on the stack merged
   (button union, deltas summed) with per-address tracking so a disconnect
   releases only that mouse's buttons; movement and wheel accumulate as

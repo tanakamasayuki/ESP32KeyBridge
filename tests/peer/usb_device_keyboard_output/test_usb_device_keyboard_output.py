@@ -1,5 +1,4 @@
 import pexpect
-import pytest
 
 
 def _wait_mounted(device, retries=30):
@@ -132,13 +131,6 @@ def _wait_lock(device, expected, retries=20):
     raise AssertionError(f"lock state never became: {expected}")
 
 
-@pytest.mark.skip(
-    reason="EspUsbHost 2.2.0 setKeyboardLeds() only reaches boot-declared keyboard "
-    "interfaces; the bridge's composite device merges its HID classes into one "
-    "report-ID interface, so the test host cannot send the LED report. Reported "
-    "upstream (LED output to report-ID keyboards). Real PCs handle report IDs, "
-    "so the device-side path is covered by a manual OS check until then."
-)
 def test_host_leds_become_lock_state(dut, peers):
     device = peers["device"]
     _wait_mounted(device)
