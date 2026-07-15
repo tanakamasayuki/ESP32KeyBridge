@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- The core_smoke unit sketch (~60 assertions over the whole core) can now
+  also run on a real ESP32-S3: the same sketch gained an `esp32s3`
+  profile (`pytest unit/core_smoke --profile esp32s3` with the optional
+  single S3 connected) — no duplicated test sketch and no host/device
+  branch. The tests allocate a bridge (~7.3 KB) and a config (~5.6 KB) as
+  locals, so the sketch defines `getArduinoLoopTaskStackSize()` (24 KB) —
+  the weak hook arduino-esp32 calls to size the loop task; on the host
+  core it is just an uncalled function. The `esp32s3` profile uses
+  `USBMode=default` (like the examples), so Serial goes to the board's
+  external USB-serial (UART0). The result summary is re-emitted from
+  loop() because the test runner attaches only after the board has run
+  setup(), so a one-shot boot print is lost in that gap. Verified on real
+  ESP32-S3 hardware; tests/single/ stays a placeholder pointing there.
 - Add the first hardware peer smoke tests (two directly-wired ESP32-S3
   boards): `usb_host_keyboard` verifies the bridge input pipeline end to
   end against a real boot keyboard device (remap, modifier-only

@@ -1402,9 +1402,8 @@ static void run(const char *name, void (*test)())
 
 } // namespace
 
-void setup()
+static void runAllTests()
 {
-  Serial.begin(115200);
   run("key_identity_is_kind_plus_code", test_key_identity_is_kind_plus_code);
   run("key_converts_implicitly_from_usage_enums", test_key_converts_implicitly_from_usage_enums);
   run("key_kind_names", test_key_kind_names);
@@ -1463,4 +1462,33 @@ void setup()
   Serial.println(g_total);
 }
 
-void loop() {}
+// The tests allocate a bridge (~7.3 KB) and a config (~5.6 KB) as locals,
+// which overflows the default 8 KB loop task stack on real boards. The
+// arduino-esp32 core sizes the loop task with this weak hook (what its
+// SET_LOOP_TASK_STACK_SIZE macro expands to); on the host core it is
+// simply an uncalled function.
+size_t getArduinoLoopTaskStackSize() { return 24 * 1024; }
+
+void setup()
+{
+  Serial.begin(115200);
+  runAllTests();
+}
+
+void loop()
+{
+  // Re-emit the summary until the reader attaches. The test runner starts
+  // reading only after the board has booted and run setup(), so a
+  // one-shot print at boot is lost in that gap (confirmed empirically on
+  // this harness); a fixed pre-print delay would only paper over a
+  // gap whose length is environment-dependent. The runner matches the
+  // first line it sees and disconnects. If an assertion fails the board
+  // panics and never reaches here, so no summary is emitted and the run
+  // fails — the intended outcome. No-op on the host, which matches the
+  // first print from setup() before loop() runs.
+  Serial.print("TEST done ");
+  Serial.print(g_total);
+  Serial.print("/");
+  Serial.println(g_total);
+  delay(1000);
+}
