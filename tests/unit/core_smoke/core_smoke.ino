@@ -1,9 +1,45 @@
 #include <ESP32KeyBridge.h>
+#include <ESP32KeyBridgeSerial.h>
 #include <cassert>
+#include <cstring>
 
 namespace
 {
 int g_total = 0;
+
+// A Print sink that captures everything written into a fixed buffer, so the
+// serial output adapters can be checked byte-for-byte on the host without a
+// real port. Only write(uint8_t) is virtual in Print; print()/println() build
+// on it.
+class CaptureStream : public Print
+{
+public:
+  size_t write(uint8_t value) override
+  {
+    if (length_ + 1 < Capacity)
+    {
+      buffer_[length_++] = static_cast<char>(value);
+      buffer_[length_] = '\0';
+    }
+    return 1;
+  }
+  using Print::write;
+
+  void reset()
+  {
+    length_ = 0;
+    buffer_[0] = '\0';
+  }
+  const char *c_str() const { return buffer_; }
+  size_t length() const { return length_; }
+  uint8_t byteAt(size_t i) const { return static_cast<uint8_t>(buffer_[i]); }
+  bool has(const char *needle) const { return std::strstr(buffer_, needle) != nullptr; }
+
+private:
+  static constexpr size_t Capacity = 256;
+  char buffer_[Capacity] = {};
+  size_t length_ = 0;
+};
 
 static void test_key_identity_is_kind_plus_code()
 {
@@ -1445,6 +1481,263 @@ static void test_hid_mouse_report_builder()
   assert(report.overflow);
 }
 
+static void test_key_set_iteration_merge_and_clear()
+{
+  esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+  esp32keybridge::Key b = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::B);
+  esp32keybridge::Key c = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::C);
+
+  esp32keybridge::KeySet left;
+  assert(left.press(a));
+  assert(left.press(b));
+
+  // at() enumerates the pressed keys; every entry is a member.
+  bool sawA = false;
+  bool sawB = false;
+  for (size_t i = 0; i < left.count(); ++i)
+  {
+    const esp32keybridge::Key key = left.at(i);
+    assert(left.contains(key));
+    sawA = sawA || (key == a);
+    sawB = sawB || (key == b);
+  }
+  assert(sawA && sawB);
+  assert(!esp32keybridge::isValid(left.at(left.count()))); // out of range
+
+  // mergeFrom is a union: overlapping keys are not duplicated.
+  esp32keybridge::KeySet right;
+  assert(right.press(b));
+  assert(right.press(c));
+  assert(left.mergeFrom(right));
+  assert(left.count() == 3);
+  assert(left.contains(a) && left.contains(b) && left.contains(c));
+
+  // Merging past capacity reports the drop but keeps what fit.
+  esp32keybridge::KeySet full;
+  for (uint16_t i = 0; i < esp32keybridge::KeySet::MaxKeys; ++i)
+  {
+    assert(full.press(esp32keybridge::virtualKey(static_cast<uint16_t>(i + 1))));
+  }
+  esp32keybridge::KeySet extra;
+  assert(extra.press(esp32keybridge::virtualKey(1000)));
+  assert(!full.mergeFrom(extra));
+  assert(full.count() == esp32keybridge::KeySet::MaxKeys);
+
+  left.clear();
+  assert(left.count() == 0);
+  assert(!left.contains(a));
+}
+
+static void test_mouse_usage_buttons_map_to_report_bits()
+{
+  // The whole MouseUsage range converts to a Key implicitly and lands on the
+  // matching report bit (button N -> bit N-1).
+  struct
+  {
+    esp32keybridge::MouseUsage usage;
+    uint8_t bit;
+  } cases[] = {
+      {esp32keybridge::MouseUsage::Left, 0},    {esp32keybridge::MouseUsage::Right, 1},
+      {esp32keybridge::MouseUsage::Middle, 2},  {esp32keybridge::MouseUsage::Back, 3},
+      {esp32keybridge::MouseUsage::Forward, 4}, {esp32keybridge::MouseUsage::Button6, 5},
+      {esp32keybridge::MouseUsage::Button7, 6}, {esp32keybridge::MouseUsage::Button8, 7},
+  };
+
+  for (const auto &c : cases)
+  {
+    esp32keybridge::Key key = c.usage; // implicit conversion
+    esp32keybridge::KeySet keys;
+    assert(keys.press(key));
+    esp32keybridge::HidMouseReport report = esp32keybridge::buildHidMouseReport(keys);
+    assert(report.buttons == static_cast<uint8_t>(1u << c.bit));
+    assert(!report.overflow);
+  }
+
+  // Back + Forward together set two bits.
+  esp32keybridge::KeySet both;
+  assert(both.press(esp32keybridge::MouseUsage::Back));
+  assert(both.press(esp32keybridge::MouseUsage::Forward));
+  esp32keybridge::HidMouseReport report = esp32keybridge::buildHidMouseReport(both);
+  assert(report.buttons == 0x18); // bits 3 and 4
+}
+
+static void test_all_axes_scale_independently()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter mouse;
+  esp32keybridge::ManualOutputAdapter usb;
+  assert(bridge.addInput(mouse));
+  assert(bridge.addOutput(usb));
+
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  // Y left at the default scale of 1; the others get distinct scales.
+  assert(config.axisScale(esp32keybridge::Axis::Y) == 1);
+  config.setAxisScale(esp32keybridge::Axis::X, 3);
+  config.setAxisScale(esp32keybridge::Axis::Wheel, -2);
+  config.setAxisScale(esp32keybridge::Axis::Pan, 2);
+  assert(config.axisScale(esp32keybridge::Axis::X) == 3);
+  bridge.applyConfig(config);
+
+  mouse.addAxisDelta(esp32keybridge::Axis::X, 4);
+  mouse.addAxisDelta(esp32keybridge::Axis::Y, 5);
+  mouse.addAxisDelta(esp32keybridge::Axis::Wheel, 3);
+  mouse.addAxisDelta(esp32keybridge::Axis::Pan, 1);
+  bridge.update();
+
+  assert(bridge.axisDelta(esp32keybridge::Axis::X) == 12);
+  assert(bridge.axisDelta(esp32keybridge::Axis::Y) == 5); // unscaled
+  assert(bridge.axisDelta(esp32keybridge::Axis::Wheel) == -6);
+  assert(bridge.axisDelta(esp32keybridge::Axis::Pan) == 2);
+  assert(usb.axisTotal(esp32keybridge::Axis::Y) == 5);
+
+  // Every axis drains after the update.
+  bridge.update();
+  assert(bridge.axisDelta(esp32keybridge::Axis::X) == 0);
+  assert(bridge.axisDelta(esp32keybridge::Axis::Y) == 0);
+  assert(bridge.axisDelta(esp32keybridge::Axis::Wheel) == 0);
+  assert(bridge.axisDelta(esp32keybridge::Axis::Pan) == 0);
+}
+
+static void test_text_macro_lookup_and_capacity()
+{
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  esp32keybridge::Key fn1 = esp32keybridge::virtualKey(1);
+
+  // Not registered yet.
+  assert(config.findTextMacro(fn1) == nullptr);
+
+  assert(config.textMacro(fn1, "ok"));
+  const esp32keybridge::TextMacro *macro = config.findTextMacro(fn1);
+  assert(macro != nullptr);
+  assert(macro->length == 2);
+  assert(macro->text[0] == U'o' && macro->text[1] == U'k');
+
+  // Re-registering the same trigger overwrites in place (no new slot).
+  assert(config.textMacro(fn1, "hey"));
+  macro = config.findTextMacro(fn1);
+  assert(macro != nullptr && macro->length == 3 && macro->text[0] == U'h');
+
+  // Fill the remaining slots, then overflow.
+  assert(config.textMacro(esp32keybridge::virtualKey(2), "b"));
+  assert(config.textMacro(esp32keybridge::virtualKey(3), "c"));
+  assert(config.textMacro(esp32keybridge::virtualKey(4), "d"));
+  assert(!config.textMacro(esp32keybridge::virtualKey(5), "e"));
+  assert(config.findTextMacro(esp32keybridge::virtualKey(5)) == nullptr);
+
+  // Invalid arguments are rejected.
+  assert(!config.textMacro(esp32keybridge::Key(), "x"));
+  assert(!config.textMacro(fn1, nullptr));
+}
+
+static void test_multiple_outputs_receive_keys_text_axis()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualInputAdapter keyboard;
+  esp32keybridge::ManualOutputAdapter first;
+  esp32keybridge::ManualOutputAdapter second;
+  esp32keybridge::ManualOutputAdapter offline;
+  assert(bridge.addInput(keyboard));
+  assert(bridge.addOutput(first));
+  assert(bridge.addOutput(second));
+  assert(bridge.addOutput(offline));
+  offline.setConnected(false);
+
+  esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+
+  // Keys and relative axes fan out to every connected output.
+  assert(keyboard.press(a));
+  keyboard.addAxisDelta(esp32keybridge::Axis::Wheel, 2);
+  bridge.update();
+  assert(first.keys().contains(a));
+  assert(second.keys().contains(a));
+  assert(first.axisTotal(esp32keybridge::Axis::Wheel) == 2);
+  assert(second.axisTotal(esp32keybridge::Axis::Wheel) == 2);
+  assert(offline.writeCount() == 0);
+  assert(offline.axisTotal(esp32keybridge::Axis::Wheel) == 0);
+
+  // The text stream fans out the same way.
+  assert(bridge.typeChar(U'z'));
+  for (int i = 0; i < 6; ++i)
+  {
+    bridge.update();
+  }
+  assert(first.textCount() == 1 && first.lastText() == U'z');
+  assert(second.textCount() == 1 && second.lastText() == U'z');
+  assert(offline.textCount() == 0);
+}
+
+static void test_text_output_adapter_writes_utf8()
+{
+  CaptureStream stream;
+  esp32keybridge::TextOutputAdapter text(stream);
+
+  // ASCII: one byte.
+  text.writeText(U'a');
+  assert(stream.length() == 1 && stream.byteAt(0) == 0x61);
+
+  // U+00A5 YEN SIGN: two bytes.
+  stream.reset();
+  text.writeText(U'¥');
+  assert(stream.length() == 2 && stream.byteAt(0) == 0xc2 && stream.byteAt(1) == 0xa5);
+
+  // U+3042 HIRAGANA A: three bytes.
+  stream.reset();
+  text.writeText(U'あ');
+  assert(stream.length() == 3 && stream.byteAt(0) == 0xe3 && stream.byteAt(1) == 0x81 &&
+         stream.byteAt(2) == 0x82);
+
+  // U+1F600 GRINNING FACE: four bytes.
+  stream.reset();
+  text.writeText(U'\U0001f600');
+  assert(stream.length() == 4 && stream.byteAt(0) == 0xf0 && stream.byteAt(1) == 0x9f &&
+         stream.byteAt(2) == 0x98 && stream.byteAt(3) == 0x80);
+
+  // A text output ignores the key set entirely.
+  esp32keybridge::KeySet keys;
+  assert(keys.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A)));
+  stream.reset();
+  text.write(keys);
+  assert(stream.length() == 0);
+  assert(text.connected());
+}
+
+static void test_log_output_adapter_formats_lines()
+{
+  CaptureStream stream;
+  esp32keybridge::LogOutputAdapter log(stream);
+
+  // A key set change prints one KEYS line naming each key by kind and code.
+  esp32keybridge::KeySet keys;
+  assert(keys.press(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A)));
+  log.write(keys);
+  assert(stream.has("KEYS") && stream.has("keyboard:4"));
+
+  // Clearing prints the empty marker.
+  stream.reset();
+  esp32keybridge::KeySet empty;
+  log.write(empty);
+  assert(stream.has("(empty)"));
+
+  // No change, no line.
+  stream.reset();
+  log.write(empty);
+  assert(stream.length() == 0);
+
+  // Text and axis events each get their own line.
+  stream.reset();
+  log.writeText(U'A'); // 0x41
+  assert(stream.has("TEXT 41"));
+
+  stream.reset();
+  log.writeAxisDelta(esp32keybridge::Axis::Wheel, -3);
+  assert(stream.has("AXIS wheel -3"));
+
+  stream.reset();
+  log.writeAxisDelta(esp32keybridge::Axis::X, 5);
+  assert(stream.has("AXIS x +5"));
+  assert(log.connected());
+}
+
 static void run(const char *name, void (*test)())
 {
   Serial.print("RUN ");
@@ -1507,6 +1800,13 @@ static void runAllTests()
   run("layout_conversion_toggle_key", test_layout_conversion_toggle_key);
   run("convert_layout_emits_text_to_outputs", test_convert_layout_emits_text_to_outputs);
   run("no_convert_layout_emits_no_text", test_no_convert_layout_emits_no_text);
+  run("key_set_iteration_merge_and_clear", test_key_set_iteration_merge_and_clear);
+  run("mouse_usage_buttons_map_to_report_bits", test_mouse_usage_buttons_map_to_report_bits);
+  run("all_axes_scale_independently", test_all_axes_scale_independently);
+  run("text_macro_lookup_and_capacity", test_text_macro_lookup_and_capacity);
+  run("multiple_outputs_receive_keys_text_axis", test_multiple_outputs_receive_keys_text_axis);
+  run("text_output_adapter_writes_utf8", test_text_output_adapter_writes_utf8);
+  run("log_output_adapter_formats_lines", test_log_output_adapter_formats_lines);
   run("hid_keyboard_report_builder", test_hid_keyboard_report_builder);
   run("hid_keyboard_report_overflow", test_hid_keyboard_report_overflow);
   run("hid_consumer_report_builder", test_hid_consumer_report_builder);
