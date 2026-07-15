@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Add four examples that fill the remaining feature gaps. `NavLayer` (P4):
+  hold CapsLock to turn H/J/K/L into arrow keys on any USB keyboard — the
+  first momentary-layer example (`addLayer`/`setTrigger` with a virtual
+  trigger, press-time resolution). `LayerKeypad` (S3, GPIO): a keypad whose
+  four keys are navigation normally and media keys while an Fn key is held
+  (a layer remapping across key kinds). `MergeKeyboards` (P4): a USB
+  keyboard and GPIO macro buttons merged into one HID device (union of
+  multiple inputs, plus the USB adapter's own multi-keyboard merge).
+  `ScrollDial` (S3, GPIO): a rotary encoder as a mouse scroll/jog dial with
+  a middle-click push switch — the `mapToAxis()` counterpart to VolumeKnob.
+- Document the rotary encoder's x4 quadrature decoding and detent handling
+  in ADAPTERS (both phases, both edges → 4 counts per cycle, collapsed to
+  one notch by `setPulsesPerDetent`, remainder carried so no drift).
 - Add two Print-based output adapters (new `ESP32KeyBridgeSerial.h`, no
   external dependency): `TextOutputAdapter` writes the text stream to an
   Arduino `Print` (USB CDC Serial, a UART, ...) as UTF-8, and
