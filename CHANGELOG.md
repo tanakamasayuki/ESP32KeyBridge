@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Add two input-only USB Host adapters (EspUsbHost 2.3.0).
+  `EspUsbHostGamepadInputAdapter`: `mapButton(number, key)` maps HID buttons
+  (1-based) and `mapHat(up, down, left, right)` maps the D-pad to any keys;
+  only mapped controls emit, all gamepads on the stack merge, analog sticks
+  are out of scope for now. `EspUsbHostMidiInputAdapter`: `mapNote(note,
+  key)` maps MIDI notes (Note On presses, Note Off releases), `setChannel()`
+  narrows to one channel. Both feed the normal key set, so remap/layers/
+  merge apply; there is no gamepad/MIDI *output* (that would need the core
+  data model to carry those semantics). The shared EspUsbHost hub gained
+  gamepad and MIDI sinks. Examples: `GamepadToKeys` and `MidiToKeys` (P4).
 - Add four examples that fill the remaining feature gaps. `NavLayer` (P4):
   hold CapsLock to turn H/J/K/L into arrow keys on any USB keyboard — the
   first momentary-layer example (`addLayer`/`setTrigger` with a virtual

@@ -17,8 +17,9 @@
 // adapters therefore share one subscription per hook through an internal
 // hub and hand the data to the update() context behind a critical section.
 // Sketches must not set the hooks the adapters use themselves
-// (onKeyboardState, onConsumerControl, onMouse, onDeviceDisconnected).
-// The per-event onKeyboard hook stays free for sketches.
+// (onKeyboardState, onConsumerControl, onMouse, onGamepad, onMidiMessage,
+// onDeviceDisconnected). The per-event onKeyboard hook stays free for
+// sketches.
 
 namespace esp32keybridge
 {
@@ -37,6 +38,8 @@ public:
   using KeyboardStateSink = void (*)(void *context, const EspUsbHostKeyboardState &state);
   using ConsumerSink = void (*)(void *context, const EspUsbHostConsumerControlEvent &event);
   using MouseSink = void (*)(void *context, const EspUsbHostMouseEvent &event);
+  using GamepadSink = void (*)(void *context, const EspUsbHostGamepadEvent &event);
+  using MidiSink = void (*)(void *context, const EspUsbHostMidiMessage &message);
   using DisconnectSink = void (*)(void *context, uint8_t address);
 
   static EspUsbHostHub &forStack(EspUsbHost &usb)
@@ -76,6 +79,18 @@ public:
   {
     mouseContext_ = context;
     mouseSink_ = sink;
+  }
+
+  void setGamepadSink(GamepadSink sink, void *context)
+  {
+    gamepadContext_ = context;
+    gamepadSink_ = sink;
+  }
+
+  void setMidiSink(MidiSink sink, void *context)
+  {
+    midiContext_ = context;
+    midiSink_ = sink;
   }
 
   void addDisconnectSink(DisconnectSink sink, void *context)
@@ -119,6 +134,22 @@ private:
             mouseSink_(mouseContext_, event);
           }
         });
+    usb.onGamepad(
+        [this](const EspUsbHostGamepadEvent &event)
+        {
+          if (gamepadSink_ != nullptr)
+          {
+            gamepadSink_(gamepadContext_, event);
+          }
+        });
+    usb.onMidiMessage(
+        [this](const EspUsbHostMidiMessage &message)
+        {
+          if (midiSink_ != nullptr)
+          {
+            midiSink_(midiContext_, message);
+          }
+        });
     usb.onDeviceDisconnected(
         [this](const EspUsbHostDeviceInfo &info)
         {
@@ -139,6 +170,10 @@ private:
   void *consumerContext_ = nullptr;
   MouseSink mouseSink_ = nullptr;
   void *mouseContext_ = nullptr;
+  GamepadSink gamepadSink_ = nullptr;
+  void *gamepadContext_ = nullptr;
+  MidiSink midiSink_ = nullptr;
+  void *midiContext_ = nullptr;
   DisconnectSink disconnectSinks_[MaxDisconnectSinks] = {};
   void *disconnectContexts_[MaxDisconnectSinks] = {};
 };
@@ -486,6 +521,326 @@ private:
   Mouse mice_[MaxMice];
   size_t mouseCount_ = 0;
   int32_t pendingAxis_[kAxisCount] = {};
+};
+
+// USB gamepad input. Buttons and the hat/D-pad map to keys; only mapped
+// controls produce output, so the sketch decides what each control means
+// (any Key kind - keyboard, consumer, mouse button, or a virtual key to
+// remap/layer later). All gamepads on the stack are merged; a disconnect
+// drops only that pad's controls. Analog sticks and triggers are not mapped
+// in this version.
+//
+// Reports arrive as onGamepad (EspUsbHost 2.3.0): decoded HID fields. Button
+// page (0x09) fields are buttons (usage = HID button number, 1-based); the
+// Generic Desktop hat switch (usage 0x39) is the D-pad. Button numbers vary
+// by controller - watch a LogOutputAdapter to find which is which.
+class EspUsbHostGamepadInputAdapter : public InputAdapter
+{
+public:
+  static constexpr size_t MaxGamepads = 4;
+  static constexpr size_t MaxButtons = 32;
+
+  explicit EspUsbHostGamepadInputAdapter(EspUsbHost &usb) : usb_(usb) {}
+
+  // Map HID button `number` (1-based, as the controller reports it) to any
+  // Key. Returns false if the number is out of range; unmapped buttons
+  // produce nothing.
+  bool mapButton(uint8_t number, Key key)
+  {
+    if (number < 1 || number > MaxButtons)
+    {
+      return false;
+    }
+    buttonKeys_[number - 1] = key;
+    return true;
+  }
+
+  // Map the four hat/D-pad directions; diagonals press the two neighbours.
+  void mapHat(Key up, Key down, Key left, Key right)
+  {
+    hatUp_ = up;
+    hatDown_ = down;
+    hatLeft_ = left;
+    hatRight_ = right;
+  }
+
+  void update() override
+  {
+    if (!subscribed_)
+    {
+      subscribed_ = true;
+      detail::EspUsbHostHub &hub = detail::EspUsbHostHub::forStack(usb_);
+      hub.setGamepadSink(&EspUsbHostGamepadInputAdapter::handleGamepad, this);
+      hub.addDisconnectSink(&EspUsbHostGamepadInputAdapter::handleDisconnect, this);
+    }
+
+    uint32_t buttons[MaxGamepads];
+    int8_t hats[MaxGamepads];
+    size_t padCount;
+    portENTER_CRITICAL(&mux_);
+    padCount = padCount_;
+    for (size_t i = 0; i < padCount_; ++i)
+    {
+      buttons[i] = pads_[i].buttons;
+      hats[i] = pads_[i].hat;
+    }
+    portEXIT_CRITICAL(&mux_);
+
+    keys_.clear();
+    bool up = false, down = false, left = false, right = false;
+    for (size_t i = 0; i < padCount; ++i)
+    {
+      for (size_t b = 0; b < MaxButtons; ++b)
+      {
+        if ((buttons[i] & (1u << b)) != 0 && isValid(buttonKeys_[b]))
+        {
+          keys_.press(buttonKeys_[b]);
+        }
+      }
+      switch (hats[i])
+      {
+      case 0: up = true; break;
+      case 1: up = true; right = true; break;
+      case 2: right = true; break;
+      case 3: down = true; right = true; break;
+      case 4: down = true; break;
+      case 5: down = true; left = true; break;
+      case 6: left = true; break;
+      case 7: up = true; left = true; break;
+      default: break;
+      }
+    }
+    if (up && isValid(hatUp_)) keys_.press(hatUp_);
+    if (down && isValid(hatDown_)) keys_.press(hatDown_);
+    if (left && isValid(hatLeft_)) keys_.press(hatLeft_);
+    if (right && isValid(hatRight_)) keys_.press(hatRight_);
+    connected_ = padCount > 0;
+  }
+
+  const KeySet &keys() const override { return keys_; }
+  bool connected() const override { return connected_; }
+
+private:
+  struct Pad
+  {
+    uint8_t address = 0;
+    uint8_t interfaceNumber = 0;
+    uint32_t buttons = 0;
+    int8_t hat = -1;
+  };
+
+  // Fires from the EspUsbHost task.
+  static void handleGamepad(void *context, const EspUsbHostGamepadEvent &event)
+  {
+    EspUsbHostGamepadInputAdapter &self = *static_cast<EspUsbHostGamepadInputAdapter *>(context);
+    uint32_t buttons = 0;
+    int8_t hat = -1;
+    for (size_t i = 0; i < event.fieldCount; ++i)
+    {
+      const EspUsbHostHIDFieldValue &field = event.fields[i];
+      if (field.usagePage == 0x09) // Button page
+      {
+        if (field.usage >= 1 && field.usage <= MaxButtons && field.value != 0)
+        {
+          buttons |= (1u << (field.usage - 1));
+        }
+      }
+      else if (field.usagePage == 0x01 && field.usage == 0x39) // Hat switch
+      {
+        const int32_t dir = field.value - field.logicalMin;
+        if (dir >= 0 && dir <= 7)
+        {
+          hat = static_cast<int8_t>(dir);
+        }
+      }
+    }
+
+    portENTER_CRITICAL(&self.mux_);
+    size_t index = self.padCount_;
+    for (size_t i = 0; i < self.padCount_; ++i)
+    {
+      if (self.pads_[i].address == event.address &&
+          self.pads_[i].interfaceNumber == event.interfaceNumber)
+      {
+        index = i;
+        break;
+      }
+    }
+    if (index == self.padCount_ && self.padCount_ < MaxGamepads)
+    {
+      self.pads_[self.padCount_].address = event.address;
+      self.pads_[self.padCount_].interfaceNumber = event.interfaceNumber;
+      ++self.padCount_;
+    }
+    if (index < self.padCount_)
+    {
+      self.pads_[index].buttons = buttons;
+      self.pads_[index].hat = hat;
+    }
+    portEXIT_CRITICAL(&self.mux_);
+  }
+
+  // Fires from the EspUsbHost task (any device, not only gamepads).
+  static void handleDisconnect(void *context, uint8_t address)
+  {
+    EspUsbHostGamepadInputAdapter &self = *static_cast<EspUsbHostGamepadInputAdapter *>(context);
+    portENTER_CRITICAL(&self.mux_);
+    for (size_t i = self.padCount_; i > 0; --i)
+    {
+      if (self.pads_[i - 1].address == address)
+      {
+        self.pads_[i - 1] = self.pads_[self.padCount_ - 1];
+        --self.padCount_;
+      }
+    }
+    portEXIT_CRITICAL(&self.mux_);
+  }
+
+  EspUsbHost &usb_;
+  bool subscribed_ = false;
+  KeySet keys_;
+  bool connected_ = false;
+  Key buttonKeys_[MaxButtons] = {};
+  Key hatUp_, hatDown_, hatLeft_, hatRight_;
+  portMUX_TYPE mux_ = portMUX_INITIALIZER_UNLOCKED;
+  Pad pads_[MaxGamepads];
+  size_t padCount_ = 0;
+};
+
+// USB MIDI input. MIDI notes map to keys: Note On (velocity > 0) presses the
+// mapped key, Note Off (or Note On with velocity 0) releases it. Only mapped
+// notes produce output, and any Key kind is allowed, so a pad or piano key
+// can become a shortcut, a media key, or a virtual key to remap/layer later.
+//
+// Messages arrive as onMidiMessage (EspUsbHost 2.3.0). Every channel is
+// listened to by default; setChannel() narrows it to one. Only note on/off
+// are used - control changes, pitch bend, etc. are ignored in this version.
+class EspUsbHostMidiInputAdapter : public InputAdapter
+{
+public:
+  explicit EspUsbHostMidiInputAdapter(EspUsbHost &usb) : usb_(usb) {}
+
+  // Map a MIDI note (0-127) to any Key. Returns false if the note is out of
+  // range; unmapped notes produce nothing.
+  bool mapNote(uint8_t note, Key key)
+  {
+    if (note > 127)
+    {
+      return false;
+    }
+    noteKeys_[note] = key;
+    return true;
+  }
+
+  // Listen to one MIDI channel (0-15), or all channels with -1 (default).
+  void setChannel(int channel = -1) { channel_ = channel; }
+
+  void update() override
+  {
+    if (!subscribed_)
+    {
+      subscribed_ = true;
+      detail::EspUsbHostHub &hub = detail::EspUsbHostHub::forStack(usb_);
+      hub.setMidiSink(&EspUsbHostMidiInputAdapter::handleMidi, this);
+      hub.addDisconnectSink(&EspUsbHostMidiInputAdapter::handleDisconnect, this);
+    }
+
+    uint8_t onNotes[16];
+    size_t deviceCount;
+    portENTER_CRITICAL(&mux_);
+    memcpy(onNotes, onNotes_, sizeof(onNotes));
+    deviceCount = deviceCount_;
+    portEXIT_CRITICAL(&mux_);
+
+    keys_.clear();
+    for (size_t note = 0; note < 128; ++note)
+    {
+      if ((onNotes[note >> 3] & (1u << (note & 7))) != 0 && isValid(noteKeys_[note]))
+      {
+        keys_.press(noteKeys_[note]);
+      }
+    }
+    connected_ = deviceCount > 0;
+  }
+
+  const KeySet &keys() const override { return keys_; }
+  bool connected() const override { return connected_; }
+
+private:
+  static constexpr size_t MaxDevices = 4;
+
+  // Fires from the EspUsbHost task.
+  static void handleMidi(void *context, const EspUsbHostMidiMessage &message)
+  {
+    EspUsbHostMidiInputAdapter &self = *static_cast<EspUsbHostMidiInputAdapter *>(context);
+    const uint8_t type = message.status & 0xf0;
+    const uint8_t channel = message.status & 0x0f;
+    const bool noteOn = (type == 0x90) && (message.data2 > 0);
+    const bool noteOff = (type == 0x80) || ((type == 0x90) && (message.data2 == 0));
+
+    portENTER_CRITICAL(&self.mux_);
+    // Track the device for presence (and clearing stuck notes on unplug).
+    bool known = false;
+    for (size_t i = 0; i < self.deviceCount_; ++i)
+    {
+      if (self.devices_[i] == message.address)
+      {
+        known = true;
+        break;
+      }
+    }
+    if (!known && self.deviceCount_ < MaxDevices)
+    {
+      self.devices_[self.deviceCount_++] = message.address;
+    }
+
+    if ((self.channel_ < 0 || channel == self.channel_) && (noteOn || noteOff))
+    {
+      const uint8_t note = message.data1 & 0x7f;
+      if (noteOn)
+      {
+        self.onNotes_[note >> 3] |= static_cast<uint8_t>(1u << (note & 7));
+      }
+      else
+      {
+        self.onNotes_[note >> 3] &= static_cast<uint8_t>(~(1u << (note & 7)));
+      }
+    }
+    portEXIT_CRITICAL(&self.mux_);
+  }
+
+  // Fires from the EspUsbHost task (any device, not only MIDI).
+  static void handleDisconnect(void *context, uint8_t address)
+  {
+    EspUsbHostMidiInputAdapter &self = *static_cast<EspUsbHostMidiInputAdapter *>(context);
+    portENTER_CRITICAL(&self.mux_);
+    for (size_t i = self.deviceCount_; i > 0; --i)
+    {
+      if (self.devices_[i - 1] == address)
+      {
+        self.devices_[i - 1] = self.devices_[self.deviceCount_ - 1];
+        --self.deviceCount_;
+      }
+    }
+    // No MIDI device left: drop any notes still marked on, so they do not
+    // reappear when a device is plugged back in.
+    if (self.deviceCount_ == 0)
+    {
+      memset(self.onNotes_, 0, sizeof(self.onNotes_));
+    }
+    portEXIT_CRITICAL(&self.mux_);
+  }
+
+  EspUsbHost &usb_;
+  bool subscribed_ = false;
+  KeySet keys_;
+  bool connected_ = false;
+  int channel_ = -1;
+  Key noteKeys_[128] = {};
+  uint8_t onNotes_[16] = {};
+  portMUX_TYPE mux_ = portMUX_INITIALIZER_UNLOCKED;
+  uint8_t devices_[MaxDevices] = {};
+  size_t deviceCount_ = 0;
 };
 
 } // namespace esp32keybridge

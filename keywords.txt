@@ -28,6 +28,8 @@ ManualOutputAdapter	KEYWORD1
 InputConfig	KEYWORD1
 EspUsbHostKeyboardInputAdapter	KEYWORD1
 EspUsbHostMouseInputAdapter	KEYWORD1
+EspUsbHostGamepadInputAdapter	KEYWORD1
+EspUsbHostMidiInputAdapter	KEYWORD1
 EspUsbDeviceHidOutputAdapter	KEYWORD1
 GpioKeyInputAdapter	KEYWORD1
 GpioMatrixInputAdapter	KEYWORD1
@@ -112,6 +114,10 @@ setKeys	KEYWORD2
 setHasDiodes	KEYWORD2
 mapToKeys	KEYWORD2
 mapToAxis	KEYWORD2
+mapButton	KEYWORD2
+mapHat	KEYWORD2
+mapNote	KEYWORD2
+setChannel	KEYWORD2
 setPulsesPerDetent	KEYWORD2
 writeAxisDelta	KEYWORD2
 axisTotal	KEYWORD2

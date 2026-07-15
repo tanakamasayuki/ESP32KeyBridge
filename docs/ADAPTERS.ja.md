@@ -11,6 +11,8 @@
 | `ManualInputAdapter` | `ESP32KeyBridge.h`(core) | なし | **実装済み** | `press()` / `release()` で論理押下を注入。相対値(`addAxisDelta`)、切断模擬、LockState 受信の記録。自作入力の最小リファレンス |
 | `EspUsbHostKeyboardInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost 2.3.0+ | **実装済み(実機検証待ち)** | USB キーボード(スタック上の全キーボードを合算、最大 4 台。consumer キー = メディアキーやリモコンも合算、同時 8 usage)。`onKeyboardState` の 256-bit スナップショット(boot / report-ID boot / NKRO 共通、修飾キー単独変化含む)を KeySet に写像。boot のロールオーバーエラーコード(usage 0x01〜0x03)は除外。LockState を全キーボードの LED へ転送(num/caps/scroll。kana は EspUsbHost に転送手段なし。EspUsbHost 2.3.0 で report-ID/NKRO 専用キーボードへも LED を送れる = boot 宣言キーボードにしか送れなかった 2.2.0 の制限は解消)。presence は最初の report から、切断でそのデバイスのキーだけ解放 |
 | `EspUsbHostMouseInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost | **実装済み(実機検証待ち)** | USB マウス(スタック上の全マウスを合算、最大 4 台)。ボタン = MouseButton キー(union)、移動・ホイール = 相対軸(合算)。presence は最初の report から(列挙照会 API が無いため)、切断でそのマウスのボタンだけ解放 |
+| `EspUsbHostGamepadInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost 2.3.0+ | **実装済み(実機検証待ち)** | USB ゲームパッド(入力専用)。`mapButton(番号, key)` で HID ボタン(1 始まり)を任意の Key に、`mapHat(up,down,left,right)` で十字/ハット(8 方向、斜めは 2 キー)を写像。登録したコントロールだけ出力。全パッド合算(最大 4 台)、切断でそのパッドだけ解放。アナログスティック/トリガは未対応(現状) |
+| `EspUsbHostMidiInputAdapter` | `ESP32KeyBridgeEspUsbHost.h` | EspUsbHost 2.3.0+ | **実装済み(実機検証待ち)** | USB MIDI(入力専用)。`mapNote(ノート, key)` で MIDI ノート(0-127)を任意の Key に写像(Note On=押下 / Note Off・vel0=解放)。`setChannel(ch)` で 1 ch に限定(既定 全 ch)。Note On/Off のみ使用(CC・ピッチベンド等は無視)。登録したノートだけ出力、全 MIDI デバイス切断で残ノートをクリア |
 | `GpioKeyInputAdapter` | `ESP32KeyBridgeGpio.h` | Arduino GPIO のみ | **実装済み(実機検証待ち)** | `addKey(pin, key, activeLow, pullUp)` で最大 `SOC_GPIO_PIN_COUNT` キー。デバウンス内蔵(既定 5ms、`setDebounceMillis()` で調整)。ピン設定は登録後最初の `update()`。loop レート(≈1kHz)のポーリングで足りる |
 | BLE キーボード / マウス入力 | - | 専用 BLE ライブラリ(作成予定) | **構想(別ライブラリ完成待ち)** | BLE キーボード / マウス(HID over GATT central)。専用 BLE ライブラリ(central + peripheral 両役を 1 本、NimBLE ベース、クラシック非対応)を別途作成し、完成までこのライブラリでは BLE 非対応 |
 | `GpioMatrixInputAdapter` | `ESP32KeyBridgeGpio.h` | Arduino GPIO のみ | **実装済み(実機検証待ち)** | キーマトリクス(最大 16 行 × 16 列。スキャン・デバウンス・ゴースト判定は専用タスク 1kHz = loop がブロックしても取りこぼさない。初回 `update()` で起動、非アクティブ行は high-Z)。配線は `setRowPins()` / `setColPins()`(行 = スキャン出力、列 = プルアップ入力)、キーマップは `setKeys()` に行優先の並びで渡す(見た目 = 物理配置、座標番号なし。歯抜けは無効キー `Key()`)。ダイオード任意(無しはゴーストブロック = 確実な同時押し 2 キーまで。`setHasDiodes(true)` で無制限)。デバウンス内蔵 |
@@ -54,7 +56,7 @@ USB Device 出力は 1 種類で、常に**複合 HID デバイス**として PC
 | `GpioKeyInputAdapter` | `update()` 内で読む(**loop レート依存**) | **ブロック中より短い押下は取りこぼす**。ペダル・ボタンのような押下の長い入力専用の割り切り |
 | `GpioMatrixInputAdapter` | 専用タスク 1kHz(スキャン・デバウンス・ゴースト判定込み。初回 `update()` で起動) | 取りこぼさない(押下状態はタスク側で確定済み。反映が遅れるだけ) |
 | `RotaryEncoderInputAdapter` | PCNT ペリフェラルのハードウェア計数 | 取りこぼさない(カウンタが溜めている。反映が遅れるだけ) |
-| `EspUsbHostKeyboardInputAdapter` / `EspUsbHostMouseInputAdapter` | EspUsbHost のタスクからコールバック受け(critical section 越しの共有状態) | 取りこぼさない(キーボードは状態スナップショット保持。マウスの移動量は合算して保持) |
+| `EspUsbHostKeyboardInputAdapter` / `EspUsbHostMouseInputAdapter` / `EspUsbHostGamepadInputAdapter` / `EspUsbHostMidiInputAdapter` | EspUsbHost のタスクからコールバック受け(critical section 越しの共有状態) | 取りこぼさない(状態スナップショット保持。マウスの移動量は合算。MIDI は Note On/Off 状態を保持) |
 | `ManualInputAdapter` | スケッチが直接 `press()`/`release()` | スケッチ次第(呼んだものはそのまま残る) |
 
 出力側(`EspUsbDeviceHidOutputAdapter` 等)は状態スナップショット方式なので、`update()` が遅れても「最後の状態」が送られるだけで壊れません(タイピング・マクロの打鍵速度は update 間隔に比例して遅くなります)。
