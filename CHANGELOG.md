@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Add the first hardware peer smoke tests (two directly-wired ESP32-S3
+  boards): `usb_host_keyboard` verifies the bridge input pipeline end to
+  end against a real boot keyboard device (remap, modifier-only
+  press/release, terminal-host CapsLock toggle forwarded to the keyboard
+  LEDs), `usb_host_consumer` verifies consumer events merging into the
+  key set, and `usb_device_keyboard_output` verifies the composite output
+  adapter's keyboard/consumer/mouse reports on the wire. 8 tests pass on
+  hardware; the LED-to-lock-authority test is skipped for now because
+  EspUsbHost 2.2.0 can only send LEDs to boot-declared keyboard
+  interfaces while the composite device merges its HID classes into one
+  report-ID interface — reported upstream, and the same limitation
+  applies to real report-ID/NKRO keyboards (noted in ADAPTERS).
 - Implement `GpioMatrixInputAdapter` and `RotaryEncoderInputAdapter` with
   the NumPad (GPIO key matrix, 4x3 numeric keypad) and VolumeKnob (rotary
   encoder volume control with a scroll-dial variation) examples. The

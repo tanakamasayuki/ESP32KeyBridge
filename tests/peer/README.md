@@ -1,8 +1,10 @@
 # Peer Tests
 
-`usb_host_keyboard` is the first peer smoke test. The device board exposes an HID keyboard with `EspUsbDevice`, sends `A`, and the host board receives it with `EspUsbHost` before feeding it into the `esp32keybridge::ESP32KeyBridge` input pipeline.
+`usb_host_keyboard`: the device board exposes a boot-declared HID keyboard with `EspUsbDevice` and the host board's bridge input pipeline is verified end to end — remap (A→B), modifier-only press/release, and the terminal-host CapsLock toggle forwarded back to the keyboard LEDs.
 
-`usb_device_keyboard_output` checks the opposite adapter boundary: the peer device board feeds `A` through `esp32keybridge::ESP32KeyBridge` and sends it as a USB Device keyboard report, while the host DUT observes it with `EspUsbHost`.
+`usb_host_consumer`: consumer control press/release from a consumer-only device merges into the bridge key set through the keyboard input adapter.
+
+`usb_device_keyboard_output` checks the opposite adapter boundary: the peer device board drives the bridge output pipeline (manual input → composite HID output) and the host DUT observes the keyboard/consumer/mouse reports with `EspUsbHost`. The LED-to-lock test is skipped: EspUsbHost 2.2.0 can only send LEDs to boot-declared keyboard interfaces, and the composite device merges its HID classes into one report-ID interface (reported upstream; real PCs handle report IDs, covered by a manual OS check meanwhile).
 
 Two-board ESP32-S3 hardware tests.
 
