@@ -3,15 +3,15 @@ profiles:
     fqbn: lang-ship:host:host
     port: socket://localhost
     platforms:
-      - platform: lang-ship:host (1.4.6)
+      - platform: lang-ship:host (1.4.7)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../../
-
   # Same assertions on a real board: connect the optional S3
   # (TEST_SERIAL_PORT_ESP32S3) and run with --profile esp32s3. Serial goes
   # to UART0 (the board's external USB-serial chip), matching how the peer
   # boards are wired — not the native USB-OTG CDC.
+
   esp32s3:
     fqbn: esp32:esp32:esp32s3:USBMode=default
     platforms:
