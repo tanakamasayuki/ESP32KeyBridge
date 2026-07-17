@@ -4,8 +4,9 @@
 
 - Add AltGr (Right Alt) support to the keyboard layout model, reaching
   feature parity with the shared 4-plane keymap tables of the related
-  projects (see `docs/KEYMAP_FIX_REQUEST.ja.md`). `KeyboardLayoutEntry`
-  gains `altGr` / `altGrShift` Unicode codepoint planes and `KeyStroke`
+  projects (see the layout conversion section of `docs/DATA_MODEL.ja.md`).
+  `KeyboardLayoutEntry` gains `altGr` / `altGrShift` Unicode codepoint
+  planes and `KeyStroke`
   gains an `altGr` flag. `encode()` now searches base -> Shift -> AltGr ->
   AltGr+Shift and sets the matched plane's flags; `decode(key, shift,
   altGr)` selects the AltGr planes; `hasAltGr()` reports whether a layout
