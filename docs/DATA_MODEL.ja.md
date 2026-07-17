@@ -99,7 +99,15 @@
 |---|---|
 | `en_us` | ASCII 印字文字(U+0020〜U+007E) |
 | `ja_jp` | ASCII 印字文字(U+0020〜U+007E)+ `¥`(U+00A5) |
-| `de_de` | ASCII 印字文字(QWERTZ、AltGr 面で `@ € { [ ] } \ ~ \|` 等)+ ドイツ語特有文字(`ä ö ü ß §` および `² ³ µ`) |
+| 生成ロケール(下記) | 各 layout の base / Shift / AltGr / AltGr+Shift 各面の印字文字(ロケール固有の `ä ö ü ß € £ ñ ő` 等を含む) |
+
+`en_us` / `ja_jp` は手書き実装です。それ以外は共有 4-plane テーブル(`EspUsbHost/src/keymap/*.h`)から `tools/gen_keymaps.py` で `KeyboardLayoutEntry[]` を生成し、`src/ESP32KeyBridgeLayouts.inc` に出力します。生成対象は **`de_de` / `fr_fr` / `es_es` / `it_it` / `nl_nl` / `da_dk` / `nb_no` / `sv_se` / `fi_fi` / `en_gb` / `pt_pt` / `pt_br` / `fr_ch` / `hu_hu`** の 14 ロケールです。取得は `KeyboardLayout::byName("fr_fr")` 等(`de_de` は `deDe()` も可)。
+
+生成規則:
+- 列 = base / Shift / AltGr / AltGr+Shift の Unicode コードポイント(0 は当該面に文字なし)。
+- `capsAffects` は「Shift 列 == base の Unicode 大文字」で導出(memo 準拠)。Latin-1 の `ä→Ä` や Latin Extended-A の `ő→Ő` / `ű→Ű` も Unicode の大文字化で正しく判定します。
+- 制御キー(Enter / Tab / Esc / Backspace)とキーパッド系は表から除外(前者は typing engine、後者は主キー列へ展開する方針のため)。
+- 単一ソースから 4 プロジェクトを同期でき、共有テーブルの修正は再生成で取り込めます。
 
 読み捨てになった文字も含め、消費された文字はすべて文字対応の出力(`writeText`)には届きます(打鍵化の可否は HID 出力側だけの制約)。
 

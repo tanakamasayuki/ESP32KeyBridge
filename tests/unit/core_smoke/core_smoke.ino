@@ -897,6 +897,65 @@ static void test_de_de_altgr_encode_decode()
   assert(found);
 }
 
+static void test_generated_locales()
+{
+  esp32keybridge::KeyStroke stroke;
+  bool found = false;
+
+  // de_DE is regenerated from the shared 4-plane tables: the '#' key sits on
+  // NonUsHash (0x32), fixing the hand-authored placement on Backslash.
+  esp32keybridge::KeyboardLayout de = esp32keybridge::KeyboardLayout::deDe();
+  assert(de.decode(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::NonUsHash), false) ==
+         U'#');
+  assert(de.decode(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Backslash), false) ==
+         0);
+  assert(de.encode(U'@', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Q) && stroke.altGr);
+
+  // fr_FR (AZERTY): 'a' is on the physical Q position, 'q' on A; @ / € via AltGr.
+  esp32keybridge::KeyboardLayout fr = esp32keybridge::KeyboardLayout::byName("fr_fr", &found);
+  assert(found && fr.hasAltGr());
+  assert(fr.decode(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Q), false) == U'a');
+  assert(fr.decode(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A), false) == U'q');
+  assert(fr.encode(U'@', stroke) && stroke.altGr);
+  assert(fr.encode(U'€', stroke) && stroke.altGr);
+
+  // es_ES: ñ on its own key, @ via AltGr.
+  esp32keybridge::KeyboardLayout es = esp32keybridge::KeyboardLayout::byName("es_es", &found);
+  assert(found);
+  assert(es.encode(U'ñ', stroke) && !stroke.altGr);
+  assert(es.encode(U'@', stroke) && stroke.altGr);
+
+  // pt_BR: the ABNT2 extra key (International1) types '/' and '?'.
+  esp32keybridge::KeyboardLayout br = esp32keybridge::KeyboardLayout::byName("pt_br", &found);
+  assert(found);
+  assert(br.decode(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::International1), false) ==
+         U'/');
+  assert(br.decode(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::International1), true) ==
+         U'?');
+
+  // hu_HU: double-acute letters (Latin Extended-A) are Caps-affected -- the
+  // generated capsAffects rule handles non-Latin-1 casing.
+  esp32keybridge::KeyboardLayout hu = esp32keybridge::KeyboardLayout::byName("hu_hu", &found);
+  assert(found);
+  assert(hu.encode(U'ő', stroke) && hu.capsAffects(stroke.key));
+
+  // All bundled locales resolve and every one carries an AltGr plane.
+  const char *locales[] = {"de_de", "fr_fr", "es_es", "it_it", "nl_nl", "da_dk", "nb_no",
+                           "sv_se", "fi_fi", "en_gb", "pt_pt", "pt_br", "fr_ch", "hu_hu"};
+  for (const char *loc : locales)
+  {
+    found = false;
+    esp32keybridge::KeyboardLayout layout = esp32keybridge::KeyboardLayout::byName(loc, &found);
+    assert(found);
+    assert(layout.hasAltGr());
+  }
+
+  // Unknown locale falls back to en_us with found=false.
+  esp32keybridge::KeyboardLayout::byName("zz_zz", &found);
+  assert(!found);
+}
+
 static void test_typing_emits_altgr()
 {
   esp32keybridge::ESP32KeyBridge bridge;
@@ -1895,6 +1954,7 @@ static void runAllTests()
   run("first_lock_reporting_output_is_authority", test_first_lock_reporting_output_is_authority);
   run("host_layout_encode", test_host_layout_encode);
   run("de_de_altgr_encode_decode", test_de_de_altgr_encode_decode);
+  run("generated_locales", test_generated_locales);
   run("typing_emits_altgr", test_typing_emits_altgr);
   run("typing_produces_atomic_frames", test_typing_produces_atomic_frames);
   run("typing_parks_user_modifiers", test_typing_parks_user_modifiers);

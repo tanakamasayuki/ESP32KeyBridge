@@ -13,11 +13,18 @@
   layout conversion synthesizes/consumes Right Alt symmetrically: on an
   AltGr layout Right Alt drives the AltGr plane and is consumed like Shift,
   while layouts without AltGr (`en_us` / `ja_jp`) keep Right Alt as an
-  ordinary shortcut modifier (unchanged behavior). Adds a `de_DE` (German
-  T1, QWERTZ) preset — `KeyboardLayout::deDe()` / `byName("de_de")` — that
-  exercises the AltGr plane (`@ € { [ ] } \ ~ | ² ³ µ`). A full multi-locale
-  set is still best generated from the shared tables rather than
-  hand-maintained here.
+  ordinary shortcut modifier (unchanged behavior).
+- Bundle 14 additional keyboard layouts generated from the shared 4-plane
+  keymap tables of the related projects (`de_de`, `fr_fr`, `es_es`, `it_it`,
+  `nl_nl`, `da_dk`, `nb_no`, `sv_se`, `fi_fi`, `en_gb`, `pt_pt`, `pt_br`,
+  `fr_ch`, `hu_hu`), each with full AltGr support. `en_us` / `ja_jp` stay
+  hand-authored; the rest are produced by `tools/gen_keymaps.py` into
+  `src/ESP32KeyBridgeLayouts.inc`, so all projects stay in sync from one
+  source. The generator derives each key's `capsAffects` with the agreed
+  rule (Shift column == Unicode uppercase of base), which also handles
+  non-Latin-1 case pairs (e.g. Hungarian `ő`/`Ő`, `ű`/`Ű`). Get any locale
+  with `KeyboardLayout::byName("fr_fr")` (or `deDe()`); `de_DE` exercises the
+  AltGr plane (`@ € { [ ] } \ ~ | ² ³ µ`).
 - Add two input-only USB Host adapters (EspUsbHost 2.3.0).
   `EspUsbHostGamepadInputAdapter`: `mapButton(number, key)` maps HID buttons
   (1-based) and `mapHat(up, down, left, right)` maps the D-pad to any keys;

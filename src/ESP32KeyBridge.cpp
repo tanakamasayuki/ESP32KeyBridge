@@ -84,56 +84,15 @@ const KeyboardLayoutEntry kJaJpEntries[] = {
     {U(KeyboardUsage::International3), 0x00a5, '|', false}, // Yen sign
 };
 
-// German T1 (de_DE) as interpreted by a de_DE host. Hand-authored: it exercises
-// the AltGr plane end to end (@ € µ { [ ] } \ ~ | ² ³). QWERTZ swaps the Y/Z
-// positions, so usage Y produces 'z' and usage Z produces 'y'. Fields are
-// {usage, base, shift, capsAffects, altGr, altGrShift}. Dead keys (^ ´ `) are
-// listed by their spacing glyphs; dead-key composition is left to the host.
-// A full multi-locale set is better generated from the shared 4-plane tables
-// (see docs/KEYMAP_FIX_REQUEST.ja.md) than hand-maintained here.
-const KeyboardLayoutEntry kDeDeEntries[] = {
-    {U(KeyboardUsage::A), 'a', 'A', true}, {U(KeyboardUsage::B), 'b', 'B', true},
-    {U(KeyboardUsage::C), 'c', 'C', true}, {U(KeyboardUsage::D), 'd', 'D', true},
-    {U(KeyboardUsage::E), 'e', 'E', true, 0x20ac}, // AltGr = Euro
-    {U(KeyboardUsage::F), 'f', 'F', true}, {U(KeyboardUsage::G), 'g', 'G', true},
-    {U(KeyboardUsage::H), 'h', 'H', true}, {U(KeyboardUsage::I), 'i', 'I', true},
-    {U(KeyboardUsage::J), 'j', 'J', true}, {U(KeyboardUsage::K), 'k', 'K', true},
-    {U(KeyboardUsage::L), 'l', 'L', true},
-    {U(KeyboardUsage::M), 'm', 'M', true, 0x00b5}, // AltGr = micro sign
-    {U(KeyboardUsage::N), 'n', 'N', true}, {U(KeyboardUsage::O), 'o', 'O', true},
-    {U(KeyboardUsage::P), 'p', 'P', true},
-    {U(KeyboardUsage::Q), 'q', 'Q', true, '@'}, // AltGr = at sign
-    {U(KeyboardUsage::R), 'r', 'R', true}, {U(KeyboardUsage::S), 's', 'S', true},
-    {U(KeyboardUsage::T), 't', 'T', true}, {U(KeyboardUsage::U), 'u', 'U', true},
-    {U(KeyboardUsage::V), 'v', 'V', true}, {U(KeyboardUsage::W), 'w', 'W', true},
-    {U(KeyboardUsage::X), 'x', 'X', true},
-    {U(KeyboardUsage::Y), 'z', 'Z', true}, // QWERTZ: US-Y position -> z
-    {U(KeyboardUsage::Z), 'y', 'Y', true}, // QWERTZ: US-Z position -> y
-    {U(KeyboardUsage::Grave), 0x005e, 0x00b0, false},         // ^ / degree (dead)
-    {U(KeyboardUsage::Digit1), '1', '!', false},
-    {U(KeyboardUsage::Digit2), '2', '"', false, 0x00b2},      // AltGr = superscript two
-    {U(KeyboardUsage::Digit3), '3', 0x00a7, false, 0x00b3},   // shift = section, AltGr = superscript three
-    {U(KeyboardUsage::Digit4), '4', '$', false},
-    {U(KeyboardUsage::Digit5), '5', '%', false},
-    {U(KeyboardUsage::Digit6), '6', '&', false},
-    {U(KeyboardUsage::Digit7), '7', '/', false, '{'},         // AltGr = {
-    {U(KeyboardUsage::Digit8), '8', '(', false, '['},         // AltGr = [
-    {U(KeyboardUsage::Digit9), '9', ')', false, ']'},         // AltGr = ]
-    {U(KeyboardUsage::Digit0), '0', '=', false, '}'},         // AltGr = }
-    {U(KeyboardUsage::Minus), 0x00df, '?', false, '\\'},      // ss / ? , AltGr = backslash
-    {U(KeyboardUsage::Equal), 0x00b4, '`', false},            // acute / grave (dead)
-    {U(KeyboardUsage::LeftBracket), 0x00fc, 0x00dc, true},    // ue / UE
-    {U(KeyboardUsage::RightBracket), '+', '*', false, '~'},   // AltGr = ~
-    {U(KeyboardUsage::Backslash), '#', '\'', false},
-    {U(KeyboardUsage::Semicolon), 0x00f6, 0x00d6, true},      // oe / OE
-    {U(KeyboardUsage::Quote), 0x00e4, 0x00c4, true},          // ae / AE
-    {U(KeyboardUsage::NonUsBackslash), '<', '>', false, '|'}, // AltGr = |
-    {U(KeyboardUsage::Comma), ',', ';', false},
-    {U(KeyboardUsage::Period), '.', ':', false},
-    {U(KeyboardUsage::Slash), '-', '_', false},
-    {U(KeyboardUsage::Space), ' ', 0, false},
-};
 // clang-format on
+
+// Every other bundled locale (de_de, fr_fr, es_es, it_it, nl_nl, da_dk, nb_no,
+// sv_se, fi_fi, en_gb, pt_pt, pt_br, fr_ch, hu_hu) is generated from the shared
+// 4-plane keymap tables so all four projects stay in sync from one source; the
+// per-key capsAffects flag is derived there with the agreed rule (Shift column
+// == Unicode uppercase of base). Defines kDeDeEntries, ..., and the
+// kGeneratedLayouts registry. Regenerate with tools/gen_keymaps.py.
+#include "ESP32KeyBridgeLayouts.inc"
 
 bool nameEquals(const char *a, const char *b)
 {
@@ -182,6 +141,8 @@ KeyboardLayout KeyboardLayout::deDe()
 
 KeyboardLayout KeyboardLayout::byName(const char *name, bool *found)
 {
+  // en_us and ja_jp are hand-authored; the rest come from the generated
+  // registry (de_de and every other bundled locale).
   if (nameEquals(name, "ja_jp"))
   {
     if (found != nullptr)
@@ -190,13 +151,17 @@ KeyboardLayout KeyboardLayout::byName(const char *name, bool *found)
     }
     return jaJp();
   }
-  if (nameEquals(name, "de_de"))
+  for (size_t i = 0; i < sizeof(kGeneratedLayouts) / sizeof(kGeneratedLayouts[0]); ++i)
   {
-    if (found != nullptr)
+    if (nameEquals(name, kGeneratedLayouts[i].name))
     {
-      *found = true;
+      if (found != nullptr)
+      {
+        *found = true;
+      }
+      return KeyboardLayout(kGeneratedLayouts[i].entries, kGeneratedLayouts[i].count,
+                            kGeneratedLayouts[i].name);
     }
-    return deDe();
   }
   const bool isEnUs = nameEquals(name, "en_us");
   if (found != nullptr)
