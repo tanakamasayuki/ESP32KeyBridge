@@ -99,6 +99,7 @@
 |---|---|
 | `en_us` | ASCII 印字文字(U+0020〜U+007E) |
 | `ja_jp` | ASCII 印字文字(U+0020〜U+007E)+ `¥`(U+00A5) |
+| `de_de` | ASCII 印字文字(QWERTZ、AltGr 面で `@ € { [ ] } \ ~ \|` 等)+ ドイツ語特有文字(`ä ö ü ß §` および `² ³ µ`) |
 
 読み捨てになった文字も含め、消費された文字はすべて文字対応の出力(`writeText`)には届きます(打鍵化の可否は HID 出力側だけの制約)。
 
@@ -164,8 +165,8 @@
 - 英字・数字(単打)・ナビゲーション・修飾キー等の**恒等キーは素通し**します。変換対象は記号系のみ(US⇄JA で約 15 キー)。
 - **Shift の抑制と合成**: 物理 Shift があっても出力で外す、なくても出力で押す。押している間は維持する(長押し・リピートを保つ)。
 - 物理キーボードに存在しないキーも出力は送れます(`_` = Shift+0x87 等)。変換/無変換/かな などの IME キーの供給は変換表ではなく**通常の remap** で行います。
-- キーボードレイアウト記述(文字⇄(キー, Shift))から変換表を導出するか、ペア表を直接持つかは実装判断です。プリセットの命名は locale 形式(`en_us`、`ja_jp`)とします。
-- v1 の対象は Shift 面までです(AltGr を使う layout は将来メモ)。
+- キーボードレイアウト記述(文字⇄(キー, Shift/AltGr))から変換表を導出するか、ペア表を直接持つかは実装判断です。プリセットの命名は locale 形式(`en_us`、`ja_jp`、`de_de`)とします。
+- **4 面(base / Shift / AltGr / AltGr+Shift)に対応**します。`KeyboardLayoutEntry` は `altGr` / `altGrShift` の Unicode コードポイント面を持ち、`KeyStroke` は Right Alt(AltGr)フラグを持ちます。`encode` は base→Shift→AltGr→AltGr+Shift の順で逆引きし、ヒットした面のフラグ(shift / altGr)を立てます。`decode(key, shift, altGr)` は AltGr 面も参照します。AltGr 面を持つ layout(例: `de_de`)を刻印に指定した入力では、Right Alt は AltGr として消費され(Shift と同様)、出力側では変換キーごとに Right Alt を再合成します。AltGr 面を持たない layout(`en_us` / `ja_jp`)では Right Alt は従来どおりショートカット修飾として素通しします。
 
 ### 運用要件と制約
 

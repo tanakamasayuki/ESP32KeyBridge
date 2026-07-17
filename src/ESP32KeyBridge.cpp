@@ -83,6 +83,56 @@ const KeyboardLayoutEntry kJaJpEntries[] = {
     {U(KeyboardUsage::International1), '\\', '_', false},
     {U(KeyboardUsage::International3), 0x00a5, '|', false}, // Yen sign
 };
+
+// German T1 (de_DE) as interpreted by a de_DE host. Hand-authored: it exercises
+// the AltGr plane end to end (@ € µ { [ ] } \ ~ | ² ³). QWERTZ swaps the Y/Z
+// positions, so usage Y produces 'z' and usage Z produces 'y'. Fields are
+// {usage, base, shift, capsAffects, altGr, altGrShift}. Dead keys (^ ´ `) are
+// listed by their spacing glyphs; dead-key composition is left to the host.
+// A full multi-locale set is better generated from the shared 4-plane tables
+// (see docs/KEYMAP_FIX_REQUEST.ja.md) than hand-maintained here.
+const KeyboardLayoutEntry kDeDeEntries[] = {
+    {U(KeyboardUsage::A), 'a', 'A', true}, {U(KeyboardUsage::B), 'b', 'B', true},
+    {U(KeyboardUsage::C), 'c', 'C', true}, {U(KeyboardUsage::D), 'd', 'D', true},
+    {U(KeyboardUsage::E), 'e', 'E', true, 0x20ac}, // AltGr = Euro
+    {U(KeyboardUsage::F), 'f', 'F', true}, {U(KeyboardUsage::G), 'g', 'G', true},
+    {U(KeyboardUsage::H), 'h', 'H', true}, {U(KeyboardUsage::I), 'i', 'I', true},
+    {U(KeyboardUsage::J), 'j', 'J', true}, {U(KeyboardUsage::K), 'k', 'K', true},
+    {U(KeyboardUsage::L), 'l', 'L', true},
+    {U(KeyboardUsage::M), 'm', 'M', true, 0x00b5}, // AltGr = micro sign
+    {U(KeyboardUsage::N), 'n', 'N', true}, {U(KeyboardUsage::O), 'o', 'O', true},
+    {U(KeyboardUsage::P), 'p', 'P', true},
+    {U(KeyboardUsage::Q), 'q', 'Q', true, '@'}, // AltGr = at sign
+    {U(KeyboardUsage::R), 'r', 'R', true}, {U(KeyboardUsage::S), 's', 'S', true},
+    {U(KeyboardUsage::T), 't', 'T', true}, {U(KeyboardUsage::U), 'u', 'U', true},
+    {U(KeyboardUsage::V), 'v', 'V', true}, {U(KeyboardUsage::W), 'w', 'W', true},
+    {U(KeyboardUsage::X), 'x', 'X', true},
+    {U(KeyboardUsage::Y), 'z', 'Z', true}, // QWERTZ: US-Y position -> z
+    {U(KeyboardUsage::Z), 'y', 'Y', true}, // QWERTZ: US-Z position -> y
+    {U(KeyboardUsage::Grave), 0x005e, 0x00b0, false},         // ^ / degree (dead)
+    {U(KeyboardUsage::Digit1), '1', '!', false},
+    {U(KeyboardUsage::Digit2), '2', '"', false, 0x00b2},      // AltGr = superscript two
+    {U(KeyboardUsage::Digit3), '3', 0x00a7, false, 0x00b3},   // shift = section, AltGr = superscript three
+    {U(KeyboardUsage::Digit4), '4', '$', false},
+    {U(KeyboardUsage::Digit5), '5', '%', false},
+    {U(KeyboardUsage::Digit6), '6', '&', false},
+    {U(KeyboardUsage::Digit7), '7', '/', false, '{'},         // AltGr = {
+    {U(KeyboardUsage::Digit8), '8', '(', false, '['},         // AltGr = [
+    {U(KeyboardUsage::Digit9), '9', ')', false, ']'},         // AltGr = ]
+    {U(KeyboardUsage::Digit0), '0', '=', false, '}'},         // AltGr = }
+    {U(KeyboardUsage::Minus), 0x00df, '?', false, '\\'},      // ss / ? , AltGr = backslash
+    {U(KeyboardUsage::Equal), 0x00b4, '`', false},            // acute / grave (dead)
+    {U(KeyboardUsage::LeftBracket), 0x00fc, 0x00dc, true},    // ue / UE
+    {U(KeyboardUsage::RightBracket), '+', '*', false, '~'},   // AltGr = ~
+    {U(KeyboardUsage::Backslash), '#', '\'', false},
+    {U(KeyboardUsage::Semicolon), 0x00f6, 0x00d6, true},      // oe / OE
+    {U(KeyboardUsage::Quote), 0x00e4, 0x00c4, true},          // ae / AE
+    {U(KeyboardUsage::NonUsBackslash), '<', '>', false, '|'}, // AltGr = |
+    {U(KeyboardUsage::Comma), ',', ';', false},
+    {U(KeyboardUsage::Period), '.', ':', false},
+    {U(KeyboardUsage::Slash), '-', '_', false},
+    {U(KeyboardUsage::Space), ' ', 0, false},
+};
 // clang-format on
 
 bool nameEquals(const char *a, const char *b)
@@ -125,6 +175,11 @@ KeyboardLayout KeyboardLayout::jaJp()
   return KeyboardLayout(kJaJpEntries, sizeof(kJaJpEntries) / sizeof(kJaJpEntries[0]), "ja_jp");
 }
 
+KeyboardLayout KeyboardLayout::deDe()
+{
+  return KeyboardLayout(kDeDeEntries, sizeof(kDeDeEntries) / sizeof(kDeDeEntries[0]), "de_de");
+}
+
 KeyboardLayout KeyboardLayout::byName(const char *name, bool *found)
 {
   if (nameEquals(name, "ja_jp"))
@@ -134,6 +189,14 @@ KeyboardLayout KeyboardLayout::byName(const char *name, bool *found)
       *found = true;
     }
     return jaJp();
+  }
+  if (nameEquals(name, "de_de"))
+  {
+    if (found != nullptr)
+    {
+      *found = true;
+    }
+    return deDe();
   }
   const bool isEnUs = nameEquals(name, "en_us");
   if (found != nullptr)
@@ -155,6 +218,7 @@ bool KeyboardLayout::encode(char32_t codepoint, KeyStroke &stroke) const
     {
       stroke.key = keyboardKey(entries_[i].usage);
       stroke.shift = false;
+      stroke.altGr = false;
       return true;
     }
   }
@@ -164,6 +228,27 @@ bool KeyboardLayout::encode(char32_t codepoint, KeyStroke &stroke) const
     {
       stroke.key = keyboardKey(entries_[i].usage);
       stroke.shift = true;
+      stroke.altGr = false;
+      return true;
+    }
+  }
+  for (size_t i = 0; i < count_; ++i)
+  {
+    if (entries_[i].altGr == codepoint)
+    {
+      stroke.key = keyboardKey(entries_[i].usage);
+      stroke.shift = false;
+      stroke.altGr = true;
+      return true;
+    }
+  }
+  for (size_t i = 0; i < count_; ++i)
+  {
+    if (entries_[i].altGrShift == codepoint)
+    {
+      stroke.key = keyboardKey(entries_[i].usage);
+      stroke.shift = true;
+      stroke.altGr = true;
       return true;
     }
   }
@@ -171,6 +256,11 @@ bool KeyboardLayout::encode(char32_t codepoint, KeyStroke &stroke) const
 }
 
 char32_t KeyboardLayout::decode(Key key, bool shift) const
+{
+  return decode(key, shift, false);
+}
+
+char32_t KeyboardLayout::decode(Key key, bool shift, bool altGr) const
 {
   if (key.kind != KeyKind::Keyboard)
   {
@@ -180,10 +270,26 @@ char32_t KeyboardLayout::decode(Key key, bool shift) const
   {
     if (entries_[i].usage == key.code)
     {
+      if (altGr)
+      {
+        return shift ? entries_[i].altGrShift : entries_[i].altGr;
+      }
       return shift ? entries_[i].shift : entries_[i].base;
     }
   }
   return 0;
+}
+
+bool KeyboardLayout::hasAltGr() const
+{
+  for (size_t i = 0; i < count_; ++i)
+  {
+    if (entries_[i].altGr != 0 || entries_[i].altGrShift != 0)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool KeyboardLayout::capsAffects(Key key) const
@@ -1132,9 +1238,11 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
   Key key = source;
   bool converted = false;
   bool requiresShift = false;
-  bool dropped = false;       // conversion produced an untypable character
-  bool shiftConsumed = false; // Shift of a converting input, used for decode
-  char32_t textChar = 0;      // decoded character delivered to text outputs
+  bool requiresAltGr = false;
+  bool dropped = false;        // conversion produced an untypable character
+  bool shiftConsumed = false;  // Shift of a converting input, used for decode
+  bool altGrConsumed = false;  // Right Alt of an AltGr converting input
+  char32_t textChar = 0;       // decoded character delivered to text outputs
 
   // Layout conversion runs first, on the raw physical key of the engraving.
   if (layoutConversionEnabled_ && perInput != nullptr && perInput->convertsLayout() &&
@@ -1143,24 +1251,36 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
     const KeySet &inputKeys = inputs_[inputIndex]->keys();
     const Key leftShift = keyboardKey(KeyboardUsage::LeftShift);
     const Key rightShift = keyboardKey(KeyboardUsage::RightShift);
+    const Key rightAlt = keyboardKey(KeyboardUsage::RightAlt);
+    // On a layout whose engraving carries an AltGr plane, Right Alt selects
+    // that plane and is consumed like Shift; the host-side Right Alt is
+    // re-synthesized per converted key. Layouts without AltGr keep Right Alt
+    // as an ordinary shortcut modifier (unchanged behavior).
+    const bool engravingHasAltGr = perInput->engraving().hasAltGr();
     if (source == leftShift || source == rightShift)
     {
       shiftConsumed = true;
     }
+    else if (engravingHasAltGr && source == rightAlt)
+    {
+      altGrConsumed = true;
+    }
     else
     {
       // Shortcut rule: keys pressed while Ctrl/Alt/GUI is held on the same
-      // input pass through unconverted (position semantics).
+      // input pass through unconverted (position semantics). Right Alt counts
+      // as a shortcut modifier only when the engraving has no AltGr plane.
       const bool shortcut = inputKeys.contains(keyboardKey(KeyboardUsage::LeftCtrl)) ||
                             inputKeys.contains(keyboardKey(KeyboardUsage::RightCtrl)) ||
                             inputKeys.contains(keyboardKey(KeyboardUsage::LeftAlt)) ||
-                            inputKeys.contains(keyboardKey(KeyboardUsage::RightAlt)) ||
                             inputKeys.contains(keyboardKey(KeyboardUsage::LeftGui)) ||
-                            inputKeys.contains(keyboardKey(KeyboardUsage::RightGui));
+                            inputKeys.contains(keyboardKey(KeyboardUsage::RightGui)) ||
+                            (!engravingHasAltGr && inputKeys.contains(rightAlt));
       if (!shortcut)
       {
         const bool shifted = inputKeys.contains(leftShift) || inputKeys.contains(rightShift);
-        const char32_t codepoint = perInput->engraving().decode(source, shifted);
+        const bool altGr = engravingHasAltGr && inputKeys.contains(rightAlt);
+        const char32_t codepoint = perInput->engraving().decode(source, shifted, altGr);
         // Text-native outputs take the decoded character regardless of
         // whether the host layout can re-encode it (e.g. Yen on an en_us
         // host is dropped for HID but is still valid text). Enter and Tab
@@ -1186,6 +1306,7 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
           {
             key = stroke.key;
             requiresShift = stroke.shift;
+            requiresAltGr = stroke.altGr;
             converted = true;
           }
           else
@@ -1202,7 +1323,7 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
 
   bool disabled = false;
   uint8_t triggerMask = 0;
-  if (!shiftConsumed && !dropped)
+  if (!shiftConsumed && !altGrConsumed && !dropped)
   {
     if (!converted && perInput != nullptr)
     {
@@ -1234,6 +1355,7 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
   entry.layerTriggerMask = triggerMask;
   entry.converted = converted;
   entry.requiresShift = converted && requiresShift;
+  entry.requiresAltGr = converted && requiresAltGr;
 
   // Side effects live below the triggersOnly gate so the two press passes
   // cannot double-apply them.
@@ -1262,7 +1384,7 @@ void ESP32KeyBridge::resolvePress(uint8_t inputIndex, Key source, bool triggersO
       }
     }
   }
-  else if (!disabled && !shiftConsumed && !dropped)
+  else if (!disabled && !shiftConsumed && !altGrConsumed && !dropped)
   {
     if (esp32keybridge::isValid(config_.layoutConversionToggle) &&
         key == config_.layoutConversionToggle)
@@ -1354,6 +1476,7 @@ void ESP32KeyBridge::update()
 
   output_.clear();
   bool synthesizeShift = false;
+  bool synthesizeAltGr = false;
   for (size_t i = 0; i < heldCount_; ++i)
   {
     if (!esp32keybridge::isValid(held_[i].resolved))
@@ -1368,10 +1491,18 @@ void ESP32KeyBridge::update()
     {
       synthesizeShift = true;
     }
+    if (held_[i].requiresAltGr)
+    {
+      synthesizeAltGr = true;
+    }
   }
   if (synthesizeShift)
   {
     output_.press(keyboardKey(KeyboardUsage::LeftShift));
+  }
+  if (synthesizeAltGr)
+  {
+    output_.press(keyboardKey(KeyboardUsage::RightAlt));
   }
 
   // A converting input's Shift keys are consumed for decoding, but while a
@@ -1491,6 +1622,7 @@ void ESP32KeyBridge::enqueueMacro(const TextMacro &macro)
 
 bool ESP32KeyBridge::encodeCharForTyping(char32_t codepoint, KeyStroke &stroke) const
 {
+  stroke.altGr = false; // control-char cases below carry no AltGr
   switch (codepoint)
   {
   case '\t':
@@ -1587,6 +1719,10 @@ void ESP32KeyBridge::stepTyping()
   if (typingStroke_.shift)
   {
     result.press(keyboardKey(KeyboardUsage::LeftShift));
+  }
+  if (typingStroke_.altGr)
+  {
+    result.press(keyboardKey(KeyboardUsage::RightAlt));
   }
   if (typingPhase_ == 1)
   {

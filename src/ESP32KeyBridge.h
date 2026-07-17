@@ -407,6 +407,7 @@ struct KeyStroke
 {
   Key key;
   bool shift = false;
+  bool altGr = false; // Right Alt (AltGr) required for this stroke
 };
 
 struct KeyboardLayoutEntry
@@ -415,6 +416,11 @@ struct KeyboardLayoutEntry
   uint16_t base;  // codepoint without shift (0 = none)
   uint16_t shift; // codepoint with shift (0 = none)
   bool capsAffects;
+  // AltGr (Right Alt) plane; 0 = the key produces nothing there. Appended
+  // after capsAffects so layouts with no AltGr keep the compact
+  // {usage, base, shift, capsAffects} initializer and stay unchanged.
+  uint16_t altGr = 0;      // codepoint with AltGr
+  uint16_t altGrShift = 0; // codepoint with AltGr+Shift
 };
 
 class KeyboardLayout
@@ -424,18 +430,26 @@ public:
 
   static KeyboardLayout enUs();
   static KeyboardLayout jaJp();
-  // Lookup by locale name ("en_us", "ja_jp"). Returns en_us when unknown and
-  // sets *found to false if provided.
+  static KeyboardLayout deDe();
+  // Lookup by locale name ("en_us", "ja_jp", "de_de"). Returns en_us when
+  // unknown and sets *found to false if provided.
   static KeyboardLayout byName(const char *name, bool *found = nullptr);
 
   // Encodes a printable character. Returns false when this layout cannot
   // type the character. Control characters are handled by the typing engine.
+  // Searches base -> Shift -> AltGr -> AltGr+Shift and sets the stroke's
+  // shift / altGr flags for the plane that matched.
   bool encode(char32_t codepoint, KeyStroke &stroke) const;
 
   // Decodes a key press under this layout (as engraved on a keyboard, or as
   // interpreted by a host). Returns 0 when the key produces no character in
-  // that plane.
+  // that plane. The two-argument form reads the base/Shift planes; the
+  // three-argument form also selects the AltGr / AltGr+Shift planes.
   char32_t decode(Key key, bool shift) const;
+  char32_t decode(Key key, bool shift, bool altGr) const;
+
+  // True when any key in this layout carries an AltGr (Right Alt) plane.
+  bool hasAltGr() const;
 
   // True when Caps Lock inverts the shift requirement of this stroke's key.
   bool capsAffects(Key key) const;
@@ -1067,6 +1081,7 @@ private:
     uint8_t layerTriggerMask = 0;
     bool converted = false;     // produced by layout conversion
     bool requiresShift = false; // synthesized Shift while held (converted only)
+    bool requiresAltGr = false; // synthesized Right Alt while held (converted only)
   };
 
   size_t findHeld(uint8_t inputIndex, Key source) const;

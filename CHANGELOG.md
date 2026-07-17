@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Add AltGr (Right Alt) support to the keyboard layout model, reaching
+  feature parity with the shared 4-plane keymap tables of the related
+  projects (see `docs/KEYMAP_FIX_REQUEST.ja.md`). `KeyboardLayoutEntry`
+  gains `altGr` / `altGrShift` Unicode codepoint planes and `KeyStroke`
+  gains an `altGr` flag. `encode()` now searches base -> Shift -> AltGr ->
+  AltGr+Shift and sets the matched plane's flags; `decode(key, shift,
+  altGr)` selects the AltGr planes; `hasAltGr()` reports whether a layout
+  uses them. The typing engine emits Right Alt for AltGr characters, and
+  layout conversion synthesizes/consumes Right Alt symmetrically: on an
+  AltGr layout Right Alt drives the AltGr plane and is consumed like Shift,
+  while layouts without AltGr (`en_us` / `ja_jp`) keep Right Alt as an
+  ordinary shortcut modifier (unchanged behavior). Adds a `de_DE` (German
+  T1, QWERTZ) preset — `KeyboardLayout::deDe()` / `byName("de_de")` — that
+  exercises the AltGr plane (`@ € { [ ] } \ ~ | ² ³ µ`). A full multi-locale
+  set is still best generated from the shared tables rather than
+  hand-maintained here.
 - Add two input-only USB Host adapters (EspUsbHost 2.3.0).
   `EspUsbHostGamepadInputAdapter`: `mapButton(number, key)` maps HID buttons
   (1-based) and `mapHat(up, down, left, right)` maps the D-pad to any keys;

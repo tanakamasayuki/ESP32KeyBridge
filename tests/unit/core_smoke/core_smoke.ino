@@ -850,6 +850,119 @@ static void test_host_layout_encode()
   assert(stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftBracket));
   esp32keybridge::KeyboardLayout::byName("xx_xx", &found);
   assert(!found);
+
+  // en_us / ja_jp carry no AltGr plane; the flag is always false.
+  assert(!enUs.hasAltGr());
+  assert(!jaJp.hasAltGr());
+  assert(enUs.encode(U'@', stroke) && !stroke.altGr);
+}
+
+static void test_de_de_altgr_encode_decode()
+{
+  esp32keybridge::KeyStroke stroke;
+  esp32keybridge::KeyboardLayout de = esp32keybridge::KeyboardLayout::deDe();
+  assert(de.hasAltGr());
+
+  // AltGr plane: @ € { [ ] } \ ~ | are reached with the altGr flag set.
+  assert(de.encode(U'@', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Q) &&
+         !stroke.shift && stroke.altGr);
+  assert(de.encode(U'€', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::E) &&
+         stroke.altGr);
+  assert(de.encode(U'{', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit7) &&
+         stroke.altGr);
+  assert(de.encode(U'|', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::NonUsBackslash) &&
+         stroke.altGr);
+
+  // QWERTZ Y/Z swap and the base/Shift planes clear the altGr flag.
+  assert(de.encode(U'z', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Y) && !stroke.altGr);
+  assert(de.encode(U'y', stroke) &&
+         stroke.key == esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Z) && !stroke.altGr);
+  assert(de.encode(U'a', stroke) && !stroke.shift && !stroke.altGr);
+
+  // decode: two-arg reads base/Shift, three-arg selects the AltGr plane.
+  esp32keybridge::Key q = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Q);
+  assert(de.decode(q, false) == U'q');
+  assert(de.decode(q, false, false) == U'q');
+  assert(de.decode(q, false, true) == U'@');
+  esp32keybridge::Key a = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::A);
+  assert(de.decode(a, false, true) == 0); // A has no AltGr plane
+
+  bool found = false;
+  assert(esp32keybridge::KeyboardLayout::byName("de_de", &found).hasAltGr());
+  assert(found);
+}
+
+static void test_typing_emits_altgr()
+{
+  esp32keybridge::ESP32KeyBridge bridge;
+  esp32keybridge::ManualOutputAdapter usb;
+  esp32keybridge::ESP32KeyBridgeConfig config;
+  config.hostLayout = esp32keybridge::KeyboardLayout::deDe();
+  assert(bridge.addOutput(usb));
+  bridge.applyConfig(config);
+
+  // '@' on de_DE is AltGr+Q: the key-down phase carries Right Alt, not Shift.
+  bridge.typeText("@");
+  bridge.update(); // phase 0: modifiers only
+  bridge.update(); // phase 1: modifiers + key
+  const esp32keybridge::KeySet &k = usb.keys();
+  assert(k.contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Q)));
+  assert(k.contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::RightAlt)));
+  assert(!k.contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift)));
+}
+
+static void test_layout_conversion_altgr_both_directions()
+{
+  // de_DE keyboard -> en_us host: AltGr+Q = '@', which is Shift+2 on en_us.
+  {
+    esp32keybridge::ESP32KeyBridge bridge;
+    esp32keybridge::ManualInputAdapter keyboard;
+    esp32keybridge::ESP32KeyBridgeConfig config;
+    esp32keybridge::InputConfig &kc = config.addInputConfig();
+    kc.convertLayout(esp32keybridge::KeyboardLayout::deDe());
+    config.hostLayout = esp32keybridge::KeyboardLayout::enUs();
+    assert(bridge.addInput(keyboard, kc));
+    bridge.applyConfig(config);
+
+    esp32keybridge::Key rightAlt = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::RightAlt);
+    esp32keybridge::Key q = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Q);
+    assert(keyboard.press(rightAlt));
+    assert(keyboard.press(q));
+    bridge.update();
+    const esp32keybridge::KeySet &o = bridge.outputKeys();
+    assert(o.contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit2)));
+    assert(o.contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift)));
+    assert(!o.contains(rightAlt)); // physical AltGr consumed by conversion
+    assert(!o.contains(q));
+  }
+
+  // en_us keyboard -> de_DE host: Shift+2 = '@', which is AltGr+Q on de_DE.
+  {
+    esp32keybridge::ESP32KeyBridge bridge;
+    esp32keybridge::ManualInputAdapter keyboard;
+    esp32keybridge::ESP32KeyBridgeConfig config;
+    esp32keybridge::InputConfig &kc = config.addInputConfig();
+    kc.convertLayout(esp32keybridge::KeyboardLayout::enUs());
+    config.hostLayout = esp32keybridge::KeyboardLayout::deDe();
+    assert(bridge.addInput(keyboard, kc));
+    bridge.applyConfig(config);
+
+    esp32keybridge::Key leftShift = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::LeftShift);
+    esp32keybridge::Key digit2 = esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Digit2);
+    assert(keyboard.press(leftShift));
+    assert(keyboard.press(digit2));
+    bridge.update();
+    const esp32keybridge::KeySet &o = bridge.outputKeys();
+    assert(o.contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::Q)));
+    assert(o.contains(esp32keybridge::keyboardKey(esp32keybridge::KeyboardUsage::RightAlt)));
+    assert(!o.contains(leftShift)); // physical Shift consumed by conversion
+    assert(!o.contains(digit2));
+  }
 }
 
 static void test_typing_produces_atomic_frames()
@@ -1781,6 +1894,8 @@ static void runAllTests()
   run("lock_authority_wins_over_terminal_state", test_lock_authority_wins_over_terminal_state);
   run("first_lock_reporting_output_is_authority", test_first_lock_reporting_output_is_authority);
   run("host_layout_encode", test_host_layout_encode);
+  run("de_de_altgr_encode_decode", test_de_de_altgr_encode_decode);
+  run("typing_emits_altgr", test_typing_emits_altgr);
   run("typing_produces_atomic_frames", test_typing_produces_atomic_frames);
   run("typing_parks_user_modifiers", test_typing_parks_user_modifiers);
   run("typing_defer_option_waits_for_modifiers", test_typing_defer_option_waits_for_modifiers);
@@ -1798,6 +1913,7 @@ static void runAllTests()
   run("layout_conversion_shift_passes_for_nonprintable", test_layout_conversion_shift_passes_for_nonprintable);
   run("layout_conversion_untypable_is_dropped", test_layout_conversion_untypable_is_dropped);
   run("layout_conversion_toggle_key", test_layout_conversion_toggle_key);
+  run("layout_conversion_altgr_both_directions", test_layout_conversion_altgr_both_directions);
   run("convert_layout_emits_text_to_outputs", test_convert_layout_emits_text_to_outputs);
   run("no_convert_layout_emits_no_text", test_no_convert_layout_emits_no_text);
   run("key_set_iteration_merge_and_clear", test_key_set_iteration_merge_and_clear);

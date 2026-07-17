@@ -128,6 +128,8 @@ decode	KEYWORD2
 capsAffects	KEYWORD2
 enUs	KEYWORD2
 jaJp	KEYWORD2
+deDe	KEYWORD2
+hasAltGr	KEYWORD2
 byName	KEYWORD2
 buildHidKeyboardReport	KEYWORD2
 buildHidKeyboardRolloverReport	KEYWORD2
